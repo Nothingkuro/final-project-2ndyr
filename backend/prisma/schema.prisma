@@ -1,0 +1,199 @@
+// Arrowhead Gym Management System - Prisma Schema
+// Database: PostgreSQL (NeonTech)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+}
+
+enum EquipmentCondition {
+  GOOD
+  MAINTENANCE
+  BROKEN
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+/// Staff/Admin users who can access the system
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  role         Role
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  processedPayments Payment[] @relation("ProcessedByUser")
+
+  @@map("users")
+}
+
+/// Gym members
+model Member {
+  id            String       @id @default(cuid())
+  firstName     String
+  lastName      String
+  contactNumber String       @unique
+  address       String?
+  joinDate      DateTime     @default(now())
+  expiryDate    DateTime?
+  status        MemberStatus @default(ACTIVE)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  attendances Attendance[]
+  payments    Payment[]
+
+  @@map("members")
+}
+
+/// Available membership plans
+model MembershipPlan {
+  id           String  @id @default(cuid())
+  name         String
+  description  String?
+  durationDays Int
+  price        Decimal @db.Decimal(10, 2)
+  isActive     Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  payments Payment[]
+
+  @@map("membership_plans")
+}
+
+/// Payment transactions for memberships
+model Payment {
+  id              String        @id @default(cuid())
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod
+  transactionDate DateTime      @default(now())
+
+  // Foreign Keys
+  memberId      String
+  planId        String
+  processedById String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  member      Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  plan        MembershipPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  processedBy User           @relation("ProcessedByUser", fields: [processedById], references: [id], onDelete: Restrict)
+
+  @@index([memberId])
+  @@index([planId])
+  @@index([processedById])
+  @@map("payments")
+}
+
+/// Attendance records for gym check-ins
+model Attendance {
+  id          String   @id @default(cuid())
+  checkInTime DateTime @default(now())
+
+  // Foreign Keys
+  memberId String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([checkInTime])
+  @@map("attendances")
+}
+
+/// Gym equipment inventory
+model Equipment {
+  id          String             @id @default(cuid())
+  itemName    String
+  quantity    Int
+  condition   EquipmentCondition @default(GOOD)
+  lastChecked DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("equipment")
+}
+
+/// Equipment and supply suppliers
+model Supplier {
+  id            String  @id @default(cuid())
+  name          String
+  contactPerson String?
+  contactNumber String?
+  address       String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transactions SupplierTransaction[]
+
+  @@map("suppliers")
+}
+
+/// Purchase transactions with suppliers
+model SupplierTransaction {
+  id              String   @id @default(cuid())
+  itemsPurchased  String
+  totalCost       Decimal  @db.Decimal(10, 2)
+  transactionDate DateTime @default(now())
+
+  // Foreign Keys
+  supplierId String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@map("supplier_transactions")
+}
