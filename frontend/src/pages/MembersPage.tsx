@@ -1,45 +1,101 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, Plus } from 'lucide-react';
-import arrowheadLogo from '../assets/arrowhead-logo.png';
-
-/** Member status types matching wireframe color coding */
-type MemberStatus = 'Active' | 'Expired' | 'Inactive';
-
-interface Member {
-  id: string;
-  name: string;
-  status: MemberStatus;
-}
+import AddMemberModal, { type MemberFormData } from '../components/AddMemberModal';
+import type { Member, MemberStatus } from '../types/member';
 
 /** Status color mapping matching wireframe exactly */
 const statusStyles: Record<MemberStatus, { text: string; bg: string }> = {
-  Active: { text: 'text-success', bg: 'bg-success/5' },
-  Expired: { text: 'text-danger', bg: 'bg-danger/5' },
-  Inactive: { text: 'text-neutral-400', bg: 'bg-neutral-50' },
+  ACTIVE: { text: 'text-success', bg: 'bg-success/5' },
+  EXPIRED: { text: 'text-danger', bg: 'bg-danger/5' },
+  INACTIVE: { text: 'text-neutral-400', bg: 'bg-neutral-50' },
 };
 
 /** Sample member data matching the wireframe */
 const sampleMembers: Member[] = [
-  { id: '#67', name: 'John Elmo Doe', status: 'Active' },
-  { id: '#67', name: 'John Elmo Doe', status: 'Active' },
-  { id: '#67', name: 'John Elmo Doe', status: 'Expired' },
-  { id: '#67', name: 'John Elmo Doe', status: 'Expired' },
-  { id: '#67', name: 'John Elmo Doe', status: 'Inactive' },
-  { id: '#67', name: 'John Elmo Doe', status: 'Inactive' },
+  {
+    id: '67',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456464',
+    joinDate: '2023-01-01',
+    expiryDate: '2023-03-03',
+    status: 'ACTIVE',
+    notes: '',
+  },
+  {
+    id: '68',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456465',
+    joinDate: '2023-01-01',
+    expiryDate: '2023-03-03',
+    status: 'ACTIVE',
+    notes: '',
+  },
+  {
+    id: '69',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456466',
+    joinDate: '2023-02-15',
+    expiryDate: '2023-04-15',
+    status: 'EXPIRED',
+    notes: 'Needs follow-up',
+  },
+  {
+    id: '70',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456467',
+    joinDate: '2023-02-15',
+    expiryDate: '2023-04-15',
+    status: 'EXPIRED',
+    notes: '',
+  },
+  {
+    id: '71',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456468',
+    joinDate: '2023-03-10',
+    expiryDate: '2023-06-10',
+    status: 'INACTIVE',
+    notes: 'Moved to another city',
+  },
+  {
+    id: '72',
+    firstName: 'John Elmo',
+    lastName: 'Doe',
+    contactNumber: '123445456469',
+    joinDate: '2023-03-10',
+    expiryDate: '2023-06-10',
+    status: 'INACTIVE',
+    notes: '',
+  },
 ];
 
 export default function MembersPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const handleAddMember = (data: MemberFormData) => {
+    // TODO: send to backend
+    console.log('New member:', data);
+    setIsAddModalOpen(false);
+  };
 
   const filters = ['All', 'Active', 'Expired', 'Inactive'];
 
   /** Filter members based on search and status filter */
   const filteredMembers = sampleMembers.filter((member) => {
+    const fullName = `${member.firstName} ${member.lastName}`;
     const matchesSearch =
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       activeFilter === 'All' || member.status === activeFilter;
@@ -135,7 +191,8 @@ export default function MembersPage() {
 
               return (
                 <div
-                  key={index}
+                  key={member.id}
+                  onClick={() => navigate(`/dashboard/members/${member.id}`)}
                   onMouseEnter={() => setHoveredRow(index)}
                   onMouseLeave={() => setHoveredRow(null)}
                   className={`
@@ -154,7 +211,7 @@ export default function MembersPage() {
                     text-sm font-medium w-16 flex-shrink-0
                     ${isHovered ? 'text-secondary' : 'text-primary'}
                   `}>
-                    {member.id}
+                    #{member.id}
                   </span>
 
                   {/* Hover indicator (shown in wireframe on hover)
@@ -169,7 +226,7 @@ export default function MembersPage() {
                     flex-1 text-sm text-right sm:text-center
                     ${isHovered ? 'text-secondary font-medium' : 'text-secondary'}
                   `}>
-                    {member.name}
+                    {member.firstName} {member.lastName}
                   </span>
 
                   {/* Status */}
@@ -193,6 +250,7 @@ export default function MembersPage() {
       {/* ── Add Member FAB ── */}
       <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-20">
         <button
+          onClick={() => setIsAddModalOpen(true)}
           className="
             flex items-center gap-2 px-5 py-3 bg-primary text-text-light
             rounded-full shadow-lg shadow-primary/30
@@ -205,6 +263,13 @@ export default function MembersPage() {
           <span>Member</span>
         </button>
       </div>
+
+      {/* ── Add Member Modal ── */}
+      <AddMemberModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddMember}
+      />
     </div>
   );
 }

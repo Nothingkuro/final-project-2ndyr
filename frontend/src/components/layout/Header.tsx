@@ -1,4 +1,4 @@
-import { Search, Bell, Menu, ChevronDown } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 
 interface HeaderProps {
   /** Callback to toggle sidebar on mobile */
@@ -42,15 +42,14 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           </button>
 
           {/* User Profile */}
-          <button className="
+          <div className="
             flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg
             hover:bg-neutral-100 transition-colors duration-200 cursor-pointer
           ">
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium text-secondary leading-tight">Admin</p>
             </div>
-            <ChevronDown size={14} className="text-neutral-400 hidden md:block" />
-          </button>
+          </div>
         </div>
       </div>
 
