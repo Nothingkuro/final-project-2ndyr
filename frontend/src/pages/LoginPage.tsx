@@ -25,6 +25,7 @@ export default function LoginPage({
   initialLoading = false,
   disableSubmit = false,
 }: LoginPageProps) {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001'
   const navigate = useNavigate();
   const [step, setStep] = useState<LoginStep>(initialStep);
   const [selectedRole, setSelectedRole] = useState<Role | null>(initialRole);
@@ -46,8 +47,9 @@ export default function LoginPage({
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
