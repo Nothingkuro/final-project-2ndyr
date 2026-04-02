@@ -28,3 +28,33 @@ export const DefaultShell: Story = {
     </MemoryRouter>
   ),
 };
+
+export const OwnerShellExpanded: Story = {
+  render: () => (
+    <MemoryRouter initialEntries={['/dashboard/suppliers']}>
+      <MainLayout sidebarRole="owner">
+        <div className="rounded-lg border border-neutral-200 bg-surface p-6">
+          <h2 className="text-xl font-semibold text-primary">Owner Dashboard Content</h2>
+          <p className="mt-2 text-sm text-secondary">
+            This story shows the shell with owner privileges and additional sidebar tabs.
+          </p>
+        </div>
+      </MainLayout>
+    </MemoryRouter>
+  ),
+};
+
+export const OwnerShellCollapsed: Story = {
+  render: () => (
+    <MemoryRouter initialEntries={['/dashboard/reports']}>
+      <MainLayout sidebarRole="owner" sidebarDefaultCollapsed>
+        <div className="rounded-lg border border-neutral-200 bg-surface p-6">
+          <h2 className="text-xl font-semibold text-primary">Owner Dashboard Content</h2>
+          <p className="mt-2 text-sm text-secondary">
+            Collapsed owner shell with fixed sidebar background and no visible sidebar scrollbars.
+          </p>
+        </div>
+      </MainLayout>
+    </MemoryRouter>
+  ),
+};

@@ -36,8 +36,9 @@ export default function MemberTableRow({
       `}
     >
       <span
+        title={`#${member.id}`}
         className={`
-          text-sm font-medium w-16 shrink-0
+          text-sm font-medium w-16 shrink-0 truncate
           ${isHovered ? 'text-secondary' : 'text-primary'}
         `}
       >
@@ -45,8 +46,9 @@ export default function MemberTableRow({
       </span>
 
       <span
+        title={`${member.firstName} ${member.lastName}`}
         className={`
-          flex-1 text-sm text-right sm:text-center
+          flex-1 min-w-0 text-sm text-right sm:text-center truncate
           ${isHovered ? 'text-secondary font-medium' : 'text-secondary'}
         `}
       >

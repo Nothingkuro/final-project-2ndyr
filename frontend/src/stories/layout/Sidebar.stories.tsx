@@ -43,4 +43,34 @@ export const DesktopCollapsed: Story = {
   ),
 };
 
+export const OwnerDesktopExpanded: Story = {
+  args: {
+    isOpen: true,
+    defaultCollapsed: false,
+    role: 'owner',
+  },
+  render: (args) => (
+    <MemoryRouter initialEntries={['/dashboard/suppliers']}>
+      <div className="h-screen">
+        <Sidebar {...args} />
+      </div>
+    </MemoryRouter>
+  ),
+};
+
+export const OwnerDesktopCollapsed: Story = {
+  args: {
+    isOpen: true,
+    defaultCollapsed: true,
+    role: 'owner',
+  },
+  render: (args) => (
+    <MemoryRouter initialEntries={['/dashboard/reports']}>
+      <div className="h-screen">
+        <Sidebar {...args} />
+      </div>
+    </MemoryRouter>
+  ),
+};
+
 

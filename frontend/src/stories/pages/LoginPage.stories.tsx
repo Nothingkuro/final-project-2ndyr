@@ -48,7 +48,7 @@ export const LoadingState: Story = {
   ),
 };
 
-export const ErrorState: Story = {
+export const InvalidCredentialsErrorState: Story = {
   render: () => (
     <MemoryRouter>
       <LoginPage
@@ -58,6 +58,21 @@ export const ErrorState: Story = {
         initialUsername="staff.user"
         initialPassword="bad-password"
         initialError="Invalid username or password"
+      />
+    </MemoryRouter>
+  ),
+};
+
+export const RoleMismatchErrorState: Story = {
+  render: () => (
+    <MemoryRouter>
+      <LoginPage
+        disableSubmit
+        initialStep="enter-credentials"
+        initialRole="Owner"
+        initialUsername="staff"
+        initialPassword="secret123"
+        initialError="Role mismatch"
       />
     </MemoryRouter>
   ),

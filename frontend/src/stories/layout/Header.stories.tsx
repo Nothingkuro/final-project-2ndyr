@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn } from 'storybook/test';
+import { fn, userEvent, within } from 'storybook/test';
 import Header from '../../components/layout/Header';
 
 const meta = {
@@ -26,5 +26,16 @@ export const DesktopWithNotifications: Story = {
 export const WithoutNotificationDot: Story = {
   args: {
     showNotificationDot: false,
+  },
+};
+
+export const BlankWidgetOnNotificationPress: Story = {
+  args: {
+    showNotificationDot: true,
+    notificationWidget: <div className="h-24" aria-label="Blank notification widget" />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByLabelText('Notifications'));
   },
 };

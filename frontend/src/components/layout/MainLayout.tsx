@@ -5,11 +5,15 @@ import Header from './Header';
 interface MainLayoutProps {
   children: ReactNode;
   initialSidebarOpen?: boolean;
+  sidebarRole?: 'staff' | 'owner';
+  sidebarDefaultCollapsed?: boolean;
 }
 
 export default function MainLayout({
   children,
   initialSidebarOpen = false,
+  sidebarRole = 'staff',
+  sidebarDefaultCollapsed = false,
 }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(initialSidebarOpen);
 
@@ -18,7 +22,12 @@ export default function MainLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-surface-alt">
       {/* ── Sidebar ── */}
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        role={sidebarRole}
+        defaultCollapsed={sidebarDefaultCollapsed}
+      />
 
       {/* ── Main content area ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

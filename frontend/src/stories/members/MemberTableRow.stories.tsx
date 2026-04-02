@@ -52,3 +52,19 @@ export const InactiveDefault: Story = {
     onClick: fn(),
   },
 };
+
+export const LongIdAndMemberName: Story = {
+  args: {
+    member: {
+      ...storyMembers[0],
+      id: 'MEMBER-ID-2026-ULTRA-LONG-ALPHA-NUMERIC-000000000123456789',
+      firstName: 'MaximilianAlexanderTheThirdOfNorthernHighlands',
+      lastName: 'VanDerBergsteinMontgomeryLongfellowSantiago',
+    },
+    index: 3,
+    isHovered: false,
+    onMouseEnter: fn(),
+    onMouseLeave: fn(),
+    onClick: fn(),
+  },
+};

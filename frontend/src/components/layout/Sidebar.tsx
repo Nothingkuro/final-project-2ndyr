@@ -4,6 +4,10 @@ import {
   Users,
   CreditCard,
   Package,
+  Truck,
+  BarChart3,
+  Boxes,
+  UserCog,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +28,8 @@ interface SidebarProps {
   onToggle: () => void;
   /** Initial collapsed state for desktop */
   defaultCollapsed?: boolean;
+  /** Role-based navigation variant */
+  role?: 'staff' | 'owner';
 }
 
 const navItems: NavItem[] = [
@@ -32,13 +38,22 @@ const navItems: NavItem[] = [
   { label: 'Inventory', icon: <Package size={20} />, to: '/dashboard/inventory' },
 ];
 
+const ownerAdditionalNavItems: NavItem[] = [
+  { label: 'Suppliers', icon: <Truck size={20} />, to: '/dashboard/suppliers' },
+  { label: 'Reports', icon: <BarChart3 size={20} />, to: '/dashboard/reports' },
+  { label: 'Manage Assets', icon: <Boxes size={20} />, to: '/dashboard/manage-assets' },
+  { label: 'Staff', icon: <UserCog size={20} />, to: '/dashboard/staff' },
+];
+
 export default function Sidebar({
   isOpen,
   onToggle,
   defaultCollapsed = false,
+  role = 'staff',
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(defaultCollapsed);
   const navigate = useNavigate();
+  const navigationItems = role === 'owner' ? [...navItems, ...ownerAdditionalNavItems] : navItems;
 
   const handleLogout = () => {
     // TODO: Clear auth state
@@ -59,7 +74,7 @@ export default function Sidebar({
       {/* ── Sidebar ── */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen bg-secondary flex flex-col
+          fixed top-0 left-0 z-50 h-screen bg-secondary-light flex flex-col overflow-hidden
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'w-20' : 'w-64'}
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -67,7 +82,7 @@ export default function Sidebar({
         `}
       >
         {/* ── Logo / Brand ── */}
-        <div className="flex items-center gap-3 px-5 py-6 border-b border-neutral-800">
+        <div className="flex shrink-0 items-center gap-3 px-5 py-6 border-b border-neutral-800">
           <img
             src={arrowheadLogo}
             alt="Arrowhead Gym Logo"
@@ -84,8 +99,8 @@ export default function Sidebar({
         </div>
 
         {/* ── Navigation Links ── */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
+        <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3 py-4 space-y-1">
+          {navigationItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
@@ -130,7 +145,7 @@ export default function Sidebar({
         </nav>
 
         {/* ── Bottom Section ── */}
-        <div className="px-3 py-4 border-t border-neutral-800 space-y-2">
+        <div className="shrink-0 px-3 py-4 border-t border-neutral-800 bg-secondary-light space-y-2">
           {/* Collapse Toggle (desktop only) */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}

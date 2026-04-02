@@ -68,6 +68,16 @@ const sampleMembers: Member[] = [
     status: 'INACTIVE',
     notes: '',
   },
+  {
+    id: 'skdfkjsbdfkjbdfksbdfkjbsdkjfbskjdbfkjsbdkjsbdfksbfksdbfkbsjdfkjbdf',
+    firstName: 'slkdkfnfklsndflnsdklfnskldfnklsdnfklsndklfnskldnklsdnflksndfnsdnlsndfnln',
+    lastName: 'sdnfnrensnglndslgjosjfgsjgo',
+    contactNumber: '94035809485093',
+    joinDate: '2023-03-10',
+    expiryDate: '2023-06-10',
+    status: 'INACTIVE',
+    notes: 'test member with very long id and name to check text overflow handling in the UI',
+  }
 ];
 
 /** Side tab options */
