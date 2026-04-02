@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
 import MembersPage from '../../pages/MembersPage';
 import { storyMembers } from '../helpers/mockMembers';
@@ -81,4 +82,39 @@ export const AddModalOpen: Story = {
       initialAddModalOpen
     />
   ),
+};
+
+export const SearchFilterAndAddMemberFlow: Story = {
+  render: () => <MembersPageCanvas members={storyMembers} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const slowUser = userEvent.setup({ delay: 800 });
+
+    const searchInput = canvas.getByPlaceholderText('Search member...');
+    await slowUser.clear(searchInput);
+    await slowUser.type(searchInput, '67');
+
+    const selectedMember = await canvas.findByText('#67');
+    await slowUser.click(selectedMember);
+
+    await slowUser.click(canvas.getByRole('button', { name: 'Filter' }));
+    await slowUser.click(canvas.getByRole('button', { name: 'Active' }));
+
+    await waitFor(() => {
+      expect(canvas.queryByRole('button', { name: 'Active' })).not.toBeInTheDocument();
+    });
+
+    await slowUser.click(canvas.getByRole('button', { name: 'Member' }));
+
+    await slowUser.type(await canvas.findByPlaceholderText('First Name'), 'Jane');
+    await slowUser.type(canvas.getByPlaceholderText('Last Name'), 'Smith');
+    await slowUser.type(canvas.getByPlaceholderText('Contact Number'), '09171234567');
+    await slowUser.type(canvas.getByPlaceholderText('Notes'), 'Added from Storybook play flow');
+
+    await slowUser.click(canvas.getByRole('button', { name: 'Submit' }));
+
+    await waitFor(() => {
+      expect(canvas.queryByPlaceholderText('First Name')).not.toBeInTheDocument();
+    });
+  },
 };

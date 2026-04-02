@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import MemberProfilePage from '../../pages/MemberProfilePage';
 import { storyMembers } from '../helpers/mockMembers';
@@ -58,4 +59,20 @@ export const InactiveMember: Story = {
 
 export const NotFound: Story = {
   render: () => <ProfileCanvas route="/dashboard/members/999" members={[]} />,
+};
+
+export const ActiveMemberDeactivateFlow: Story = {
+  render: () => <ProfileCanvas route="/dashboard/members/67" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const slowUser = userEvent.setup({ delay: 800 });
+
+    await slowUser.click(canvas.getByRole('button', { name: 'Deactivate' }));
+
+    await waitFor(() => {
+      expect(canvas.getByText('INACTIVE')).toBeInTheDocument();
+      expect(canvas.getByRole('button', { name: 'Deactivate' })).toBeDisabled();
+      expect(canvas.getByRole('button', { name: 'Check-In' })).toBeDisabled();
+    });
+  },
 };
