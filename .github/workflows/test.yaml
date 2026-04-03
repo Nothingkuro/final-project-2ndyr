@@ -2,7 +2,7 @@ name: Backend Test CI
 
 on:
   push:
-    branches: ["dev", "feat/*", "test"]
+    branches: ["dev", "feat/**", "test"]
     paths:
       - "backend/**"
       - ".github/workflows/test.yaml"
