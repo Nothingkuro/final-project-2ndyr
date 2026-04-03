@@ -29,6 +29,11 @@ export default function MemberSearchSelect({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const selectedMember = useMemo(
+    () => members.find((member) => member.id === selectedMemberId),
+    [members, selectedMemberId],
+  );
+
   const filteredMembers = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -53,6 +58,10 @@ export default function MemberSearchSelect({
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
+
+  useEffect(() => {
+    setSearchQuery(formatMemberName(selectedMember));
+  }, [selectedMember]);
 
   return (
     <div ref={containerRef}>
@@ -82,7 +91,7 @@ export default function MemberSearchSelect({
                   type="button"
                   onClick={() => {
                     onSelectMember(member.id);
-                    setSearchQuery('');
+                    setSearchQuery(formatMemberName(member));
                     setShowSuggestions(false);
                   }}
                   className={`

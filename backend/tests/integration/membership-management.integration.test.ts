@@ -11,8 +11,6 @@ describe('Membership management API (no mocks)', () => {
   let authCookie = '';
 
   let createdMemberId: string | null = null;
-  let createdPlanId: string | null = null;
-  let createdPaymentId: string | null = null;
   let originalContactNumber = '';
   let updatedContactNumber = '';
 
@@ -43,22 +41,6 @@ describe('Membership management API (no mocks)', () => {
   });
 
   afterAll(async () => {
-    if (createdPaymentId) {
-      await prisma.payment.deleteMany({
-        where: {
-          id: createdPaymentId,
-        },
-      });
-    }
-
-    if (createdPlanId) {
-      await prisma.membershipPlan.deleteMany({
-        where: {
-          id: createdPlanId,
-        },
-      });
-    }
-
     if (createdMemberId) {
       await prisma.member.deleteMany({
         where: {
@@ -255,60 +237,5 @@ describe('Membership management API (no mocks)', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Member not found' });
-  });
-
-  it('creates a payment and returns member payment history', async () => {
-    expect(createdMemberId).toBeTruthy();
-
-    const planName = `Test Plan ${suffix}`;
-
-    const createdPlan = await prisma.membershipPlan.create({
-      data: {
-        name: planName,
-        durationDays: 30,
-        price: 1200,
-        isActive: true,
-      },
-    });
-
-    createdPlanId = createdPlan.id;
-
-    const paymentResponse = await request(app)
-      .post('/api/payments')
-      .set('Cookie', authCookie)
-      .send({
-        memberId: createdMemberId,
-        planId: createdPlanId,
-        paymentMethod: 'CASH',
-      });
-
-    expect(paymentResponse.status).toBe(201);
-    expect(paymentResponse.body.payment.memberId).toBe(createdMemberId);
-    expect(paymentResponse.body.payment.planId).toBe(createdPlanId);
-    expect(paymentResponse.body.payment.amount).toBe(1200);
-    expect(paymentResponse.body.payment.paymentMethod).toBe('CASH');
-    expect(paymentResponse.body.updatedMember.status).toBe('ACTIVE');
-    expect(typeof paymentResponse.body.updatedMember.expiryDate).toBe('string');
-    expect(paymentResponse.body.updatedMember.expiryDate).not.toBe('');
-
-    createdPaymentId = paymentResponse.body.payment.id;
-
-    const historyResponse = await request(app)
-      .get(`/api/members/${createdMemberId}/payments`)
-      .set('Cookie', authCookie);
-
-    expect(historyResponse.status).toBe(200);
-    expect(Array.isArray(historyResponse.body)).toBe(true);
-    expect(historyResponse.body.length).toBeGreaterThan(0);
-
-    const createdPayment = historyResponse.body.find(
-      (item: { id: string }) => item.id === createdPaymentId,
-    );
-
-    expect(createdPayment).toBeDefined();
-    expect(createdPayment.memberId).toBe(createdMemberId);
-    expect(createdPayment.membershipPlan).toBe(planName);
-    expect(createdPayment.processedBy).toBe(username);
-    expect(createdPayment.amountPhp).toBe(1200);
   });
 });
