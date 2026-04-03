@@ -35,11 +35,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client (unit tests)
+        env:
+          DATABASE_URL_TEST: postgresql://user:pass@localhost:5432/unit_test_dummy
+        run: npx prisma generate
+
       - name: Run unit tests
         run: npm run test:unit
 
   api-tests:
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+      NODE_ENV: test
 
     defaults:
       run:
@@ -59,18 +68,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate test database URL
+        run: |
+          if [ -z "$DATABASE_URL_TEST" ]; then
+            echo "DATABASE_URL_TEST is missing or unavailable."
+            exit 1
+          fi
+          case "$DATABASE_URL_TEST" in
+            postgresql://*|postgres://*) ;;
+            *)
+              echo "DATABASE_URL_TEST must start with postgres:// or postgresql://"
+              exit 1
+              ;;
+          esac
+
       - name: Generate Prisma Client
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
         run: npx prisma generate
 
       - name: Run Prisma migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
         run: npm run db:migrate:prod
 
       - name: Run API tests
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
-          NODE_ENV: test
         run: npm run test:integration

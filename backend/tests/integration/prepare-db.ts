@@ -13,8 +13,12 @@ if (fs.existsSync(envTestPath)) {
   dotenv.config({ path: envTestPath, override: true });
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required to run integration tests.');
+if (!process.env.DATABASE_URL_TEST && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL_TEST (or DATABASE_URL) is required to run integration tests.');
+}
+
+if (!process.env.DATABASE_URL && process.env.DATABASE_URL_TEST) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL_TEST;
 }
 
 execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
