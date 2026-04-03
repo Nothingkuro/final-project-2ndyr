@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 import MemberPaymentHistoryPanel from '../../components/members/payment-history/MemberPaymentHistoryPanel';
-import type { MemberPaymentHistoryRecord } from '../helpers/mockPayments';
+import type { MemberPaymentHistoryRecord } from '../../types/payment';
 
 const STORY_PAYMENTS: MemberPaymentHistoryRecord[] = [
   {
@@ -58,7 +58,7 @@ export const Default: Story = {
 export const NoRecordsForMember: Story = {
   args: {
     memberId: '999',
-    payments: undefined,
+    payments: [],
   },
 };
 

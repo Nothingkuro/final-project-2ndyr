@@ -17,3 +17,13 @@ export interface MembershipPlan {
   price: number;
   description?: string;
 }
+
+export interface MemberPaymentHistoryRecord {
+  id: string;
+  memberId: string;
+  paidAt: string;
+  amountPhp: number;
+  membershipPlan: string;
+  processedBy: string;
+  paymentMethod?: PaymentMethod;
+}

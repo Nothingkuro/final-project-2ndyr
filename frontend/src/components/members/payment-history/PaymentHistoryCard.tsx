@@ -1,4 +1,4 @@
-import type { MemberPaymentHistoryRecord } from '../../../stories/helpers/mockPayments';
+import type { MemberPaymentHistoryRecord } from '../../../types/payment';
 
 function formatPaymentDate(dateIso: string): string {
   const dateValue = new Date(dateIso);

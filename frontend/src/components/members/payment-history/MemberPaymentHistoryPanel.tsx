@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PaymentHistoryFilters from './PaymentHistoryFilters';
 import PaymentHistoryList from './PaymentHistoryList';
-import { MOCK_MEMBER_PAYMENTS, type MemberPaymentHistoryRecord } from '../../../stories/helpers/mockPayments';
+import type { MemberPaymentHistoryRecord } from '../../../types/payment';
+import { API_BASE_URL } from '../../../services/apiBaseUrl';
 
 interface MemberPaymentHistoryPanelProps {
   memberId: string;
@@ -14,14 +15,68 @@ export default function MemberPaymentHistoryPanel({
 }: MemberPaymentHistoryPanelProps) {
   const [selectedMonth, setSelectedMonth] = useState('ALL');
   const [selectedYear, setSelectedYear] = useState('ALL');
+  const [apiPayments, setApiPayments] = useState<MemberPaymentHistoryRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(payments === undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (payments !== undefined) {
+      setIsLoading(false);
+      setLoadError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadPayments = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+
+        const response = await fetch(`${API_BASE_URL}/api/members/${memberId}/payments`, {
+          method: 'GET',
+          credentials: 'include',
+          signal: controller.signal,
+        });
+
+        const data = (await response.json()) as MemberPaymentHistoryRecord[] | { error?: string };
+
+        if (!response.ok) {
+          const message = 'error' in data && typeof data.error === 'string'
+            ? data.error
+            : 'Failed to load payment history';
+          throw new Error(message);
+        }
+
+        setApiPayments(Array.isArray(data) ? data : []);
+      } catch (error: unknown) {
+        if ((error as { name?: string })?.name === 'AbortError') {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : 'Failed to load payment history';
+        setLoadError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadPayments();
+
+    return () => {
+      controller.abort();
+    };
+  }, [memberId, payments]);
+
+  const sourcePayments = payments ?? apiPayments;
 
   const memberPayments = useMemo(() => {
-    return (payments ?? MOCK_MEMBER_PAYMENTS)
+    return sourcePayments
       .filter((paymentRecord) => paymentRecord.memberId === memberId)
       .sort((leftRecord, rightRecord) => {
         return new Date(rightRecord.paidAt).getTime() - new Date(leftRecord.paidAt).getTime();
       });
-  }, [memberId, payments]);
+  }, [memberId, sourcePayments]);
 
   const yearOptions = useMemo(() => {
     return Array.from(
@@ -49,6 +104,18 @@ export default function MemberPaymentHistoryPanel({
         px-5 py-5 sm:px-8 sm:py-7
       "
     >
+      {isLoading && (
+        <div className="mb-4 rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-500">
+          Loading payment history...
+        </div>
+      )}
+
+      {loadError && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
       <PaymentHistoryFilters
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
