@@ -1,4 +1,4 @@
-import { By, type WebDriver } from 'selenium-webdriver';
+import { By, Key, type WebDriver } from 'selenium-webdriver';
 import {
   buttonByText,
   DEFAULT_TIMEOUT_MS,
@@ -45,30 +45,30 @@ export class LoginPage {
   }
 
   async enterUsername(username: string): Promise<void> {
-    const usernameInput = await waitForVisible(
-      this.driver,
-      By.css('input[placeholder="Username"]'),
-      this.timeoutMs,
-    );
-
-    await usernameInput.clear();
-    await usernameInput.sendKeys(username);
+    await this.setInputValue(By.css('input[placeholder="Username"]'), username);
   }
 
   async enterPassword(password: string): Promise<void> {
-    const passwordInput = await waitForVisible(
-      this.driver,
-      By.css('input[placeholder="Password"]'),
-      this.timeoutMs,
-    );
-
-    await passwordInput.clear();
-    await passwordInput.sendKeys(password);
+    await this.setInputValue(By.css('input[placeholder="Password"]'), password);
   }
 
   async submit(): Promise<void> {
     const submitButton = await waitForVisible(this.driver, buttonByText('Log In'), this.timeoutMs);
     await submitButton.click();
+
+    if (await this.isCredentialsStepVisible()) {
+      await this.driver.executeScript('arguments[0].click();', submitButton);
+    }
+
+    if (await this.isCredentialsStepVisible()) {
+      const forms = await this.driver.findElements(By.css('form'));
+      if (forms.length > 0) {
+        await this.driver.executeScript(
+          'if (arguments[0].requestSubmit) { arguments[0].requestSubmit(); } else { arguments[0].submit(); }',
+          forms[0],
+        );
+      }
+    }
   }
 
   async login(credentials: LoginCredentials): Promise<void> {
@@ -76,6 +76,31 @@ export class LoginPage {
     await this.enterUsername(credentials.username);
     await this.enterPassword(credentials.password);
     await this.submit();
+
+    const loginErrorLocator = By.xpath('//div[contains(@class, "text-red-600")]');
+
+    await this.driver.wait(async () => {
+      const url = await this.driver.getCurrentUrl();
+      if (url.includes('/dashboard/members')) {
+        return true;
+      }
+
+      const errors = await this.driver.findElements(loginErrorLocator);
+      if (errors.length === 0) {
+        return false;
+      }
+
+      return errors[0].isDisplayed();
+    }, this.timeoutMs);
+
+    const url = await this.driver.getCurrentUrl();
+    if (!url.includes('/dashboard/members')) {
+      const errors = await this.driver.findElements(loginErrorLocator);
+      const message = errors.length > 0
+        ? await errors[0].getText()
+        : `Login did not navigate to members page (url=${url}).`;
+      throw new Error(`Login failed in E2E: ${message}`);
+    }
   }
 
   async waitForMembersPage(): Promise<void> {
@@ -94,5 +119,18 @@ export class LoginPage {
     }
 
     return usernameFields[0].isDisplayed();
+  }
+
+  private async setInputValue(locator: By, value: string): Promise<void> {
+    const input = await waitForVisible(this.driver, locator, this.timeoutMs);
+    await input.click();
+    await input.sendKeys(Key.CONTROL, 'a');
+    await input.sendKeys(Key.DELETE);
+    await input.sendKeys(value);
+
+    await this.driver.wait(async () => {
+      const currentValue = await input.getAttribute('value');
+      return currentValue === value;
+    }, this.timeoutMs);
   }
 }
