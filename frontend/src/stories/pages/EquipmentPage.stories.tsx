@@ -39,10 +39,6 @@ function EquipmentPageCanvas(props: ComponentProps<typeof EquipmentPage>) {
   );
 }
 
-export const Loading: Story = {
-  render: () => <EquipmentPageCanvas forceLoading />,
-};
-
 export const SuccessData: Story = {
   render: () => <EquipmentPageCanvas />,
 };
@@ -52,10 +48,6 @@ export const EmptyState: Story = {
     mockEquipment: [],
   },
   render: () => <EquipmentPageCanvas />,
-};
-
-export const ApiError: Story = {
-  render: () => <EquipmentPageCanvas forcedErrorMessage="Failed to load equipment inventory" />,
 };
 
 export const StatusOnlyControls: Story = {
