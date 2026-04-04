@@ -75,6 +75,14 @@ export default function LoginPage({
         window.sessionStorage.setItem('authUsername', loggedInUsername);
       }
 
+      const apiRole = typeof data?.user?.role === 'string' ? data.user.role.toUpperCase() : '';
+      const normalizedRole = apiRole === 'ADMIN' || apiRole === 'STAFF'
+        ? apiRole
+        : selectedRole === 'Owner'
+          ? 'ADMIN'
+          : 'STAFF';
+      window.sessionStorage.setItem('authRole', normalizedRole);
+
       navigate('/dashboard/members');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to login';

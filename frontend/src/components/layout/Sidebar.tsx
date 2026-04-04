@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
+  Activity,
   Users,
   CreditCard,
-  Package,
+  Database,
   Truck,
   BarChart3,
-  Boxes,
   UserCog,
   LogOut,
   ChevronLeft,
@@ -29,19 +29,19 @@ interface SidebarProps {
   /** Initial collapsed state for desktop */
   defaultCollapsed?: boolean;
   /** Role-based navigation variant */
-  role?: 'staff' | 'owner';
+  role?: 'staff' | 'owner' | 'STAFF' | 'ADMIN';
 }
 
 const navItems: NavItem[] = [
   { label: 'Members', icon: <Users size={20} />, to: '/dashboard/members' },
   { label: 'Payments', icon: <CreditCard size={20} />, to: '/dashboard/payments' },
-  { label: 'Inventory', icon: <Package size={20} />, to: '/dashboard/inventory' },
+  { label: 'Equipment Status', icon: <Activity size={20} />, to: '/dashboard/inventory' },
 ];
 
-const ownerAdditionalNavItems: NavItem[] = [
+const adminAdditionalNavItems: NavItem[] = [
   { label: 'Suppliers', icon: <Truck size={20} />, to: '/dashboard/suppliers' },
   { label: 'Reports', icon: <BarChart3 size={20} />, to: '/dashboard/reports' },
-  { label: 'Manage Assets', icon: <Boxes size={20} />, to: '/dashboard/manage-assets' },
+  { label: 'Assets Inventory', icon: <Database size={20} />, to: '/dashboard/manage-assets' },
   { label: 'Staff', icon: <UserCog size={20} />, to: '/dashboard/staff' },
 ];
 
@@ -53,10 +53,12 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(defaultCollapsed);
   const navigate = useNavigate();
-  const navigationItems = role === 'owner' ? [...navItems, ...ownerAdditionalNavItems] : navItems;
+  const isAdmin = role === 'owner' || role === 'ADMIN';
+  const navigationItems = isAdmin ? [...navItems, ...adminAdditionalNavItems] : navItems;
 
   const handleLogout = () => {
-    // TODO: Clear auth state
+    window.sessionStorage.removeItem('authUsername');
+    window.sessionStorage.removeItem('authRole');
     navigate('/');
   };
 

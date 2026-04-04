@@ -5,17 +5,21 @@ import Header from './Header';
 interface MainLayoutProps {
   children: ReactNode;
   initialSidebarOpen?: boolean;
-  sidebarRole?: 'staff' | 'owner';
+  sidebarRole?: 'staff' | 'owner' | 'STAFF' | 'ADMIN';
   sidebarDefaultCollapsed?: boolean;
 }
 
 export default function MainLayout({
   children,
   initialSidebarOpen = false,
-  sidebarRole = 'staff',
+  sidebarRole,
   sidebarDefaultCollapsed = false,
 }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(initialSidebarOpen);
+  const storedRole = typeof window !== 'undefined'
+    ? window.sessionStorage.getItem('authRole')
+    : null;
+  const resolvedSidebarRole = sidebarRole ?? (storedRole === 'ADMIN' ? 'ADMIN' : 'STAFF');
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
@@ -25,7 +29,7 @@ export default function MainLayout({
       <Sidebar
         isOpen={sidebarOpen}
         onToggle={toggleSidebar}
-        role={sidebarRole}
+        role={resolvedSidebarRole}
         defaultCollapsed={sidebarDefaultCollapsed}
       />
 

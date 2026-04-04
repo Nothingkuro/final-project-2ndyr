@@ -3,6 +3,10 @@ import SearchBar from '../components/common/SearchBar';
 import FilterDropdown from '../components/common/FilterDropdown';
 import EquipmentTableRow from '../components/equipment/EquipmentTableRow';
 import { EquipmentCondition, type Equipment } from '../types/equipment';
+import {
+  listMockEquipment,
+  updateMockEquipmentCondition,
+} from '../services/mockEquipmentStore';
 
 type EquipmentFilter = 'ALL' | EquipmentCondition;
 
@@ -54,7 +58,7 @@ const seedEquipment: Equipment[] = [
   },
   {
     id: 'EQ-004',
-    itemName: 'Yoga Msd,fnksdnfldfnlats',
+    itemName: 'Yoga Mats',
     quantity: 25,
     condition: EquipmentCondition.GOOD,
     lastChecked: '2026-03-30T07:45:00.000Z',
@@ -132,14 +136,6 @@ function filterAndPaginateEquipment(
   };
 }
 
-function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  });
-}
-
 interface EquipmentPageProps {
   equipment?: Equipment[];
   initialSearchQuery?: string;
@@ -158,7 +154,7 @@ export default function EquipmentPage({
   forcedErrorMessage = null,
 }: EquipmentPageProps) {
   const [inventory, setInventory] = useState<Equipment[]>(equipment ?? seedEquipment);
-  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>(equipment ?? []);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialSearchQuery);
   const [filterOpen, setFilterOpen] = useState(initialFilterOpen);
@@ -169,8 +165,9 @@ export default function EquipmentPage({
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(null);
   const [editingCondition, setEditingCondition] = useState<EquipmentCondition | null>(null);
-  const [isLoadingEquipment, setIsLoadingEquipment] = useState(true);
+  const [isLoadingEquipment, setIsLoadingEquipment] = useState(equipment === undefined);
   const [equipmentLoadError, setEquipmentLoadError] = useState<string | null>(null);
+  const [isSavingCondition, setIsSavingCondition] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
@@ -188,14 +185,10 @@ export default function EquipmentPage({
   }, [searchQuery]);
 
   useEffect(() => {
-    let isCancelled = false;
-
     if (forceLoading) {
       setIsLoadingEquipment(true);
       setEquipmentLoadError(null);
-      return () => {
-        isCancelled = true;
-      };
+      return;
     }
 
     if (forcedErrorMessage) {
@@ -204,23 +197,42 @@ export default function EquipmentPage({
       setEquipmentList([]);
       setTotalEquipment(0);
       setTotalPages(1);
-      return () => {
-        isCancelled = true;
-      };
+      return;
     }
 
-    setIsLoadingEquipment(true);
-    setEquipmentLoadError(null);
+    if (equipment) {
+      const response = filterAndPaginateEquipment(
+        inventory,
+        debouncedSearchQuery,
+        activeFilter,
+        currentPage,
+        PAGE_SIZE,
+      );
 
-    const timeoutId = window.setTimeout(() => {
+      setEquipmentList(response.items);
+      setTotalEquipment(response.total);
+      setTotalPages(response.totalPages);
+      if (response.page !== currentPage) {
+        setCurrentPage(response.page);
+      }
+      setIsLoadingEquipment(false);
+      setEquipmentLoadError(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadEquipment = async () => {
       try {
-        const response = filterAndPaginateEquipment(
-          inventory,
-          debouncedSearchQuery,
-          activeFilter,
-          currentPage,
-          PAGE_SIZE,
-        );
+        setIsLoadingEquipment(true);
+        setEquipmentLoadError(null);
+
+        const response = await listMockEquipment({
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          search: debouncedSearchQuery,
+          condition: activeFilter,
+        });
 
         if (isCancelled) {
           return;
@@ -228,7 +240,7 @@ export default function EquipmentPage({
 
         setEquipmentList(response.items);
         setTotalEquipment(response.total);
-        setTotalPages(response.totalPages);
+        setTotalPages(Math.max(1, response.totalPages));
 
         if (response.page !== currentPage) {
           setCurrentPage(response.page);
@@ -246,13 +258,15 @@ export default function EquipmentPage({
           setIsLoadingEquipment(false);
         }
       }
-    }, 120);
+    };
+
+    void loadEquipment();
 
     return () => {
       isCancelled = true;
-      window.clearTimeout(timeoutId);
     };
   }, [
+    equipment,
     inventory,
     debouncedSearchQuery,
     activeFilter,
@@ -262,9 +276,9 @@ export default function EquipmentPage({
     forcedErrorMessage,
   ]);
 
-  const handleEdit = (equipment: Equipment) => {
-    setEditingEquipmentId(equipment.id);
-    setEditingCondition(equipment.condition);
+  const handleEdit = (equipmentItem: Equipment) => {
+    setEditingEquipmentId(equipmentItem.id);
+    setEditingCondition(equipmentItem.condition);
   };
 
   const handleCancelEdit = () => {
@@ -272,36 +286,50 @@ export default function EquipmentPage({
     setEditingCondition(null);
   };
 
-  const handleSaveCondition = () => {
+  const handleSaveCondition = async () => {
     if (!editingEquipmentId || !editingCondition) {
       return;
     }
 
-    const nowIso = new Date().toISOString();
+    setIsSavingCondition(true);
+    setEquipmentLoadError(null);
 
-    setInventory((currentItems) =>
-      currentItems.map((item) =>
-        item.id === editingEquipmentId
-          ? {
-              ...item,
-              condition: editingCondition,
-              lastChecked: nowIso,
-              updatedAt: nowIso,
-            }
-          : item,
-      ),
-    );
+    try {
+      if (equipment) {
+        const nowIso = new Date().toISOString();
+        setInventory((currentItems) =>
+          currentItems.map((item) =>
+            item.id === editingEquipmentId
+              ? {
+                  ...item,
+                  condition: editingCondition,
+                  lastChecked: nowIso,
+                  updatedAt: nowIso,
+                }
+              : item,
+          ),
+        );
+      } else {
+        await updateMockEquipmentCondition(editingEquipmentId, editingCondition);
+      }
 
-    setEditingEquipmentId(null);
-    setEditingCondition(null);
-    setRefreshNonce((prev) => prev + 1);
+      setEditingEquipmentId(null);
+      setEditingCondition(null);
+      setRefreshNonce((prev) => prev + 1);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update equipment condition';
+      setEquipmentLoadError(message);
+    } finally {
+      setIsSavingCondition(false);
+    }
   };
 
   return (
     <div className="relative min-h-full">
       <div className="flex items-center justify-center gap-3 mb-8">
         <h1 className="text-primary text-3xl sm:text-4xl font-semibold">
-          Equipment Inventory
+          Equipment Status
         </h1>
       </div>
 
@@ -347,6 +375,9 @@ export default function EquipmentPage({
                     Condition
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold tracking-wide text-neutral-600 uppercase">
+                    Last Checked
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold tracking-wide text-neutral-600 uppercase">
                     Actions
                   </th>
                 </tr>
@@ -355,13 +386,13 @@ export default function EquipmentPage({
               <tbody>
                 {isLoadingEquipment ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-neutral-400 text-sm">
+                    <td colSpan={5} className="px-6 py-12 text-center text-neutral-400 text-sm">
                       Loading equipment...
                     </td>
                   </tr>
                 ) : equipmentLoadError ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-red-600 text-sm">
+                    <td colSpan={5} className="px-6 py-12 text-center text-red-600 text-sm">
                       {equipmentLoadError}
                     </td>
                   </tr>
@@ -370,12 +401,13 @@ export default function EquipmentPage({
                     <EquipmentTableRow
                       key={equipment.id}
                       equipment={equipment}
+                      mode="status"
                       index={index}
                       isHovered={hoveredRow === index}
                       onMouseEnter={() => setHoveredRow(index)}
                       onMouseLeave={() => setHoveredRow(null)}
-                      onEdit={handleEdit}
-                      isEditing={editingEquipmentId === equipment.id}
+                      onEditStatus={handleEdit}
+                      isEditingCondition={editingEquipmentId === equipment.id}
                       editedCondition={
                         editingEquipmentId === equipment.id
                           ? editingCondition ?? equipment.condition
@@ -383,12 +415,12 @@ export default function EquipmentPage({
                       }
                       onConditionChange={setEditingCondition}
                       onSaveCondition={handleSaveCondition}
-                      onCancelEdit={handleCancelEdit}
+                      onCancelConditionEdit={handleCancelEdit}
                     />
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-neutral-400 text-sm">
+                    <td colSpan={5} className="px-6 py-12 text-center text-neutral-400 text-sm">
                       No equipment found matching your search.
                     </td>
                   </tr>
@@ -408,7 +440,7 @@ export default function EquipmentPage({
               <button
                 type="button"
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage <= 1}
+                disabled={currentPage <= 1 || isSavingCondition}
                 className="px-3 py-1.5 rounded-md border border-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 transition-colors"
               >
                 Previous
@@ -416,7 +448,7 @@ export default function EquipmentPage({
               <button
                 type="button"
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage >= totalPages}
+                disabled={currentPage >= totalPages || isSavingCondition}
                 className="px-3 py-1.5 rounded-md border border-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 transition-colors"
               >
                 Next
@@ -425,12 +457,6 @@ export default function EquipmentPage({
           </div>
         )}
       </div>
-
-      {!isLoadingEquipment && equipmentList.length > 0 && (
-        <p className="mt-6 text-center text-xs text-neutral-500">
-          Last updated: {formatDate(equipmentList[0].updatedAt)}
-        </p>
-      )}
     </div>
   );
 }

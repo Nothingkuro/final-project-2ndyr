@@ -10,6 +10,7 @@ type EquipmentRowStoryArgs = {
   itemName: string;
   quantity: number;
   condition: EquipmentCondition;
+  mode: 'status' | 'admin';
   isHovered: boolean;
   index: number;
 };
@@ -35,11 +36,14 @@ function EquipmentTableRowStory(args: EquipmentRowStoryArgs) {
         <tbody>
           <EquipmentTableRow
             equipment={equipment}
+            mode={args.mode}
             index={args.index}
             isHovered={args.isHovered}
             onMouseEnter={fn()}
             onMouseLeave={fn()}
-            onEdit={fn()}
+            onEditStatus={fn()}
+            onEditAsset={fn()}
+            onDeleteAsset={fn()}
           />
         </tbody>
       </table>
@@ -61,6 +65,10 @@ const meta = {
       control: 'select',
       options: [EquipmentCondition.GOOD, EquipmentCondition.MAINTENANCE, EquipmentCondition.BROKEN],
     },
+    mode: {
+      control: 'select',
+      options: ['status', 'admin'],
+    },
     isHovered: { control: 'boolean' },
     index: { control: { type: 'number', min: 0, step: 1 } },
     id: { control: 'text' },
@@ -76,6 +84,7 @@ export const Standard: Story = {
     itemName: newTreadmill.itemName,
     quantity: newTreadmill.quantity,
     condition: newTreadmill.condition,
+    mode: 'status',
     isHovered: false,
     index: 0,
   },
@@ -87,6 +96,7 @@ export const LowStock: Story = {
     itemName: 'Battle Rope',
     quantity: 1,
     condition: EquipmentCondition.MAINTENANCE,
+    mode: 'status',
     isHovered: false,
     index: 1,
   },
@@ -98,6 +108,7 @@ export const OutOfStock: Story = {
     itemName: 'Resistance Band Pack',
     quantity: 0,
     condition: EquipmentCondition.BROKEN,
+    mode: 'status',
     isHovered: false,
     index: 2,
   },
@@ -109,6 +120,7 @@ export const LongName: Story = {
     itemName: longNameEquipment.itemName,
     quantity: longNameEquipment.quantity,
     condition: longNameEquipment.condition,
+    mode: 'status',
     isHovered: false,
     index: 3,
   },
@@ -120,6 +132,7 @@ export const EditConditionAction: Story = {
     itemName: 'Chest Fly Machine',
     quantity: 2,
     condition: EquipmentCondition.MAINTENANCE,
+    mode: 'status',
     isHovered: true,
     index: 4,
   },
@@ -139,6 +152,7 @@ export const InlineConditionEditing: Story = {
     itemName: 'Assisted Pull-Up Machine',
     quantity: 2,
     condition: EquipmentCondition.GOOD,
+    mode: 'status',
     isHovered: false,
     index: 5,
   },
@@ -152,19 +166,21 @@ export const InlineConditionEditing: Story = {
               itemName: 'Assisted Pull-Up Machine',
               quantity: 2,
               condition: EquipmentCondition.GOOD,
+              mode: 'status',
               isHovered: false,
               index: 5,
             })}
+            mode="status"
             index={5}
             isHovered={false}
             onMouseEnter={fn()}
             onMouseLeave={fn()}
-            onEdit={fn()}
-            isEditing
+            onEditStatus={fn()}
+            isEditingCondition
             editedCondition={EquipmentCondition.MAINTENANCE}
             onConditionChange={fn()}
             onSaveCondition={fn()}
-            onCancelEdit={fn()}
+            onCancelConditionEdit={fn()}
           />
         </tbody>
       </table>
@@ -176,5 +192,23 @@ export const InlineConditionEditing: Story = {
     expect(canvas.getByRole('combobox', { name: 'Condition for Assisted Pull-Up Machine' })).toBeInTheDocument();
     expect(canvas.getByRole('button', { name: 'Save condition for Assisted Pull-Up Machine' })).toBeInTheDocument();
     expect(canvas.getByRole('button', { name: 'Cancel editing condition for Assisted Pull-Up Machine' })).toBeInTheDocument();
+  },
+};
+
+export const AdminModeActions: Story = {
+  args: {
+    id: 'EQ-ADMIN-ROW',
+    itemName: 'Power Rack',
+    quantity: 2,
+    condition: EquipmentCondition.GOOD,
+    mode: 'admin',
+    isHovered: true,
+    index: 6,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    expect(canvas.getByRole('button', { name: 'Edit asset Power Rack' })).toBeInTheDocument();
+    expect(canvas.getByRole('button', { name: 'Delete asset Power Rack' })).toBeInTheDocument();
   },
 };

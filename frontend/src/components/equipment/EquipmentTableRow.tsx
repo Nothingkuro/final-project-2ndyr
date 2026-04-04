@@ -1,34 +1,54 @@
-import { Check, Pencil, X } from 'lucide-react';
+import { CheckCircle, Edit, Trash2, X } from 'lucide-react';
 import { EquipmentCondition, type Equipment } from '../../types/equipment';
 import ConditionBadge from './ConditionBadge';
 
 interface EquipmentTableRowProps {
   equipment: Equipment;
+  mode: 'status' | 'admin';
   index: number;
   isHovered: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onEdit: (equipment: Equipment) => void;
-  isEditing?: boolean;
+  onEditStatus?: (equipment: Equipment) => void;
+  onEditAsset?: (equipment: Equipment) => void;
+  onDeleteAsset?: (equipment: Equipment) => void;
+  isEditingCondition?: boolean;
   editedCondition?: EquipmentCondition;
   onConditionChange?: (condition: EquipmentCondition) => void;
   onSaveCondition?: () => void;
-  onCancelEdit?: () => void;
+  onCancelConditionEdit?: () => void;
   onClick?: () => void;
+}
+
+function formatDateTime(value: string | null): string {
+  if (!value) {
+    return 'N/A';
+  }
+
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export default function EquipmentTableRow({
   equipment,
+  mode,
   index,
   isHovered,
   onMouseEnter,
   onMouseLeave,
-  onEdit,
-  isEditing = false,
+  onEditStatus,
+  onEditAsset,
+  onDeleteAsset,
+  isEditingCondition = false,
   editedCondition,
   onConditionChange,
   onSaveCondition,
-  onCancelEdit,
+  onCancelConditionEdit,
   onClick,
 }: EquipmentTableRowProps) {
   const displayedItemName =
@@ -67,7 +87,7 @@ export default function EquipmentTableRow({
       </td>
 
       <td className="px-4 sm:px-6 py-3 text-right whitespace-nowrap">
-        {isEditing ? (
+        {mode === 'status' && isEditingCondition ? (
           <select
             aria-label={`Condition for ${equipment.itemName}`}
             value={editedCondition ?? equipment.condition}
@@ -87,9 +107,13 @@ export default function EquipmentTableRow({
         )}
       </td>
 
+      <td className={`px-4 sm:px-6 py-3 text-sm text-right whitespace-nowrap ${isHovered ? 'text-secondary font-medium' : 'text-secondary'}`}>
+        {mode === 'status' ? formatDateTime(equipment.lastChecked) : formatDateTime(equipment.updatedAt)}
+      </td>
+
       <td className="px-4 sm:px-6 py-3">
         <div className="flex items-center justify-end gap-2">
-          {isEditing ? (
+          {mode === 'status' && isEditingCondition ? (
             <>
               <button
                 type="button"
@@ -101,7 +125,7 @@ export default function EquipmentTableRow({
                 }}
                 className="p-2 rounded-md border border-success/40 text-success hover:bg-success/10 transition-colors duration-150 cursor-pointer"
               >
-                <Check size={16} />
+                <CheckCircle size={16} />
               </button>
               <button
                 type="button"
@@ -109,26 +133,53 @@ export default function EquipmentTableRow({
                 title="Cancel"
                 onClick={(event) => {
                   event.stopPropagation();
-                  onCancelEdit?.();
+                  onCancelConditionEdit?.();
                 }}
                 className="p-2 rounded-md border border-neutral-300 text-secondary hover:bg-neutral-100 transition-colors duration-150 cursor-pointer"
               >
                 <X size={16} />
               </button>
             </>
-          ) : (
+          ) : mode === 'status' ? (
             <button
               type="button"
               aria-label={`Edit condition for ${equipment.itemName}`}
               title="Edit condition"
               onClick={(event) => {
                 event.stopPropagation();
-                onEdit(equipment);
+                onEditStatus?.(equipment);
               }}
               className="p-2 rounded-md border border-neutral-300 text-secondary hover:bg-neutral-100 transition-colors duration-150 cursor-pointer"
             >
-              <Pencil size={16} />
+              <Edit size={16} />
             </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label={`Edit asset ${equipment.itemName}`}
+                title="Edit asset"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEditAsset?.(equipment);
+                }}
+                className="p-2 rounded-md border border-neutral-300 text-secondary hover:bg-neutral-100 transition-colors duration-150 cursor-pointer"
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label={`Delete asset ${equipment.itemName}`}
+                title="Delete asset"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteAsset?.(equipment);
+                }}
+                className="p-2 rounded-md border border-danger/40 text-danger hover:bg-danger/10 transition-colors duration-150 cursor-pointer"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
           )}
         </div>
       </td>
