@@ -176,7 +176,7 @@ jobs:
           trap cleanup EXIT
 
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:5173 >/dev/null; then
+            if curl -fsS http://127.0.0.1:5173 >/dev/null 2>/dev/null; then
               break
             fi
             sleep 2
@@ -188,4 +188,32 @@ jobs:
             exit 1
           fi
 
+          if ! kill -0 "$FRONTEND_PID" >/dev/null 2>&1; then
+            echo "Frontend process exited before E2E execution."
+            cat /tmp/frontend.log
+            exit 1
+          fi
+
+          echo "Frontend startup log tail:"
+          tail -n 60 /tmp/frontend.log || true
+
+          set +e
           npm --prefix e2e run test:e2e:ci
+          TEST_EXIT=$?
+          set -e
+
+          if [ "$TEST_EXIT" -ne 0 ]; then
+            echo "E2E failed. Frontend log tail:"
+            tail -n 200 /tmp/frontend.log || true
+            exit "$TEST_EXIT"
+          fi
+
+      - name: Upload E2E frontend log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-diagnostics
+          path: |
+            /tmp/frontend.log
+            e2e/artifacts
+          if-no-files-found: ignore

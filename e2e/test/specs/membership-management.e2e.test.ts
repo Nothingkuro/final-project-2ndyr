@@ -1,4 +1,7 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { WebDriver } from 'selenium-webdriver';
+import { By } from 'selenium-webdriver';
 import { LoginPage } from '../pages/LoginPage';
 import { MemberProfilePage } from '../pages/MemberProfilePage';
 import { MembersPage, type MemberFormValues } from '../pages/MembersPage';
@@ -7,6 +10,7 @@ import { createDriver, quitDriver } from '../utils/driverFactory';
 const FRONTEND_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
 const LOGIN_USERNAME = process.env.E2E_LOGIN_USERNAME ?? process.env.SEED_STAFF_USERNAME ?? 'staff';
 const LOGIN_PASSWORD = process.env.E2E_LOGIN_PASSWORD ?? process.env.SEED_STAFF_PASSWORD;
+const ARTIFACT_DIR = path.resolve(__dirname, '../../artifacts');
 
 function buildUniqueMember(seed: string): MemberFormValues {
   const uniqueToken = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-8);
@@ -42,14 +46,56 @@ describe('Membership management e2e', () => {
     await quitDriver(driver);
   });
 
+  async function collectDiagnostics(label: string): Promise<void> {
+    if (!driver) {
+      return;
+    }
+
+    await mkdir(ARTIFACT_DIR, { recursive: true });
+    const safeLabel = label.replace(/[^a-zA-Z0-9_-]/g, '-');
+
+    const currentUrl = await driver.getCurrentUrl().catch(() => 'unavailable');
+    const pageTitle = await driver.getTitle().catch(() => 'unavailable');
+    const bodyText = await driver
+      .findElement(By.css('body'))
+      .getText()
+      .then((text) => text.slice(0, 2000))
+      .catch(() => 'unavailable');
+
+    await writeFile(
+      path.join(ARTIFACT_DIR, `${safeLabel}.txt`),
+      `url=${currentUrl}\ntitle=${pageTitle}\n\nbody:\n${bodyText}\n`,
+      'utf8',
+    );
+
+    const screenshot = await driver.takeScreenshot().catch(() => undefined);
+    if (screenshot) {
+      await writeFile(path.join(ARTIFACT_DIR, `${safeLabel}.png`), screenshot, 'base64');
+    }
+  }
+
   beforeEach(async () => {
-    await loginPage.open(FRONTEND_URL);
-    await loginPage.login({
-      role: 'Staff',
-      username: LOGIN_USERNAME,
-      password: LOGIN_PASSWORD as string,
-    });
-    await membersPage.waitUntilLoaded();
+    const maxAttempts = 2;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await loginPage.open(FRONTEND_URL);
+        await loginPage.login({
+          role: 'Staff',
+          username: LOGIN_USERNAME,
+          password: LOGIN_PASSWORD as string,
+        });
+
+        await loginPage.waitForMembersPage();
+        await membersPage.waitUntilLoaded();
+        return;
+      } catch (error) {
+        await collectDiagnostics(`beforeEach-attempt-${attempt}`);
+        if (attempt === maxAttempts) {
+          throw error;
+        }
+      }
+    }
   });
 
   it('staff login', async () => {
