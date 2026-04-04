@@ -1,6 +1,7 @@
 import { useState, type ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import MembershipPlanTable from '../../components/payments/MembershipPlanTable';
+import { mockManyMembershipPlans } from '../helpers/mockMembershipPlans';
 import type { MembershipPlan } from '../../types/payment';
 
 const storyPlans: MembershipPlan[] = [
@@ -115,6 +116,15 @@ export const EdgeMissingDescription: Story = {
   args: {
     plans: plansWithMissingDescription,
     selectedPlanId: 'plan-nodec',
+    onSelectPlan: () => {},
+  },
+  render: (args) => <MembershipPlanTablePlayground {...args} />,
+};
+
+export const OverflowManyPlans: Story = {
+  args: {
+    plans: mockManyMembershipPlans,
+    selectedPlanId: 'plan-3months',
     onSelectPlan: () => {},
   },
   render: (args) => <MembershipPlanTablePlayground {...args} />,

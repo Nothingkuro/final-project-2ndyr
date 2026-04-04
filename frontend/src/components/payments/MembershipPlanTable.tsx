@@ -24,7 +24,7 @@ export default function MembershipPlanTable({
   return (
     <div>
       <h2 className="mb-2 text-sm font-semibold text-primary">Membership Plan Table</h2>
-      <div className="overflow-x-auto rounded-md border border-neutral-300 bg-surface">
+      <div className="max-h-50 overflow-auto rounded-md border border-neutral-300 bg-surface">
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="bg-surface-alt/60 text-xs uppercase tracking-wide text-neutral-500">
