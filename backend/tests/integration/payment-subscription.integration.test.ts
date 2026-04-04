@@ -4,7 +4,7 @@ import app from '../../src/app';
 import prisma, { disconnectPrisma } from '../../src/lib/prisma';
 import { hashPassword } from '../../src/utils/auth';
 
-describe('Payment and subscription API (no mocks)', () => {
+describe('Payment and subscription API', () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const username = `jest-staff-${suffix}`;
   const password = `P@ss-${suffix}`;
