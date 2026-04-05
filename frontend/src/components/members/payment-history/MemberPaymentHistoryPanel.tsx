@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PaymentHistoryFilters from './PaymentHistoryFilters';
 import PaymentHistoryList from './PaymentHistoryList';
 import type { MemberPaymentHistoryRecord } from '../../../types/payment';
+import { getAuthHeaders } from '../../../services/authHeaders';
 import { API_BASE_URL } from '../../../services/apiBaseUrl';
 
 interface MemberPaymentHistoryPanelProps {
@@ -35,6 +36,9 @@ export default function MemberPaymentHistoryPanel({
 
         const response = await fetch(`${API_BASE_URL}/api/members/${memberId}/payments`, {
           method: 'GET',
+          headers: {
+            ...getAuthHeaders(),
+          },
           credentials: 'include',
           signal: controller.signal,
         });

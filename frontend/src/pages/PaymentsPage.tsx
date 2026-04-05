@@ -3,6 +3,7 @@ import MemberSearchSelect from '../components/payments/MemberSearchSelect';
 import MembershipPlanTable from '../components/payments/MembershipPlanTable';
 import PaymentMethodDropdown from '../components/payments/PaymentMethodDropdown';
 import SubmitPaymentButton from '../components/payments/SubmitPaymentButton';
+import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { MembershipPlan, PaymentMember, PaymentMethod } from '../types/payment';
 
@@ -107,6 +108,9 @@ export default function PaymentsPage({
 
                 const response = await fetch(`${API_BASE_URL}/api/members?${params.toString()}`, {
                   method: 'GET',
+                  headers: {
+                    ...getAuthHeaders(),
+                  },
                   credentials: 'include',
                   signal: controller.signal,
                 });
@@ -127,6 +131,9 @@ export default function PaymentsPage({
             : (async () => {
                 const response = await fetch(`${API_BASE_URL}/api/plans`, {
                   method: 'GET',
+                  headers: {
+                    ...getAuthHeaders(),
+                  },
                   credentials: 'include',
                   signal: controller.signal,
                 });
@@ -226,6 +233,7 @@ export default function PaymentsPage({
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           memberId: selectedMemberId,

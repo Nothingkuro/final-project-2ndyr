@@ -6,6 +6,7 @@ import ActionGroup from '../components/common/ActionGroup';
 import ProfileInfoRow from '../components/members/ProfileInfoRow';
 import StatusBadge from '../components/members/StatusBadge';
 import MemberPaymentHistoryPanel from '../components/members/payment-history/MemberPaymentHistoryPanel';
+import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { Member, MemberStatus } from '../types/member';
 
@@ -149,6 +150,9 @@ export default function MemberProfilePage({
 
         const response = await fetch(`${API_BASE_URL}/api/members?${params.toString()}`, {
           method: 'GET',
+          headers: {
+            ...getAuthHeaders(),
+          },
           credentials: 'include',
           signal: controller.signal,
         });
@@ -287,6 +291,9 @@ export default function MemberProfilePage({
 
       const response = await fetch(`${API_BASE_URL}/api/members/${member.id}/deactivate`, {
         method: 'PATCH',
+        headers: {
+          ...getAuthHeaders(),
+        },
         credentials: 'include',
       });
 
@@ -375,6 +382,7 @@ export default function MemberProfilePage({
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           firstName: normalizedFirstName,

@@ -5,6 +5,7 @@ import MemberFormModal, { type MemberFormData } from '../components/AddMemberMod
 import SearchBar from '../components/common/SearchBar';
 import FilterDropdown from '../components/common/FilterDropdown';
 import MemberTableRow from '../components/members/MemberTableRow';
+import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { Member, MemberStatus } from '../types/member';
 
@@ -162,6 +163,9 @@ export default function MembersPage({
 
         const response = await fetch(`${API_BASE_URL}/api/members?${params.toString()}`, {
           method: 'GET',
+          headers: {
+            ...getAuthHeaders(),
+          },
           credentials: 'include',
           signal: controller.signal,
         });
@@ -215,6 +219,7 @@ export default function MembersPage({
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(payload),
       });
