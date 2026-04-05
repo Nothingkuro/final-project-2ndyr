@@ -172,16 +172,15 @@ export default function PaymentsPage({
   }, [members, plans]);
 
   useEffect(() => {
-    if (selectedMemberId && membersList.some((member) => member.id === selectedMemberId)) {
+    if (!selectedMemberId) {
       return;
     }
 
-    if (membersList.length === 0) {
-      setSelectedMemberId('');
+    if (membersList.some((member) => member.id === selectedMemberId)) {
       return;
     }
 
-    setSelectedMemberId(membersList[0].id);
+    setSelectedMemberId('');
   }, [membersList, selectedMemberId]);
 
   useEffect(() => {

@@ -110,6 +110,52 @@ describe('Equipment management API', () => {
     expect(response.body).toEqual({ error: 'Authentication required' });
   });
 
+  it('rejects unauthenticated access to POST /api/equipment', async () => {
+    const response = await request(app).post('/api/equipment').send({
+      itemName: `No Auth ${suffix}`,
+      quantity: 1,
+      condition: 'GOOD',
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to PUT /api/equipment/:equipmentId', async () => {
+    expect(createdEquipmentId).toBeTruthy();
+
+    const response = await request(app)
+      .put(`/api/equipment/${createdEquipmentId}`)
+      .send({
+        itemName: `No Auth Update ${suffix}`,
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to PUT /api/equipment/:equipmentId/condition', async () => {
+    expect(createdEquipmentId).toBeTruthy();
+
+    const response = await request(app)
+      .put(`/api/equipment/${createdEquipmentId}/condition`)
+      .send({
+        condition: 'GOOD',
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to DELETE /api/equipment/:equipmentId', async () => {
+    expect(secondaryEquipmentId).toBeTruthy();
+
+    const response = await request(app).delete(`/api/equipment/${secondaryEquipmentId}`);
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
   it('lets authenticated staff list equipment with search and filter', async () => {
     const response = await request(app)
       .get(`/api/equipment?search=${encodeURIComponent(suffix)}&condition=GOOD&page=1&pageSize=10`)
@@ -204,6 +250,22 @@ describe('Equipment management API', () => {
     expect(before?.lastChecked?.getTime()).not.toBe(after?.lastChecked?.getTime());
   });
 
+  it('rejects staff from updating equipment details', async () => {
+    expect(createdEquipmentId).toBeTruthy();
+
+    const response = await request(app)
+      .put(`/api/equipment/${createdEquipmentId}`)
+      .set('Cookie', staffCookie)
+      .send({
+        itemName: `Staff Cannot Update ${suffix}`,
+        quantity: 2,
+        condition: 'GOOD',
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: 'Insufficient permissions' });
+  });
+
   it('lets staff update only equipment condition and refreshes lastChecked', async () => {
     expect(createdEquipmentId).toBeTruthy();
 
@@ -243,6 +305,16 @@ describe('Equipment management API', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Invalid condition status' });
+  });
+
+  it('rejects missing condition updates', async () => {
+    const response = await request(app)
+      .put(`/api/equipment/${createdEquipmentId}/condition`)
+      .set('Cookie', staffCookie)
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Condition is required' });
   });
 
   it('deletes equipment as admin', async () => {

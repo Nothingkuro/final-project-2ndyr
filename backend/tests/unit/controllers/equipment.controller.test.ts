@@ -222,6 +222,24 @@ describe('equipment controller (mocked)', () => {
     });
   });
 
+  it('returns 500 in createEquipment when create throws', async () => {
+    mockedPrisma.equipment.create.mockRejectedValue(new Error('create error'));
+
+    const req = {
+      body: {
+        itemName: 'Bench',
+        quantity: 3,
+        condition: 'GOOD',
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createEquipment(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to create equipment' });
+  });
+
   it('returns 404 in updateEquipment when not found', async () => {
     mockedPrisma.equipment.findUnique.mockResolvedValue(null);
 
@@ -250,6 +268,36 @@ describe('equipment controller (mocked)', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Quantity must be a non-negative number' });
+  });
+
+  it('returns 400 in updateEquipment for non-string itemName', async () => {
+    mockedPrisma.equipment.findUnique.mockResolvedValue({ id: 'eq-1' });
+
+    const req = {
+      params: { equipmentId: 'eq-1' },
+      body: { itemName: 123 },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateEquipment(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Item name must be a string' });
+  });
+
+  it('returns 400 in updateEquipment for invalid condition', async () => {
+    mockedPrisma.equipment.findUnique.mockResolvedValue({ id: 'eq-1' });
+
+    const req = {
+      params: { equipmentId: 'eq-1' },
+      body: { condition: 'INVALID' },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateEquipment(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid condition status' });
   });
 
   it('updates equipment in updateEquipment', async () => {
@@ -297,6 +345,24 @@ describe('equipment controller (mocked)', () => {
     });
   });
 
+  it('returns 500 in updateEquipment when update throws', async () => {
+    mockedPrisma.equipment.findUnique.mockResolvedValue({ id: 'eq-1' });
+    mockedPrisma.equipment.update.mockRejectedValue(new Error('update error'));
+
+    const req = {
+      params: { equipmentId: 'eq-1' },
+      body: {
+        itemName: 'Updated Bench',
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateEquipment(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to update equipment' });
+  });
+
   it('returns 400 in updateEquipmentCondition for invalid condition', async () => {
     const req = {
       params: { equipmentId: 'eq-1' },
@@ -308,6 +374,19 @@ describe('equipment controller (mocked)', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Invalid condition status' });
+  });
+
+  it('returns 400 in updateEquipmentCondition when condition is missing', async () => {
+    const req = {
+      params: { equipmentId: 'eq-1' },
+      body: {},
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateEquipmentCondition(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Condition is required' });
   });
 
   it('returns 404 in updateEquipmentCondition when equipment is missing', async () => {
@@ -362,6 +441,22 @@ describe('equipment controller (mocked)', () => {
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     });
+  });
+
+  it('returns 500 in updateEquipmentCondition when update throws', async () => {
+    mockedPrisma.equipment.findUnique.mockResolvedValue({ id: 'eq-1' });
+    mockedPrisma.equipment.update.mockRejectedValue(new Error('update condition error'));
+
+    const req = {
+      params: { equipmentId: 'eq-1' },
+      body: { condition: 'GOOD' },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateEquipmentCondition(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to update equipment condition' });
   });
 
   it('returns 404 in deleteEquipment when not found', async () => {

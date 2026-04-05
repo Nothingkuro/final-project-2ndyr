@@ -70,7 +70,22 @@ export default function MemberSearchSelect({
         value={searchQuery}
         onChange={(value) => {
           setSearchQuery(value);
-          setShowSuggestions(value.trim().length > 0);
+          const trimmedValue = value.trim();
+
+          if (!trimmedValue) {
+            onSelectMember('');
+            setShowSuggestions(false);
+            return;
+          }
+
+          if (selectedMemberId) {
+            const selectedName = formatMemberName(selectedMember).toLowerCase();
+            if (trimmedValue.toLowerCase() !== selectedName) {
+              onSelectMember('');
+            }
+          }
+
+          setShowSuggestions(true);
         }}
         disabled={disabled || members.length === 0}
         placeholder={placeholder}
