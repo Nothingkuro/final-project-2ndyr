@@ -41,14 +41,6 @@ const configuredBaseUrl = configuredBaseUrlRaw
   ? toApiOrigin(normalizeBaseUrl(configuredBaseUrlRaw))
   : '';
 
-function getDefaultApiBaseUrl(): string {
-  if (typeof window !== 'undefined' && import.meta.env.PROD) {
-    return window.location.origin;
-  }
-
-  return FALLBACK_API_BASE_URL;
-}
-
-export const API_BASE_URL = configuredBaseUrl
-  ? (isFrontendOrigin(configuredBaseUrl) ? '' : configuredBaseUrl)
-  : getDefaultApiBaseUrl();
+export const API_BASE_URL = configuredBaseUrl && !isFrontendOrigin(configuredBaseUrl)
+  ? configuredBaseUrl
+  : FALLBACK_API_BASE_URL;
