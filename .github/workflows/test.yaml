@@ -38,12 +38,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm install --prefer-offline
 
       - name: Generate Prisma Client (unit tests)
         env:
@@ -78,12 +73,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm install --prefer-offline
 
       - name: Validate test database URL
         run: |
