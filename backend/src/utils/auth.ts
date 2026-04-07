@@ -29,7 +29,7 @@ export function getSessionCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'none',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
