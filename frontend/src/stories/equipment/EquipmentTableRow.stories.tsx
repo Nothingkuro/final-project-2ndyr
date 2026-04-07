@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 import type { Equipment } from '../../types/equipment';
 import { EquipmentCondition } from '../../types/equipment';
 import EquipmentTableRow from '../../components/equipment/EquipmentTableRow';
-import { longNameEquipment, newTreadmill } from '../helpers/mockEquipment';
+import { longNameEquipment, newTreadmill } from '../mocks/mockEquipment';
 
 type EquipmentRowStoryArgs = {
   id: string;

@@ -3,37 +3,8 @@ import type { ComponentProps } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
 import PaymentsPage from '../../pages/PaymentsPage';
-import type { MembershipPlan } from '../../types/payment';
-
-const storyMembers = [
-  {
-    id: 'member-001',
-    firstName: 'Juan',
-    lastName: 'Dela Cruz',
-    contactNumber: '09171234567',
-    status: 'ACTIVE' as const,
-  },
-  {
-    id: 'member-002',
-    firstName: 'Lea',
-    lastName: 'Santos',
-    contactNumber: '09179998888',
-    status: 'EXPIRED' as const,
-  },
-  {
-    id: 'member-003',
-    firstName: 'Paolo',
-    lastName: 'Rivera',
-    contactNumber: '09176667777',
-    status: 'INACTIVE' as const,
-  },
-];
-
-const storyPlans: MembershipPlan[] = [
-  { id: 'plan-walkin', name: 'Walk-In', durationDays: 1, price: 100 },
-  { id: 'plan-1month', name: 'One Month', durationDays: 30, price: 1000 },
-  { id: 'plan-3months', name: 'Three Months', durationDays: 90, price: 2700 },
-];
+import { storyPaymentMembers } from '../mocks/mockMembers';
+import { storyPaymentPlans } from '../mocks/mockMembershipPlans';
 
 const meta = {
   title: 'App/Pages/Payments Page',
@@ -59,8 +30,8 @@ function PaymentsCanvas(args: ComponentProps<typeof PaymentsPage>) {
 export const Default: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
-      plans={storyPlans}
+      members={storyPaymentMembers}
+      plans={storyPaymentPlans}
     />
   ),
 };
@@ -68,8 +39,8 @@ export const Default: Story = {
 export const GCashMethodSelected: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
-      plans={storyPlans}
+      members={storyPaymentMembers}
+      plans={storyPaymentPlans}
       initialPaymentMethod="GCASH"
     />
   ),
@@ -78,8 +49,8 @@ export const GCashMethodSelected: Story = {
 export const PlanPreselected: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
-      plans={storyPlans}
+      members={storyPaymentMembers}
+      plans={storyPaymentPlans}
       initialSelectedPlanId="plan-1month"
     />
   ),
@@ -89,7 +60,7 @@ export const NoMembers: Story = {
   render: () => (
     <PaymentsCanvas
       members={[]}
-      plans={storyPlans}
+      plans={storyPaymentPlans}
     />
   ),
 };
@@ -97,7 +68,7 @@ export const NoMembers: Story = {
 export const NoPlans: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
+      members={storyPaymentMembers}
       plans={[]}
     />
   ),
@@ -116,8 +87,8 @@ export const LoadingState: Story = {
 export const SubmitButtonVisible: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
-      plans={storyPlans}
+      members={storyPaymentMembers}
+      plans={storyPaymentPlans}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -132,8 +103,8 @@ export const SubmitButtonVisible: Story = {
 export const SelectionFlow: Story = {
   render: () => (
     <PaymentsCanvas
-      members={storyMembers}
-      plans={storyPlans}
+      members={storyPaymentMembers}
+      plans={storyPaymentPlans}
     />
   ),
   play: async ({ canvasElement }) => {

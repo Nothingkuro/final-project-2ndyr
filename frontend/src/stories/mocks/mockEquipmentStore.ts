@@ -1,5 +1,5 @@
 import { EquipmentCondition, type Equipment } from '../../types/equipment';
-import { storyEquipment } from '../helpers/mockEquipment';
+import { storyEquipment } from './mockEquipment';
 
 export type EquipmentFilter = 'ALL' | EquipmentCondition;
 

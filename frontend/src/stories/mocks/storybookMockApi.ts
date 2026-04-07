@@ -12,9 +12,9 @@ import {
   updateMockEquipment,
   updateMockEquipmentCondition,
 } from './mockEquipmentStore';
-import { storyMembers } from '../helpers/mockMembers';
-import { mockManyMembershipPlans } from '../helpers/mockMembershipPlans';
-import { MOCK_MEMBER_PAYMENTS } from '../helpers/mockPayments';
+import { storyMembers } from './mockMembers';
+import { mockManyMembershipPlans } from './mockMembershipPlans';
+import { MOCK_MEMBER_PAYMENTS } from './mockPayments';
 
 type MembersListResponse = {
   items: Member[];

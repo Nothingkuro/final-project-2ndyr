@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import MemberTableRow from '../../components/members/MemberTableRow';
-import { storyMembers } from '../helpers/mockMembers';
+import { storyMembers } from '../mocks/mockMembers';
 
 const meta = {
   title: 'App/Members/Member Table Row',

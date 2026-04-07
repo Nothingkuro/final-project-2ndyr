@@ -2,34 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 import MemberPaymentHistoryPanel from '../../components/members/payment-history/MemberPaymentHistoryPanel';
-import type { MemberPaymentHistoryRecord } from '../../types/payment';
-
-const STORY_PAYMENTS: MemberPaymentHistoryRecord[] = [
-  {
-    id: '50011',
-    memberId: '67',
-    paidAt: '2026-03-01T08:00:00.000Z',
-    amountPhp: 1500,
-    membershipPlan: 'Three Months',
-    processedBy: 'Staff A',
-  },
-  {
-    id: '50032',
-    memberId: '67',
-    paidAt: '2026-02-01T08:00:00.000Z',
-    amountPhp: 600,
-    membershipPlan: 'One Month',
-    processedBy: 'Staff B',
-  },
-  {
-    id: '50077',
-    memberId: '999',
-    paidAt: '2026-01-01T08:00:00.000Z',
-    amountPhp: 300,
-    membershipPlan: 'Walk-In',
-    processedBy: 'Staff C',
-  },
-];
+import { MOCK_MEMBER_PAYMENTS } from '../mocks/mockPayments';
 
 const meta = {
   title: 'App/Members/Payment History Panel',
@@ -51,7 +24,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     memberId: '67',
-    payments: STORY_PAYMENTS,
+    payments: MOCK_MEMBER_PAYMENTS,
   },
 };
 
@@ -65,7 +38,7 @@ export const NoRecordsForMember: Story = {
 export const FilterByMonthAndYear: Story = {
   args: {
     memberId: '67',
-    payments: STORY_PAYMENTS,
+    payments: MOCK_MEMBER_PAYMENTS,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -74,23 +47,16 @@ export const FilterByMonthAndYear: Story = {
     await user.selectOptions(canvas.getByLabelText('Month'), '3');
     await user.selectOptions(canvas.getByLabelText('Year'), '2026');
 
-    expect(canvas.getByText('Payment #50011')).toBeInTheDocument();
+    expect(canvas.getByText('Payment #23511')).toBeInTheDocument();
   },
 };
 
 export const LongPaymentId: Story = {
   args: {
     memberId: '67',
-    payments: [
-      {
-        id: 'PAYMENT-2026-VERY-LONG-ID-1234567890',
-        memberId: '67',
-        paidAt: '2026-04-01T08:00:00.000Z',
-        amountPhp: 600,
-        membershipPlan: 'One Month',
-        processedBy: 'Staff D',
-      },
-    ],
+    payments: MOCK_MEMBER_PAYMENTS.filter(
+      (paymentRecord) => paymentRecord.id === 'PAYMENT-2026-VERY-LONG-ID-1234567890',
+    ),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

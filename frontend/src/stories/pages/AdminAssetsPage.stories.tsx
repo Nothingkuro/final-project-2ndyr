@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AdminAssetsPage from '../../pages/AdminAssetsPage';
 import { setMockEquipmentStore } from '../mocks/mockEquipmentStore';
-import { storyEquipment, wobblyBench } from '../helpers/mockEquipment';
+import { storyEquipment, wobblyBench } from '../mocks/mockEquipment';
 import type { Equipment } from '../../types/equipment';
 
 const meta = {
