@@ -1,8 +1,8 @@
-import { execSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import prisma, { disconnectPrisma } from '../../src/lib/prisma';
+import { seedE2EDatabase } from './seed-e2e';
 
 const LOCK_DIR = path.join(os.tmpdir(), 'arrowhead-e2e-db-reset.lock');
 const LOCK_MAX_AGE_MS = 5 * 60 * 1000;
@@ -95,13 +95,7 @@ async function main(): Promise<void> {
 	try {
 		assertSafeDatabaseUrl();
 		await truncatePublicTables();
-		await disconnectPrisma();
-
-		execSync('npm run db:seed', {
-			cwd: process.cwd(),
-			env: process.env,
-			stdio: 'inherit',
-		});
+		await seedE2EDatabase();
 	} finally {
 		await releaseLock();
 	}

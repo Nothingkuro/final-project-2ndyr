@@ -5,13 +5,16 @@ import { resetDatabase } from '../support/db';
 const SEEDED_EQUIPMENT = 'Treadmill X100';
 
 test.describe('Inventory and equipment tracking e2e', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    resetDatabase(`${testInfo.title}-beforeEach`);
+  test.beforeAll(() => {
+    resetDatabase('equipment-tracking-beforeAll');
+  });
+
+  test.beforeEach(async ({ page }) => {
     await loginAsStaff(page);
   });
 
   test('staff filters and updates an equipment condition', async ({ page }) => {
-    await page.locator('a[href="/dashboard/inventory"]').first().click();
+    await page.getByRole('link', { name: /equipment status/i }).click();
     await expect(page).toHaveURL(/\/dashboard\/inventory/);
     await expect(page.getByRole('heading', { name: 'Equipment Status' })).toBeVisible();
 
