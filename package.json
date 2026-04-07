@@ -1,8 +1,22 @@
 {
   "name": "arrowhead-gym-management-system",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "e2e"
+  ],
   "scripts": {
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
     "test:e2e": "npm --prefix ./e2e run test:e2e",
-    "test:e2e:headless": "npm --prefix ./e2e run test:e2e:headless"
+    "test:e2e:headless": "npm --prefix ./e2e run test:e2e:headless",
+    "test:e2e:headed": "npm --prefix ./e2e run test:e2e:headed",
+    "test:e2e:ui": "npm --prefix ./e2e run test:e2e:ui",
+    "test:e2e:ci": "npm --prefix ./e2e run test:e2e:ci"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
