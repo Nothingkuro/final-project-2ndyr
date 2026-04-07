@@ -9,25 +9,36 @@ import equipmentRoutes from './routes/equipment.routes';
 
 const app = express();
 
-// Get allowed origins from environment or use defaults
-const getAllowedOrigins = (): string | RegExp => {
-	const frontendUrl = process.env.FRONTEND_URL;
-	if (frontendUrl) {
-		return frontendUrl;
+// CORS middleware for cross-origin requests
+const getAllowedOrigins = (origin: string | undefined): boolean => {
+	// Explicit FRONTEND_URL takes precedence (for Vercel deployments)
+	if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+		return true;
 	}
 
-	// In development, allow localhost
+	// Development: allow localhost
 	if (process.env.NODE_ENV === 'development') {
-		return 'http://localhost:5173';
+		if (origin === 'http://localhost:5173' || origin === 'http://localhost:3000') {
+			return true;
+		}
 	}
 
-	// In production with same-domain setup, allow any origin (API and frontend share domain)
-	return '*';
+	// Production: allow Vercel same-domain requests
+	// When frontend and backend are served from same Vercel domain,
+	// allow any same-domain origin
+	if (process.env.NODE_ENV === 'production' && origin) {
+		// Allow origins ending with vercel.app (Vercel domains)
+		if (origin.includes('.vercel.app') || origin.includes('localhost')) {
+			return true;
+		}
+	}
+
+	return false;
 };
 
 app.use(
 	cors({
-		origin: getAllowedOrigins(),
+		origin: getAllowedOrigins,
 		credentials: true,
 	})
 );
