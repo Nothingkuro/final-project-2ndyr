@@ -1,35 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { loginAsStaff, uniqueToken } from '../support/auth';
 import { resetDatabase } from '../support/db';
 
-function buildMemberNamePattern(firstName: string, lastName: string): RegExp {
-  return new RegExp(`${firstName}[\\s\\S]*${lastName}`);
-}
-
-async function submitMemberModal(page: Page): Promise<void> {
-  const firstNameInput = page.getByPlaceholder('First Name');
-
-  await page.getByRole('button', { name: 'Submit' }).click();
-
-  try {
-    await expect(firstNameInput).toBeHidden({ timeout: 5_000 });
-  } catch {
-    const closeModalButton = page.getByRole('button', { name: 'Close modal' });
-
-    if (await closeModalButton.isVisible().catch(() => false)) {
-      await closeModalButton.click({ force: true });
-    }
-
-    await expect(firstNameInput).toBeHidden({ timeout: 5_000 });
-  }
-}
-
 test.describe('Membership management e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('membership-management-beforeAll');
-  });
-
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    resetDatabase(`${testInfo.title}-beforeEach`);
     await loginAsStaff(page);
   });
 
@@ -37,6 +12,7 @@ test.describe('Membership management e2e', () => {
     const token = uniqueToken();
     const firstName = `AddFirst${token.slice(0, 3)}`;
     const lastName = `AddLast${token.slice(3)}`;
+    const fullName = `${firstName} ${lastName}`;
     const contactNumber = `09${token}1`;
 
     await page.getByRole('button', { name: 'Member' }).click();
@@ -44,16 +20,18 @@ test.describe('Membership management e2e', () => {
     await page.getByPlaceholder('Last Name').fill(lastName);
     await page.getByPlaceholder('Contact Number').fill(contactNumber);
     await page.getByPlaceholder('Notes').fill(`Add member notes ${token}`);
-    await submitMemberModal(page);
+    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('button', { name: 'Close modal' }).click();
 
     await page.getByPlaceholder('Search member...').fill(contactNumber);
-    await expect(page.getByText(buildMemberNamePattern(firstName, lastName))).toBeVisible();
+    await expect(page.getByText(fullName, { exact: true })).toBeVisible();
   });
 
   test('staff filters active list, edits profile, then deactivates member', async ({ page }) => {
     const token = uniqueToken();
     const firstName = `ManageFirst${token.slice(0, 3)}`;
     const lastName = `ManageLast${token.slice(3)}`;
+    const fullName = `${firstName} ${lastName}`;
     const contactNumber = `09${token}1`;
 
     await page.getByRole('button', { name: 'Member' }).click();
@@ -61,13 +39,14 @@ test.describe('Membership management e2e', () => {
     await page.getByPlaceholder('Last Name').fill(lastName);
     await page.getByPlaceholder('Contact Number').fill(contactNumber);
     await page.getByPlaceholder('Notes').fill(`Manage member notes ${token}`);
-    await submitMemberModal(page);
+    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('button', { name: 'Close modal' }).click();
 
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Active', exact: true }).click();
 
     await page.getByPlaceholder('Search member...').fill(contactNumber);
-    await page.getByText(buildMemberNamePattern(firstName, lastName)).click();
+    await page.getByText(fullName, { exact: true }).click();
 
     await expect(page).toHaveURL(/\/dashboard\/members\/.+/);
     await page.getByRole('button', { name: 'Edit Profile' }).click();
