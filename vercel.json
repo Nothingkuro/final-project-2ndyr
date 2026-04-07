@@ -1,6 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "npm --prefix frontend run build",
   "installCommand": "npm install --prefix frontend && npm install --prefix backend",
+  "outputDirectory": "frontend/dist",
   "builds": [
     {
       "src": "api/index.ts",
@@ -9,13 +11,6 @@
         "includeFiles": [
           "backend/**"
         ]
-      }
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
       }
     }
   ],
