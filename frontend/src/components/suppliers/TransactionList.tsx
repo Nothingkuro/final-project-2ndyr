@@ -64,9 +64,9 @@ export default function TransactionList({
         </div>
       ) : (
         <>
-          <div className="max-h-96 overflow-y-auto rounded-md border border-neutral-300 bg-surface">
+          <div className="max-h-60 overflow-y-auto overscroll-contain rounded-md border border-neutral-300 bg-surface">
             <table className="w-full min-w-180 border-collapse">
-              <thead className="bg-surface-alt border-b border-neutral-300">
+              <thead className="sticky top-0 z-10 bg-surface-alt border-b border-neutral-300">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-neutral-600 uppercase">
                     Items Purchased

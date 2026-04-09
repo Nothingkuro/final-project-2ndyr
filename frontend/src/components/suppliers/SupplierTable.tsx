@@ -42,7 +42,7 @@ export default function SupplierTable({
 
   return (
     <div className="border border-neutral-300 rounded-lg overflow-hidden bg-surface">
-      <div className="w-full max-h-100 overflow-auto">
+      <div className="w-full max-h-75 overflow-auto">
         <table className="w-full min-w-220 border-collapse">
           <thead className="bg-surface-alt border-b border-neutral-300">
             <tr>
