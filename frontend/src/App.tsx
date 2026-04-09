@@ -10,8 +10,8 @@ import {
 } from './pages';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = sessionStorage.getItem('authToken');
-  if (!token) {
+  const authRole = sessionStorage.getItem('authRole');
+  if (!authRole) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;

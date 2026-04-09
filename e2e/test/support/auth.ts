@@ -30,9 +30,9 @@ export async function loginAsStaff(page: Page): Promise<void> {
     throw new Error(`Login failed with status ${loginResponse.status()}: ${failureBody}`);
   }
 
-  // Ensure the frontend successfully stores the token in sessionStorage
-  await page.waitForFunction(() => window.sessionStorage.getItem('authToken') !== null, undefined, { timeout: 10_000 }).catch(() => {
-    throw new Error('E2E Login Helper: authToken never appeared in sessionStorage after login request.');
+  // Ensure the frontend successfully stores the role in sessionStorage
+  await page.waitForFunction(() => window.sessionStorage.getItem('authRole') !== null, undefined, { timeout: 10_000 }).catch(() => {
+    throw new Error('E2E Login Helper: authRole never appeared in sessionStorage after login request.');
   });
 
   // Force the page your tests expect
