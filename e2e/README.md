@@ -17,7 +17,7 @@ npm --prefix e2e run playwright:install
 
 ## Required environment variables
 
-Set these in `e2e/.env.test` before running tests:
+Set these in `e2e/.env.test` before running tests. If `e2e/.env.test` is absent, the runner also falls back to `e2e/.env`:
 
 - `DATABASE_URL_TEST` - points to your test database (this is mapped to `DATABASE_URL` for backend reset and server processes)
 - `SEED_STAFF_PASSWORD` or `E2E_LOGIN_PASSWORD` - staff login password used by E2E

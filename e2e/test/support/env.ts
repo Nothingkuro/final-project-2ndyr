@@ -2,11 +2,13 @@ import path from 'node:path';
 import dotenv from 'dotenv';
 
 const e2eTestEnvPath = path.resolve(__dirname, '../../.env.test');
+const e2eLocalEnvPath = path.resolve(__dirname, '../../.env');
 const repoEnvPath = path.resolve(__dirname, '../../../.env');
 const backendEnvPath = path.resolve(__dirname, '../../../backend/.env');
 
 dotenv.config({ path: repoEnvPath, override: false });
 dotenv.config({ path: backendEnvPath, override: false });
+dotenv.config({ path: e2eLocalEnvPath, override: false });
 dotenv.config({ path: e2eTestEnvPath, override: true });
 
 if (process.env.DATABASE_URL_TEST) {
