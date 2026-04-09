@@ -30,17 +30,25 @@ export async function loginAsStaff(page: Page): Promise<void> {
     throw new Error(`Login failed with status ${loginResponse.status()}: ${failureBody}`);
   }
 
-  // Wait until we appear to be "in the dashboard area" (more stable than a single exact URL)
-  await expect(page).toHaveURL(/\/dashboard(\/|$)/, { timeout: 15_000 }).catch(() => {
-    // If your app doesn't auto-redirect reliably in CI, force the target page
+  // Ensure the frontend successfully stores the token in sessionStorage
+  await page.waitForFunction(() => window.sessionStorage.getItem('authToken') !== null, undefined, { timeout: 10_000 }).catch(() => {
+    throw new Error('E2E Login Helper: authToken never appeared in sessionStorage after login request.');
   });
 
   // Force the page your tests expect
   const membersUrl = new URL('/dashboard/members', FRONTEND_URL).toString();
   await page.goto(membersUrl, { waitUntil: 'domcontentloaded' });
 
+  // If we got redirected back to a login-ish page, fail with a clear error
+  if (!page.url().includes('/dashboard')) {
+    throw new Error(`Not authenticated after login; redirected to: ${page.url()}`);
+  }
+
+  // Prefer a stable UI assertion as the real success criteria
+  await expect(page.getByRole('heading', { name: 'Members' })).toBeVisible({ timeout: 15_000 });
+
+  // Keep a soft URL check
   await expect(page).toHaveURL(/\/dashboard\/members\/?(\?.*)?$/);
-  await expect(page.getByRole('heading', { name: 'Members' })).toBeVisible();
 }
 
 export function uniqueToken(): string {
