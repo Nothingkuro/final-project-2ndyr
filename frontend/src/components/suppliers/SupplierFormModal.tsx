@@ -79,6 +79,8 @@ export default function SupplierFormModal({
     transition-all duration-200
   `;
 
+  const normalizeContactNumber = (value: string): string => value.replace(/\D/g, '').slice(0, 11);
+
   const handleBackdropClick = (event: React.MouseEvent) => {
     if (event.target === backdropRef.current && !isSubmitting) {
       onClose();
@@ -173,8 +175,12 @@ export default function SupplierFormModal({
             placeholder="Contact Number"
             value={formData.contactNumber}
             onChange={(event) =>
-              setFormData((prev) => ({ ...prev, contactNumber: event.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                contactNumber: normalizeContactNumber(event.target.value),
+              }))
             }
+            maxLength={11}
             disabled={isSubmitting}
             className={inputClasses}
           />

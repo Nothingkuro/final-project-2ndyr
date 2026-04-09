@@ -276,12 +276,14 @@ async function main() {
   const supplierSeeds = [
     {
       name: 'FitSupply Trading',
+      serviceCategory: 'Supplies',
       contactPerson: 'Andrea Lim',
       contactNumber: '0281234567',
       address: 'Quezon City',
     },
     {
       name: 'IronWorks PH',
+      serviceCategory: 'Equipment Repair',
       contactPerson: 'Mark Dela Cruz',
       contactNumber: '0287654321',
       address: 'Makati City',
