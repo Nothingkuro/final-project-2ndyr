@@ -7,6 +7,7 @@ import {
   PaymentsPage,
   EquipmentPage,
   AdminAssetsPage,
+  SuppliersPage,
 } from './pages';
 
 function App() {
@@ -58,6 +59,15 @@ function App() {
           element={
             <MainLayout>
               <AdminAssetsPage />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/dashboard/suppliers"
+          element={
+            <MainLayout>
+              <SuppliersPage />
             </MainLayout>
           }
         />
