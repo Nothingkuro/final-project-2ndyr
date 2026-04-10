@@ -1,11 +1,4 @@
-export interface MemberPaymentHistoryRecord {
-  id: string;
-  memberId: string;
-  paidAt: string;
-  amountPhp: number;
-  membershipPlan: string;
-  processedBy: string;
-}
+import type { MemberPaymentHistoryRecord } from '../../types/payment';
 
 export const MOCK_MEMBER_PAYMENTS: MemberPaymentHistoryRecord[] = [
   {

@@ -5,6 +5,7 @@ import type {
   MembershipPlan,
   PaymentMethod,
 } from '../../types/payment';
+import type { Supplier, SupplierTransaction } from '../../types/supplier';
 import {
   createMockEquipment,
   deleteMockEquipment,
@@ -12,12 +13,29 @@ import {
   updateMockEquipment,
   updateMockEquipmentCondition,
 } from './mockEquipmentStore';
-import { storyMembers } from '../helpers/mockMembers';
-import { mockManyMembershipPlans } from '../helpers/mockMembershipPlans';
-import { MOCK_MEMBER_PAYMENTS } from '../helpers/mockPayments';
+import { storyMembers } from './mockMembers';
+import { mockManyMembershipPlans } from './mockMembershipPlans';
+import { MOCK_MEMBER_PAYMENTS } from './mockPayments';
+import { mockSuppliers, mockTransactions } from './mockSuppliers';
 
 type MembersListResponse = {
   items: Member[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+type SuppliersListResponse = {
+  items: Supplier[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+type SupplierTransactionsListResponse = {
+  items: SupplierTransaction[];
   total: number;
   page: number;
   pageSize: number;
@@ -28,8 +46,12 @@ type MockApiState = {
   members: Member[];
   plans: MembershipPlan[];
   payments: MemberPaymentHistoryRecord[];
+  suppliers: Supplier[];
+  supplierTransactions: SupplierTransaction[];
   nextMemberId: number;
   nextPaymentId: number;
+  nextSupplierId: number;
+  nextSupplierTransactionId: number;
 };
 
 let restoreFetch: (() => void) | null = null;
@@ -40,6 +62,8 @@ function createInitialState(): MockApiState {
   const members = storyMembers.map((member) => ({ ...member }));
   const plans = mockManyMembershipPlans.map((plan) => ({ ...plan }));
   const payments = MOCK_MEMBER_PAYMENTS.map((payment) => ({ ...payment }));
+  const suppliers = mockSuppliers.map((supplier) => ({ ...supplier }));
+  const supplierTransactions = mockTransactions.map((transaction) => ({ ...transaction }));
 
   const maxMemberId = members.reduce((maxId, member) => {
     const numericId = Number.parseInt(member.id, 10);
@@ -51,12 +75,26 @@ function createInitialState(): MockApiState {
     return Number.isFinite(numericId) ? Math.max(maxId, numericId) : maxId;
   }, 0);
 
+  const maxSupplierId = suppliers.reduce((maxId, supplier) => {
+    const numericId = Number.parseInt(supplier.id.replace(/\D/g, ''), 10);
+    return Number.isFinite(numericId) ? Math.max(maxId, numericId) : maxId;
+  }, 0);
+
+  const maxSupplierTransactionId = supplierTransactions.reduce((maxId, transaction) => {
+    const numericId = Number.parseInt(transaction.id.replace(/\D/g, ''), 10);
+    return Number.isFinite(numericId) ? Math.max(maxId, numericId) : maxId;
+  }, 0);
+
   return {
     members,
     plans,
     payments,
+    suppliers,
+    supplierTransactions,
     nextMemberId: maxMemberId + 1,
     nextPaymentId: maxPaymentId + 1,
+    nextSupplierId: maxSupplierId + 1,
+    nextSupplierTransactionId: maxSupplierTransactionId + 1,
   };
 }
 
@@ -186,6 +224,71 @@ function paginateMembers(url: URL): MembersListResponse {
   };
 }
 
+function paginateSuppliers(url: URL): SuppliersListResponse {
+  const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
+  const pageSize = Math.max(1, Number.parseInt(url.searchParams.get('pageSize') ?? '20', 10) || 20);
+  const search = (url.searchParams.get('search') ?? '').trim().toLowerCase();
+  const serviceCategory = (url.searchParams.get('serviceCategory') ?? '').trim().toLowerCase();
+
+  const filteredSuppliers = mockApiState.suppliers.filter((supplier) => {
+    const searchableFields = [
+      supplier.id,
+      supplier.name,
+      supplier.serviceCategory,
+      supplier.contactPerson ?? '',
+      supplier.contactNumber ?? '',
+      supplier.address ?? '',
+    ];
+
+    const matchesSearch =
+      !search || searchableFields.some((value) => value.toLowerCase().includes(search));
+    const matchesServiceCategory =
+      !serviceCategory || supplier.serviceCategory.toLowerCase() === serviceCategory;
+
+    return matchesSearch && matchesServiceCategory;
+  });
+
+  const total = filteredSuppliers.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
+
+  return {
+    items: filteredSuppliers.slice(start, start + pageSize).map((supplier) => ({ ...supplier })),
+    total,
+    page: safePage,
+    pageSize,
+    totalPages,
+  };
+}
+
+function paginateSupplierTransactions(
+  supplierId: string,
+  url: URL,
+): SupplierTransactionsListResponse {
+  const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
+  const pageSize = Math.max(1, Number.parseInt(url.searchParams.get('pageSize') ?? '10', 10) || 10);
+
+  const supplierTransactions = mockApiState.supplierTransactions
+    .filter((transaction) => transaction.supplierId === supplierId)
+    .sort((left, right) => {
+      return new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
+    });
+
+  const total = supplierTransactions.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
+
+  return {
+    items: supplierTransactions.slice(start, start + pageSize).map((transaction) => ({ ...transaction })),
+    total,
+    page: safePage,
+    pageSize,
+    totalPages,
+  };
+}
+
 function resolveMemberName(fullName: string): { firstName: string; lastName: string } {
   const normalized = fullName.trim().replace(/\s+/g, ' ');
 
@@ -212,6 +315,19 @@ function addDays(dateValue: Date, dayCount: number): Date {
   const result = new Date(dateValue);
   result.setDate(result.getDate() + dayCount);
   return result;
+}
+
+function normalizeOptionalField(value: unknown): string | null {
+  const normalized = String(value ?? '').trim();
+  return normalized ? normalized : null;
+}
+
+function formatSupplierId(id: number): string {
+  return `SUP-${String(id).padStart(3, '0')}`;
+}
+
+function formatSupplierTransactionId(id: number): string {
+  return `STX-${String(id).padStart(3, '0')}`;
 }
 
 async function handleMembersApi(url: URL, method: string, body: unknown): Promise<Response | null> {
@@ -500,6 +616,198 @@ async function handleEquipmentApi(url: URL, method: string, body: unknown): Prom
   return null;
 }
 
+async function handleSuppliersApi(url: URL, method: string, body: unknown): Promise<Response | null> {
+  if (url.pathname === '/api/suppliers/categories' && method === 'GET') {
+    const items = Array.from(
+      new Set(mockApiState.suppliers.map((supplier) => supplier.serviceCategory.trim())),
+    )
+      .filter((category) => category.length > 0)
+      .sort((left, right) => left.localeCompare(right));
+
+    return jsonResponse({ items });
+  }
+
+  if (url.pathname === '/api/suppliers' && method === 'GET') {
+    return jsonResponse(paginateSuppliers(url));
+  }
+
+  if (url.pathname === '/api/suppliers' && method === 'POST') {
+    const payload = (body ?? {}) as {
+      name?: string;
+      serviceCategory?: string;
+      contactPerson?: string;
+      contactNumber?: string;
+      address?: string;
+    };
+
+    const name = String(payload.name ?? '').trim();
+    const contactNumber = String(payload.contactNumber ?? '').replace(/\D/g, '');
+
+    if (!name || !contactNumber) {
+      return errorResponse('Name and contact number are required', 400);
+    }
+
+    if (contactNumber.length > 11) {
+      return errorResponse('Contact number must contain at most 11 digits', 400);
+    }
+
+    const serviceCategory =
+      payload.serviceCategory && String(payload.serviceCategory).trim().length > 0
+        ? String(payload.serviceCategory).trim()
+        : 'GENERAL';
+
+    const now = new Date().toISOString();
+    const nextSupplier: Supplier = {
+      id: formatSupplierId(mockApiState.nextSupplierId),
+      name,
+      serviceCategory,
+      contactPerson: normalizeOptionalField(payload.contactPerson),
+      contactNumber,
+      address: normalizeOptionalField(payload.address),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    mockApiState.nextSupplierId += 1;
+    mockApiState.suppliers = [nextSupplier, ...mockApiState.suppliers];
+
+    return jsonResponse(nextSupplier, 201);
+  }
+
+  const supplierMatch = /^\/api\/suppliers\/([^/]+)$/.exec(url.pathname);
+  if (supplierMatch && method === 'PUT') {
+    const [, supplierId] = supplierMatch;
+    const supplierIndex = mockApiState.suppliers.findIndex((supplier) => supplier.id === supplierId);
+
+    if (supplierIndex < 0) {
+      return errorResponse('Supplier not found.', 404);
+    }
+
+    const payload = (body ?? {}) as {
+      name?: string;
+      serviceCategory?: string;
+      contactPerson?: string;
+      contactNumber?: string;
+      address?: string;
+    };
+
+    const currentSupplier = mockApiState.suppliers[supplierIndex];
+    const nextName =
+      payload.name !== undefined
+        ? String(payload.name).trim()
+        : currentSupplier.name;
+
+    if (!nextName) {
+      return errorResponse('Supplier name is required.', 400);
+    }
+
+    const updatedSupplier: Supplier = {
+      ...currentSupplier,
+      name: nextName,
+      serviceCategory:
+        payload.serviceCategory !== undefined && String(payload.serviceCategory).trim().length > 0
+          ? String(payload.serviceCategory).trim()
+          : currentSupplier.serviceCategory,
+      contactPerson:
+        payload.contactPerson !== undefined
+          ? normalizeOptionalField(payload.contactPerson)
+          : currentSupplier.contactPerson,
+      contactNumber:
+        payload.contactNumber !== undefined
+          ? normalizeOptionalField(payload.contactNumber)
+          : currentSupplier.contactNumber,
+      address:
+        payload.address !== undefined
+          ? normalizeOptionalField(payload.address)
+          : currentSupplier.address,
+      updatedAt: new Date().toISOString(),
+    };
+
+    mockApiState.suppliers[supplierIndex] = updatedSupplier;
+
+    return jsonResponse(updatedSupplier);
+  }
+
+  if (supplierMatch && method === 'DELETE') {
+    const [, supplierId] = supplierMatch;
+    const hasSupplier = mockApiState.suppliers.some((supplier) => supplier.id === supplierId);
+
+    if (!hasSupplier) {
+      return errorResponse('Supplier not found.', 404);
+    }
+
+    mockApiState.suppliers = mockApiState.suppliers.filter((supplier) => supplier.id !== supplierId);
+    mockApiState.supplierTransactions = mockApiState.supplierTransactions.filter(
+      (transaction) => transaction.supplierId !== supplierId,
+    );
+
+    return jsonResponse({ success: true });
+  }
+
+  const transactionMatch = /^\/api\/suppliers\/([^/]+)\/transactions$/.exec(url.pathname);
+  if (transactionMatch && method === 'GET') {
+    const [, supplierId] = transactionMatch;
+    const hasSupplier = mockApiState.suppliers.some((supplier) => supplier.id === supplierId);
+
+    if (!hasSupplier) {
+      return errorResponse('Supplier not found.', 404);
+    }
+
+    return jsonResponse(paginateSupplierTransactions(supplierId, url));
+  }
+
+  if (transactionMatch && method === 'POST') {
+    const [, supplierId] = transactionMatch;
+    const hasSupplier = mockApiState.suppliers.some((supplier) => supplier.id === supplierId);
+
+    if (!hasSupplier) {
+      return errorResponse('Supplier not found.', 404);
+    }
+
+    const payload = (body ?? {}) as {
+      itemsPurchased?: string;
+      totalCost?: number;
+      transactionDate?: string;
+    };
+
+    const itemsPurchased = String(payload.itemsPurchased ?? '').trim();
+    const totalCost = Number(payload.totalCost);
+
+    if (!itemsPurchased) {
+      return errorResponse('Items purchased is required.', 400);
+    }
+
+    if (!Number.isFinite(totalCost) || totalCost <= 0) {
+      return errorResponse('Total cost must be a positive number.', 400);
+    }
+
+    const parsedTransactionDate = payload.transactionDate
+      ? new Date(payload.transactionDate)
+      : new Date();
+    const transactionDate = Number.isNaN(parsedTransactionDate.getTime())
+      ? new Date().toISOString()
+      : parsedTransactionDate.toISOString();
+    const now = new Date().toISOString();
+
+    const transactionRecord: SupplierTransaction = {
+      id: formatSupplierTransactionId(mockApiState.nextSupplierTransactionId),
+      itemsPurchased,
+      totalCost,
+      transactionDate,
+      supplierId,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    mockApiState.nextSupplierTransactionId += 1;
+    mockApiState.supplierTransactions = [transactionRecord, ...mockApiState.supplierTransactions];
+
+    return jsonResponse(transactionRecord, 201);
+  }
+
+  return null;
+}
+
 async function handleMockRequest(input: RequestInfo | URL, init?: RequestInit): Promise<Response | null> {
   const url = toRequestUrl(input);
 
@@ -515,6 +823,7 @@ async function handleMockRequest(input: RequestInfo | URL, init?: RequestInit): 
     handleMembersApi,
     handlePlansApi,
     handlePaymentsApi,
+    handleSuppliersApi,
     handleEquipmentApi,
   ];
 

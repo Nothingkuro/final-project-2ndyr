@@ -11,6 +11,9 @@ import path from "node:path";
 import dotenv from "dotenv";
 import { defineConfig } from "prisma/config";
 
+// Load .env file before accessing environment variables
+dotenv.config({ path: path.join(__dirname, ".env") });
+
 const DATABASE_URL_PREFIX = "DATABASE_URL=";
 
 function normalizeDatabaseUrl(rawValue: string | undefined | null): string | undefined {
@@ -35,8 +38,6 @@ function normalizeDatabaseUrl(rawValue: string | undefined | null): string | und
   return normalizedValue || undefined;
 }
 
-// Load .env file before accessing environment variables
-dotenv.config({ path: path.join(__dirname, ".env") });
 
 const pooledUrl = normalizeDatabaseUrl(process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL);
 const directMigrationUrl = normalizeDatabaseUrl(

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import MemberProfilePage from '../../pages/MemberProfilePage';
-import { storyMembers } from '../helpers/mockMembers';
+import { storyMembers } from '../mocks/mockMembers';
 import type { Member, MemberStatus } from '../../types/member';
 
 const meta = {

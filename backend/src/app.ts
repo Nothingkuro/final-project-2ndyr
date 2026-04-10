@@ -6,12 +6,30 @@ import paymentRoutes from './routes/payment.routes';
 import authRoutes from './routes/auth.routes';
 import memberRoutes from './routes/member.routes';
 import equipmentRoutes from './routes/equipment.routes';
+import supplierRoutes from './routes/supplier.routes';
 
 const app = express();
-const frontendOrigin = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+
+function parseAllowedOrigins(value: string | undefined): Set<string> {
+	const defaults = [
+		'http://localhost:5173',
+		'http://127.0.0.1:5173',
+		'http://localhost:5174',
+		'http://127.0.0.1:5174',
+	];
+
+	const envOrigins = (value ?? '')
+		.split(',')
+		.map((origin) => origin.trim())
+		.filter(Boolean);
+
+	return new Set([...defaults, ...envOrigins]);
+}
+
+const allowedOrigins = parseAllowedOrigins(process.env.FRONTEND_URL);
 
 function isAllowedFrontendOrigin(origin: string): boolean {
-	if (origin === frontendOrigin) {
+	if (allowedOrigins.has(origin)) {
 		return true;
 	}
 
@@ -32,7 +50,7 @@ app.use(
 				return;
 			}
 
-			callback(new Error(`CORS blocked origin: ${origin}`));
+			callback(new Error('Not allowed by CORS'));
 		},
 		credentials: true,
 	})
@@ -44,6 +62,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', memberRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api', equipmentRoutes);
+app.use('/api', supplierRoutes);
 
 
 export default app;

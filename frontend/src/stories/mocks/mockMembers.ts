@@ -1,4 +1,5 @@
 import type { Member } from '../../types/member';
+import type { PaymentMember } from '../../types/payment';
 
 export const storyMembers: Member[] = [
   {
@@ -60,5 +61,29 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-06-10',
     status: 'INACTIVE',
     notes: '',
+  },
+];
+
+export const storyPaymentMembers: PaymentMember[] = [
+  {
+    id: '67',
+    firstName: 'Juan',
+    lastName: 'Dela Cruz',
+    contactNumber: '09171234567',
+    status: 'ACTIVE',
+  },
+  {
+    id: '68',
+    firstName: 'Lea',
+    lastName: 'Santos',
+    contactNumber: '09179998888',
+    status: 'EXPIRED',
+  },
+  {
+    id: '69',
+    firstName: 'Paolo',
+    lastName: 'Rivera',
+    contactNumber: '09176667777',
+    status: 'INACTIVE',
   },
 ];

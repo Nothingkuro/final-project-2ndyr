@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { X } from 'lucide-react';
 import arrowheadLogo from '../assets/arrowhead-logo.png';
 
@@ -32,15 +32,19 @@ export default function MemberFormModal({
   submitLabel = 'Submit',
   submittingLabel = 'Submitting...',
 }: MemberFormModalProps) {
-  const [formData, setFormData] = useState<MemberFormData>({
-    firstName: '',
-    lastName: '',
-    contactNumber: '',
-    notes: '',
-  });
   const [isAnimating, setIsAnimating] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const formResetKey = useMemo(
+    () =>
+      [
+        initialData?.firstName ?? '',
+        initialData?.lastName ?? '',
+        initialData?.contactNumber ?? '',
+        initialData?.notes ?? '',
+      ].join('|'),
+    [initialData?.firstName, initialData?.lastName, initialData?.contactNumber, initialData?.notes],
+  );
 
   // Handle open/close animation
   useEffect(() => {
@@ -61,30 +65,19 @@ export default function MemberFormModal({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  // Reset form when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setFormData({
-        firstName: initialData?.firstName ?? '',
-        lastName: initialData?.lastName ?? '',
-        contactNumber: initialData?.contactNumber ?? '',
-        notes: initialData?.notes ?? '',
-      });
-    }
-  }, [isOpen, initialData]);
-
   if (!isOpen) return null;
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    onSubmit(formData);
+
+    const form = new FormData(e.currentTarget as HTMLFormElement);
+    onSubmit({
+      firstName: String(form.get('firstName') ?? '').trim(),
+      lastName: String(form.get('lastName') ?? '').trim(),
+      contactNumber: String(form.get('contactNumber') ?? '').trim(),
+      notes: String(form.get('notes') ?? '').trim(),
+    });
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -149,7 +142,7 @@ export default function MemberFormModal({
         </div>
 
         {/* ── Form ── */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form key={formResetKey} onSubmit={handleSubmit} className="flex flex-col gap-4">
           {errorMessage && (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
               {errorMessage}
@@ -161,8 +154,7 @@ export default function MemberFormModal({
             type="text"
             name="firstName"
             placeholder="First Name"
-            value={formData.firstName}
-            onChange={handleChange}
+            defaultValue={initialData?.firstName ?? ''}
             disabled={isSubmitting}
             required
             className={inputClasses}
@@ -172,8 +164,7 @@ export default function MemberFormModal({
             type="text"
             name="lastName"
             placeholder="Last Name"
-            value={formData.lastName}
-            onChange={handleChange}
+            defaultValue={initialData?.lastName ?? ''}
             disabled={isSubmitting}
             required
             className={inputClasses}
@@ -183,8 +174,7 @@ export default function MemberFormModal({
             type="tel"
             name="contactNumber"
             placeholder="Contact Number"
-            value={formData.contactNumber}
-            onChange={handleChange}
+            defaultValue={initialData?.contactNumber ?? ''}
             disabled={isSubmitting}
             required
             className={inputClasses}
@@ -193,8 +183,7 @@ export default function MemberFormModal({
           <textarea
             name="notes"
             placeholder="Notes"
-            value={formData.notes}
-            onChange={handleChange}
+            defaultValue={initialData?.notes ?? ''}
             disabled={isSubmitting}
             rows={3}
             className={inputClasses}

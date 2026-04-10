@@ -1,31 +1,7 @@
 import { useState, type ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import MemberSearchSelect from '../../components/payments/MemberSearchSelect';
-import type { PaymentMember } from '../../types/payment';
-
-const storyMembers: PaymentMember[] = [
-  {
-    id: 'member-001',
-    firstName: 'Juan',
-    lastName: 'Dela Cruz',
-    contactNumber: '09171234567',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'member-002',
-    firstName: 'Lea',
-    lastName: 'Santos',
-    contactNumber: '09179998888',
-    status: 'EXPIRED',
-  },
-  {
-    id: 'member-003',
-    firstName: 'Paolo',
-    lastName: 'Rivera',
-    contactNumber: '09176667777',
-    status: 'INACTIVE',
-  },
-];
+import { storyPaymentMembers } from '../mocks/mockMembers';
 
 const meta = {
   title: 'App/Payments/Member Search Select',
@@ -55,8 +31,8 @@ function MemberSearchSelectPlayground(args: ComponentProps<typeof MemberSearchSe
 
 export const HappyWithMatches: Story = {
   args: {
-    members: storyMembers,
-    selectedMemberId: 'member-001',
+    members: storyPaymentMembers,
+    selectedMemberId: '67',
     onSelectMember: () => {},
   },
   render: (args) => <MemberSearchSelectPlayground {...args} />,

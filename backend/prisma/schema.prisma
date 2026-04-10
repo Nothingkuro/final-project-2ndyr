@@ -162,6 +162,7 @@ model Equipment {
 model Supplier {
   id            String  @id @default(cuid())
   name          String
+  serviceCategory String  @default("GENERAL")
   contactPerson String?
   contactNumber String?
   address       String?

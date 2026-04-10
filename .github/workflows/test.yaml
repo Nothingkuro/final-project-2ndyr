@@ -105,11 +105,8 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run Prisma migrations
-        run: npm run db:migrate:prod
-
-      - name: Run Pretest Script
-        run: npm run pretest:integration
+      - name: Run Migration for local database
+        run: npm run db:migrate
 
       - name: Run API tests
         run: npm run test:integration

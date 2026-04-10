@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { MemoryRouter } from 'react-router-dom';
 import MembersPage from '../../pages/MembersPage';
-import { storyMembers } from '../helpers/mockMembers';
+import { storyMembers } from '../mocks/mockMembers';
 
 const meta = {
   title: 'App/Pages/Members Page',

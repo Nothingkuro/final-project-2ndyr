@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import LoginPage from '../../pages/LoginPage';
 import MembersPage from '../../pages/MembersPage';
-import { storyMembers } from '../helpers/mockMembers';
+import { storyMembers } from '../mocks/mockMembers';
 
 const meta = {
   title: 'App/Pages/Login Page',
@@ -105,76 +105,54 @@ export const StaffLoginWithSidebarToggle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const slowUser = userEvent.setup({ delay: 800 });
-    const originalFetch = globalThis.fetch;
+    await slowUser.click(canvas.getByRole('button', { name: 'Staff' }));
+    await slowUser.type(canvas.getByPlaceholderText('Username'), 'staff');
+    await slowUser.type(canvas.getByPlaceholderText('Password'), 'secret123');
+    await slowUser.click(canvas.getByRole('button', { name: 'Log In' }));
 
-    globalThis.fetch = async () =>
-      new Response(
-        JSON.stringify({
-          user: {
-            id: 'staff-user',
-            role: 'Staff',
-          },
+    await waitFor(() => {
+      expect(
+        canvas.getByRole('heading', {
+          name: 'Members',
         }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      ).toBeInTheDocument();
+    });
 
-    try {
-      await slowUser.click(canvas.getByRole('button', { name: 'Staff' }));
-      await slowUser.type(canvas.getByPlaceholderText('Username'), 'staff');
-      await slowUser.type(canvas.getByPlaceholderText('Password'), 'secret123');
-      await slowUser.click(canvas.getByRole('button', { name: 'Log In' }));
+    const collapseControl = canvasElement.querySelector<HTMLButtonElement>(
+      'button[title="Collapse sidebar"]',
+    );
+
+    const isDesktopCollapseVisible =
+      collapseControl && window.getComputedStyle(collapseControl).display !== 'none';
+
+    if (isDesktopCollapseVisible && collapseControl) {
+      await slowUser.click(collapseControl);
 
       await waitFor(() => {
-        expect(
-          canvas.getByRole('heading', {
-            name: 'Members',
-          }),
-        ).toBeInTheDocument();
+        expect(canvasElement.querySelector('button[title="Expand sidebar"]')).toBeInTheDocument();
       });
 
-      const collapseControl = canvasElement.querySelector<HTMLButtonElement>(
-        'button[title="Collapse sidebar"]',
+      const expandControl = canvasElement.querySelector<HTMLButtonElement>(
+        'button[title="Expand sidebar"]',
       );
 
-      const isDesktopCollapseVisible =
-        collapseControl && window.getComputedStyle(collapseControl).display !== 'none';
-
-      if (isDesktopCollapseVisible && collapseControl) {
-        await slowUser.click(collapseControl);
-
-        await waitFor(() => {
-          expect(canvasElement.querySelector('button[title="Expand sidebar"]')).toBeInTheDocument();
-        });
-
-        const expandControl = canvasElement.querySelector<HTMLButtonElement>(
-          'button[title="Expand sidebar"]',
-        );
-
-        if (!expandControl) {
-          throw new Error('Expand sidebar button was not rendered after collapsing.');
-        }
-
-        await slowUser.click(expandControl);
-        await waitFor(() => {
-          expect(canvasElement.querySelector('button[title="Collapse sidebar"]')).toBeInTheDocument();
-        });
-        return;
+      if (!expandControl) {
+        throw new Error('Expand sidebar button was not rendered after collapsing.');
       }
 
-      const mobileToggle = canvas.queryByLabelText('Toggle sidebar');
-      if (!mobileToggle) {
-        throw new Error('No sidebar toggle control available in the current viewport.');
-      }
-
-      await slowUser.click(mobileToggle);
-      await slowUser.click(mobileToggle);
-    } finally {
-      globalThis.fetch = originalFetch;
+      await slowUser.click(expandControl);
+      await waitFor(() => {
+        expect(canvasElement.querySelector('button[title="Collapse sidebar"]')).toBeInTheDocument();
+      });
+      return;
     }
+
+    const mobileToggle = canvas.queryByLabelText('Toggle sidebar');
+    if (!mobileToggle) {
+      throw new Error('No sidebar toggle control available in the current viewport.');
+    }
+
+    await slowUser.click(mobileToggle);
+    await slowUser.click(mobileToggle);
   },
 };

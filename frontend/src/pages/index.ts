@@ -4,3 +4,4 @@ export { default as MemberProfilePage } from './MemberProfilePage';
 export { default as PaymentsPage } from './PaymentsPage';
 export { default as EquipmentPage } from './EquipmentPage';
 export { default as AdminAssetsPage } from './AdminAssetsPage';
+export { default as SuppliersPage } from './SuppliersPage';
