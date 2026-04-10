@@ -106,6 +106,15 @@ describe('Supplier management API', () => {
     expect(response.body.pageSize).toBe(10);
   });
 
+  it('lets authenticated staff list supplier service categories', async () => {
+    const response = await request(app)
+      .get('/api/suppliers/categories')
+      .set('Cookie', staffCookie);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.items)).toBe(true);
+  });
+
   it('rejects staff from creating suppliers', async () => {
     const response = await request(app)
       .post('/api/suppliers')
@@ -163,6 +172,18 @@ describe('Supplier management API', () => {
 
     const response = await request(app)
       .get(`/api/suppliers?search=${encodeURIComponent(String(suffix))}&page=1&pageSize=10`)
+      .set('Cookie', staffCookie);
+
+    expect(response.status).toBe(200);
+    const found = response.body.items.find((item: { id: string }) => item.id === createdSupplierId);
+    expect(found).toBeDefined();
+  });
+
+  it('includes created supplier in category filter results', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .get('/api/suppliers?serviceCategory=Water%20Supplier&page=1&pageSize=10')
       .set('Cookie', staffCookie);
 
     expect(response.status).toBe(200);

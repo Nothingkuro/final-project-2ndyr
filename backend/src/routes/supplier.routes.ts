@@ -4,6 +4,7 @@ import {
   createSupplierTransaction,
   deleteSupplier,
   getSuppliers,
+  getSupplierServiceCategories,
   getSupplierTransactions,
   updateSupplier,
 } from '../controllers/supplier.controller';
@@ -14,6 +15,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/suppliers', getSuppliers);
+router.get('/suppliers/categories', getSupplierServiceCategories);
 router.post('/suppliers', requireRole('ADMIN'), createSupplier);
 router.put('/suppliers/:supplierId', requireRole('ADMIN'), updateSupplier);
 router.delete('/suppliers/:supplierId', requireRole('ADMIN'), deleteSupplier);

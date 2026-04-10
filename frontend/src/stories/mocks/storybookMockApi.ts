@@ -228,21 +228,24 @@ function paginateSuppliers(url: URL): SuppliersListResponse {
   const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
   const pageSize = Math.max(1, Number.parseInt(url.searchParams.get('pageSize') ?? '20', 10) || 20);
   const search = (url.searchParams.get('search') ?? '').trim().toLowerCase();
+  const serviceCategory = (url.searchParams.get('serviceCategory') ?? '').trim().toLowerCase();
 
   const filteredSuppliers = mockApiState.suppliers.filter((supplier) => {
-    if (!search) {
-      return true;
-    }
-
     const searchableFields = [
       supplier.id,
       supplier.name,
+      supplier.serviceCategory,
       supplier.contactPerson ?? '',
       supplier.contactNumber ?? '',
       supplier.address ?? '',
     ];
 
-    return searchableFields.some((value) => value.toLowerCase().includes(search));
+    const matchesSearch =
+      !search || searchableFields.some((value) => value.toLowerCase().includes(search));
+    const matchesServiceCategory =
+      !serviceCategory || supplier.serviceCategory.toLowerCase() === serviceCategory;
+
+    return matchesSearch && matchesServiceCategory;
   });
 
   const total = filteredSuppliers.length;
@@ -614,6 +617,16 @@ async function handleEquipmentApi(url: URL, method: string, body: unknown): Prom
 }
 
 async function handleSuppliersApi(url: URL, method: string, body: unknown): Promise<Response | null> {
+  if (url.pathname === '/api/suppliers/categories' && method === 'GET') {
+    const items = Array.from(
+      new Set(mockApiState.suppliers.map((supplier) => supplier.serviceCategory.trim())),
+    )
+      .filter((category) => category.length > 0)
+      .sort((left, right) => left.localeCompare(right));
+
+    return jsonResponse({ items });
+  }
+
   if (url.pathname === '/api/suppliers' && method === 'GET') {
     return jsonResponse(paginateSuppliers(url));
   }

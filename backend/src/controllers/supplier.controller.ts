@@ -81,26 +81,46 @@ function toSupplierTransactionItem(transaction: {
 export const getSuppliers = async (req: Request, res: Response): Promise<void> => {
   try {
     const searchRaw = typeof req.query.search === 'string' ? req.query.search : '';
+    const serviceCategoryRaw =
+      typeof req.query.serviceCategory === 'string' ? req.query.serviceCategory : '';
     const pageRaw = typeof req.query.page === 'string' ? Number(req.query.page) : 1;
     const pageSizeRaw = typeof req.query.pageSize === 'string' ? Number(req.query.pageSize) : 20;
 
     const search = searchRaw.trim();
+    const serviceCategory = serviceCategoryRaw.trim();
     const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
     const pageSize = Number.isFinite(pageSizeRaw) && pageSizeRaw > 0
       ? Math.min(Math.floor(pageSizeRaw), 100)
       : 20;
 
-    const where: Prisma.SupplierWhereInput = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { serviceCategory: { contains: search, mode: 'insensitive' } },
-            { contactPerson: { contains: search, mode: 'insensitive' } },
-            { contactNumber: { contains: search, mode: 'insensitive' } },
-            { address: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+    const whereConditions: Prisma.SupplierWhereInput[] = [];
+
+    if (search) {
+      whereConditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { serviceCategory: { contains: search, mode: 'insensitive' } },
+          { contactPerson: { contains: search, mode: 'insensitive' } },
+          { contactNumber: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (serviceCategory) {
+      whereConditions.push({
+        serviceCategory: {
+          equals: serviceCategory,
+          mode: 'insensitive',
+        },
+      });
+    }
+
+    const where: Prisma.SupplierWhereInput = whereConditions.length === 0
+      ? {}
+      : whereConditions.length === 1
+        ? whereConditions[0]
+        : { AND: whereConditions };
 
     const [total, suppliers] = await prisma.$transaction([
       prisma.supplier.count({ where }),
@@ -124,6 +144,28 @@ export const getSuppliers = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error('Error fetching suppliers:', error);
     res.status(500).json({ error: 'Failed to fetch suppliers' });
+  }
+};
+
+export const getSupplierServiceCategories = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const suppliers = await prisma.supplier.findMany({
+      distinct: ['serviceCategory'],
+      select: { serviceCategory: true },
+      orderBy: { serviceCategory: 'asc' },
+    });
+
+    const items = suppliers
+      .map((supplier) => supplier.serviceCategory.trim())
+      .filter((category) => category.length > 0);
+
+    res.status(200).json({ items });
+  } catch (error) {
+    console.error('Error fetching supplier service categories:', error);
+    res.status(500).json({ error: 'Failed to fetch supplier service categories' });
   }
 };
 

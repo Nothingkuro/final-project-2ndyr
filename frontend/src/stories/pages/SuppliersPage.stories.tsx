@@ -95,7 +95,7 @@ export const OwnerAddsSupplier: Story = {
 
     await slowUser.type(await canvas.findByPlaceholderText('Supplier Name'), 'Summit Gear Depot');
     await slowUser.type(canvas.getByPlaceholderText('Contact Person'), 'Lana Morales');
-    await slowUser.type(canvas.getByPlaceholderText('Contact Number'), '09190001111');
+    await slowUser.type(canvas.getByPlaceholderText('Contact Number (e.g. 09171234567)'), '09190001111');
     await slowUser.type(canvas.getByPlaceholderText('Address'), 'Quezon Avenue, Quezon City');
 
     await slowUser.click(canvas.getByRole('button', { name: 'Create Supplier' }));
@@ -195,6 +195,30 @@ export const SearchNoResults: Story = {
 
     await waitFor(() => {
       expect(canvas.getByText('No suppliers found matching your search.')).toBeInTheDocument();
+    });
+  },
+};
+
+export const FilterByCategory: Story = {
+  parameters: {
+    authRole: 'ADMIN' as StoryRole,
+  },
+  render: () => <SuppliersPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const slowUser = userEvent.setup({ delay: 120 });
+
+    await waitFor(() => {
+      expect(canvas.getByText('Showing page 1 of 1 (20 suppliers)')).toBeInTheDocument();
+    });
+
+    await slowUser.click(await canvas.findByRole('button', { name: 'Filter' }));
+    await slowUser.click(await canvas.findByRole('button', { name: 'Nutrition' }));
+
+    await waitFor(() => {
+      expect(canvas.getByText('Showing page 1 of 1 (3 suppliers)')).toBeInTheDocument();
+      expect(canvas.getByText('Peak Wellness Traders')).toBeInTheDocument();
+      expect(canvas.queryByText('Atlas Fitness Supply Co.')).not.toBeInTheDocument();
     });
   },
 };

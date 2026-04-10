@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import FilterDropdown from '../components/common/FilterDropdown';
 import SearchBar from '../components/common/SearchBar';
 import AddTransactionModal from '../components/suppliers/AddTransactionModal';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
@@ -10,6 +11,7 @@ import {
   createSupplier,
   createTransaction,
   deleteSupplier,
+  listSupplierServiceCategories,
   listSuppliers,
   listTransactionsBySupplier,
   updateSupplier,
@@ -24,11 +26,15 @@ import type {
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 150;
 const TRANSACTION_PAGE_SIZE = 10;
+const ALL_CATEGORY_FILTER = 'ALL';
 
 export default function SuppliersPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState(ALL_CATEGORY_FILTER);
+  const [serviceCategories, setServiceCategories] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [totalSuppliers, setTotalSuppliers] = useState(0);
@@ -56,6 +62,14 @@ export default function SuppliersPage() {
   const [isSubmittingTransaction, setIsSubmittingTransaction] = useState(false);
   const [transactionModalError, setTransactionModalError] = useState<string | null>(null);
 
+  const categoryFilterOptions = useMemo(
+    () => [
+      { label: 'All Categories', value: ALL_CATEGORY_FILTER },
+      ...serviceCategories.map((category) => ({ label: category, value: category })),
+    ],
+    [serviceCategories],
+  );
+
   useEffect(() => {
     const role = window.sessionStorage.getItem('authRole');
     if (role !== 'ADMIN' && role !== 'owner') {
@@ -74,6 +88,34 @@ export default function SuppliersPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    const loadServiceCategories = async () => {
+      try {
+        const categories = await listSupplierServiceCategories();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setServiceCategories(categories);
+      } catch {
+        if (isCancelled) {
+          return;
+        }
+
+        setServiceCategories([]);
+      }
+    };
+
+    void loadServiceCategories();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [refreshNonce]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
     const loadSuppliers = async () => {
       try {
         setIsLoadingSuppliers(true);
@@ -83,6 +125,10 @@ export default function SuppliersPage() {
           page: currentPage,
           pageSize: PAGE_SIZE,
           search: debouncedSearchQuery,
+          serviceCategory:
+            selectedCategoryFilter === ALL_CATEGORY_FILTER
+              ? undefined
+              : selectedCategoryFilter,
         });
 
         if (isCancelled) {
@@ -115,7 +161,7 @@ export default function SuppliersPage() {
     return () => {
       isCancelled = true;
     };
-  }, [currentPage, debouncedSearchQuery, refreshNonce]);
+  }, [currentPage, debouncedSearchQuery, refreshNonce, selectedCategoryFilter]);
 
   useEffect(() => {
     if (!selectedSupplier) {
@@ -316,16 +362,33 @@ export default function SuppliersPage() {
       </div>
 
       <div className="mb-6 mx-auto max-w-6xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchBar
-          value={searchQuery}
-          onChange={(value) => {
-            setSearchQuery(value);
-            setCurrentPage(1);
-          }}
-          placeholder="Search supplier..."
-          className="w-full sm:max-w-md"
-          inputClassName="bg-surface border-neutral-300 text-secondary placeholder:text-neutral-400"
-        />
+        <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-center">
+          <SearchBar
+            value={searchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search supplier..."
+            className="w-full sm:flex-1"
+            inputClassName="bg-surface border-neutral-300 text-secondary placeholder:text-neutral-400"
+          />
+
+          <FilterDropdown
+            label="Filter"
+            options={categoryFilterOptions}
+            activeOption={selectedCategoryFilter}
+            isOpen={isCategoryFilterOpen}
+            onToggle={() => setIsCategoryFilterOpen((prev) => !prev)}
+            onSelect={(option) => {
+              setSelectedCategoryFilter(option);
+              setCurrentPage(1);
+              setIsCategoryFilterOpen(false);
+              setSelectedSupplier(null);
+              setIsTransactionModalOpen(false);
+            }}
+          />
+        </div>
 
         <button
           type="button"

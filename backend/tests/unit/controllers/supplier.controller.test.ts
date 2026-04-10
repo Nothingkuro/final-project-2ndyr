@@ -25,6 +25,7 @@ import {
   createSupplierTransaction,
   deleteSupplier,
   getSuppliers,
+  getSupplierServiceCategories,
   getSupplierTransactions,
   updateSupplier,
 } from '../../../src/controllers/supplier.controller';
@@ -100,6 +101,55 @@ describe('supplier controller (mocked)', () => {
       page: 1,
       pageSize: 20,
       totalPages: 1,
+    });
+  });
+
+  it('applies service category filtering in getSuppliers', async () => {
+    mockedPrisma.supplier.count.mockResolvedValue(0);
+    mockedPrisma.supplier.findMany.mockResolvedValue([]);
+    mockedPrisma.$transaction.mockImplementation(async (queries: Promise<unknown>[]) =>
+      Promise.all(queries),
+    );
+
+    const req = {
+      query: {
+        serviceCategory: 'Nutrition',
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getSuppliers(req, res);
+
+    expect(mockedPrisma.supplier.count).toHaveBeenCalledWith({
+      where: {
+        serviceCategory: {
+          equals: 'Nutrition',
+          mode: 'insensitive',
+        },
+      },
+    });
+  });
+
+  it('returns supplier service categories', async () => {
+    mockedPrisma.supplier.findMany.mockResolvedValue([
+      { serviceCategory: 'Equipment' },
+      { serviceCategory: 'Nutrition' },
+      { serviceCategory: 'Maintenance' },
+    ]);
+
+    const req = {} as unknown as Request;
+    const res = createResponse();
+
+    await getSupplierServiceCategories(req, res);
+
+    expect(mockedPrisma.supplier.findMany).toHaveBeenCalledWith({
+      distinct: ['serviceCategory'],
+      select: { serviceCategory: true },
+      orderBy: { serviceCategory: 'asc' },
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      items: ['Equipment', 'Nutrition', 'Maintenance'],
     });
   });
 

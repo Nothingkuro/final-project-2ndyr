@@ -22,6 +22,10 @@ export interface SupplierTransactionListResponse {
   totalPages: number;
 }
 
+interface SupplierServiceCategoryListResponse {
+  items: string[];
+}
+
 async function getAuthToken(): Promise<string | null> {
   const token = window.sessionStorage.getItem('authToken');
   return token;
@@ -73,6 +77,7 @@ export async function listSuppliers(params: {
   page: number;
   pageSize: number;
   search?: string;
+  serviceCategory?: string;
 }): Promise<SupplierListResponse> {
   const searchParams = new URLSearchParams();
   searchParams.append('page', String(params.page));
@@ -83,7 +88,20 @@ export async function listSuppliers(params: {
     searchParams.append('search', trimmedSearch);
   }
 
+  const trimmedServiceCategory = params.serviceCategory?.trim();
+  if (trimmedServiceCategory) {
+    searchParams.append('serviceCategory', trimmedServiceCategory);
+  }
+
   return makeRequest<SupplierListResponse>(`/suppliers?${searchParams.toString()}`);
+}
+
+export async function listSupplierServiceCategories(): Promise<string[]> {
+  const response = await makeRequest<SupplierServiceCategoryListResponse>(
+    '/suppliers/categories',
+  );
+
+  return response.items;
 }
 
 export async function createSupplier(data: SupplierFormData): Promise<Supplier> {
