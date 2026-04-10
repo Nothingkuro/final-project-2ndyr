@@ -64,3 +64,12 @@ export const EdgeMissingDescription: Story = {
   },
   render: (args) => <MembershipPlanTablePlayground {...args} />,
 };
+
+export const OverflowManyPlans: Story = {
+  args: {
+    plans: mockManyMembershipPlans,
+    selectedPlanId: 'plan-3months',
+    onSelectPlan: () => {},
+  },
+  render: (args) => <MembershipPlanTablePlayground {...args} />,
+};

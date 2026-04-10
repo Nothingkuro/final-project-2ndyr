@@ -1,0 +1,8 @@
+{
+  "name": "arrowhead-gym-management-system",
+  "private": true,
+  "scripts": {
+    "test:e2e": "npm --prefix ./e2e run test:e2e",
+    "test:e2e:headless": "npm --prefix ./e2e run test:e2e:headless"
+  }
+}

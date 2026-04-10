@@ -1,15 +1,19 @@
-name: Backend Test CI
+name: Backend and E2E Test CI
 
 on:
   push:
     branches: ["dev", "feat/**", "test"]
     paths:
       - "backend/**"
+      - "frontend/**"
+      - "e2e/**"
       - ".github/workflows/test.yaml"
   pull_request:
     branches: ["dev", "test", "main"]
     paths:
       - "backend/**"
+      - "frontend/**"
+      - "e2e/**"
       - ".github/workflows/test.yaml"
   workflow_dispatch:
 
@@ -48,6 +52,7 @@ jobs:
 
     env:
       DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
       NODE_ENV: test
 
     defaults:
