@@ -425,6 +425,7 @@ export default function SuppliersPage() {
           activeSupplier
             ? {
                 name: activeSupplier.name,
+                serviceCategory: activeSupplier.serviceCategory,
                 contactPerson: activeSupplier.contactPerson ?? '',
                 contactNumber: activeSupplier.contactNumber ?? '',
                 address: activeSupplier.address ?? '',

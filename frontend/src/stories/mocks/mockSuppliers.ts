@@ -5,6 +5,7 @@ const now = '2026-04-08T10:30:00.000Z';
 export const atlasFitnessSupply: Supplier = {
   id: 'SUP-001',
   name: 'Atlas Fitness Supply Co.',
+  serviceCategory: 'Equipment',
   contactPerson: 'Miguel Tan',
   contactNumber: '09171231234',
   address: 'Unit 5, Magsaysay Ave, Cebu City',
@@ -15,6 +16,7 @@ export const atlasFitnessSupply: Supplier = {
 export const peakWellnessTraders: Supplier = {
   id: 'SUP-002',
   name: 'Peak Wellness Traders',
+  serviceCategory: 'Nutrition',
   contactPerson: 'Alyssa Cruz',
   contactNumber: '09178889990',
   address: 'Blk 4 Lot 9, Greenfields, Bacolod City',
@@ -25,6 +27,7 @@ export const peakWellnessTraders: Supplier = {
 export const northpointIndustrial: Supplier = {
   id: 'SUP-003',
   name: 'Northpoint Industrial Distributors and Services',
+  serviceCategory: 'Maintenance',
   contactPerson: null,
   contactNumber: null,
   address: null,
@@ -35,6 +38,7 @@ export const northpointIndustrial: Supplier = {
 export const metroHydrationWorks: Supplier = {
   id: 'SUP-004',
   name: 'Metro Hydration Works',
+  serviceCategory: 'Hydration',
   contactPerson: 'Rina Esteban',
   contactNumber: '09221112222',
   address: 'Warehouse B, JP Rizal Street, Iloilo City',
@@ -50,6 +54,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-005',
     name: 'Ironline Equipment Hub',
+    serviceCategory: 'Equipment',
     contactPerson: 'Jose Villareal',
     contactNumber: '09175551234',
     address: 'San Jose St., Davao City',
@@ -59,6 +64,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-006',
     name: 'Cardio Motion Supplies',
+    serviceCategory: 'Equipment',
     contactPerson: 'Lyn Cabral',
     contactNumber: '09215556789',
     address: 'Mabini Highway, Tagum City',
@@ -68,6 +74,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-007',
     name: 'Prime Steel Fabrication',
+    serviceCategory: 'Fabrication',
     contactPerson: 'Mark Santos',
     contactNumber: '09173334444',
     address: 'Industrial Zone, Cagayan de Oro',
@@ -77,6 +84,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-008',
     name: 'FlexCore Wholesale',
+    serviceCategory: 'Equipment',
     contactPerson: 'Iris Delgado',
     contactNumber: '09179990001',
     address: 'P. Burgos St., Baguio City',
@@ -86,6 +94,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-009',
     name: 'Summit Strength Distribution',
+    serviceCategory: 'Equipment',
     contactPerson: 'Brian Go',
     contactNumber: '09081234567',
     address: 'Pioneer Avenue, General Santos',
@@ -95,6 +104,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-010',
     name: 'RepMax Fitness Goods',
+    serviceCategory: 'Equipment',
     contactPerson: 'Noel Reyes',
     contactNumber: '09187778888',
     address: 'Ortigas Extension, Pasig City',
@@ -104,6 +114,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-011',
     name: 'Titan Gym Essentials',
+    serviceCategory: 'Equipment',
     contactPerson: 'Mica Prieto',
     contactNumber: '09226667777',
     address: 'South Road, Zamboanga City',
@@ -113,6 +124,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-012',
     name: 'Apex Recovery Solutions',
+    serviceCategory: 'Recovery',
     contactPerson: 'Carlo Manansala',
     contactNumber: '09184445555',
     address: 'Quezon Blvd, Dumaguete City',
@@ -122,6 +134,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-013',
     name: 'Vital Protein Trading',
+    serviceCategory: 'Nutrition',
     contactPerson: 'Ella Hernandez',
     contactNumber: '09991112222',
     address: 'M.L. Quezon Avenue, Naga City',
@@ -131,6 +144,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-014',
     name: 'PowerPulse Logistics',
+    serviceCategory: 'Logistics',
     contactPerson: 'Ralph Lim',
     contactNumber: '09175559876',
     address: 'Harbor Drive, Subic',
@@ -140,6 +154,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-015',
     name: 'EverFit Consumables',
+    serviceCategory: 'Consumables',
     contactPerson: 'Nina Uy',
     contactNumber: '09176661234',
     address: 'A. Bonifacio St., Lucena City',
@@ -149,6 +164,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-016',
     name: 'MoveWell Industrial Parts',
+    serviceCategory: 'Maintenance',
     contactPerson: null,
     contactNumber: '09173330000',
     address: 'Tech Park, Santa Rosa',
@@ -158,6 +174,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-017',
     name: 'Endure Sports Depot',
+    serviceCategory: 'Equipment',
     contactPerson: 'Rica Alonzo',
     contactNumber: null,
     address: 'North Diversion Road, Urdaneta',
@@ -167,6 +184,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-018',
     name: 'PulsePro Nutrition Warehouse',
+    serviceCategory: 'Nutrition',
     contactPerson: 'Kevin Chua',
     contactNumber: '09189991234',
     address: null,
@@ -176,6 +194,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-019',
     name: 'CoreForm Manufacturing',
+    serviceCategory: 'Fabrication',
     contactPerson: 'Tina Ramos',
     contactNumber: '09223334444',
     address: 'Export Processing Zone, Cavite',
@@ -185,6 +204,7 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 'SUP-020',
     name: 'HydraClean Facility Supplies',
+    serviceCategory: 'Cleaning',
     contactPerson: 'Paolo Velasco',
     contactNumber: '09174446666',
     address: 'Makati Service Road, Makati City',

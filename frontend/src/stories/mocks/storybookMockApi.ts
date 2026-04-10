@@ -621,23 +621,35 @@ async function handleSuppliersApi(url: URL, method: string, body: unknown): Prom
   if (url.pathname === '/api/suppliers' && method === 'POST') {
     const payload = (body ?? {}) as {
       name?: string;
+      serviceCategory?: string;
       contactPerson?: string;
       contactNumber?: string;
       address?: string;
     };
 
     const name = String(payload.name ?? '').trim();
+    const contactNumber = String(payload.contactNumber ?? '').replace(/\D/g, '');
 
-    if (!name) {
-      return errorResponse('Supplier name is required.', 400);
+    if (!name || !contactNumber) {
+      return errorResponse('Name and contact number are required', 400);
     }
+
+    if (contactNumber.length > 11) {
+      return errorResponse('Contact number must contain at most 11 digits', 400);
+    }
+
+    const serviceCategory =
+      payload.serviceCategory && String(payload.serviceCategory).trim().length > 0
+        ? String(payload.serviceCategory).trim()
+        : 'GENERAL';
 
     const now = new Date().toISOString();
     const nextSupplier: Supplier = {
       id: formatSupplierId(mockApiState.nextSupplierId),
       name,
+      serviceCategory,
       contactPerson: normalizeOptionalField(payload.contactPerson),
-      contactNumber: normalizeOptionalField(payload.contactNumber),
+      contactNumber,
       address: normalizeOptionalField(payload.address),
       createdAt: now,
       updatedAt: now,
@@ -660,6 +672,7 @@ async function handleSuppliersApi(url: URL, method: string, body: unknown): Prom
 
     const payload = (body ?? {}) as {
       name?: string;
+      serviceCategory?: string;
       contactPerson?: string;
       contactNumber?: string;
       address?: string;
@@ -678,6 +691,10 @@ async function handleSuppliersApi(url: URL, method: string, body: unknown): Prom
     const updatedSupplier: Supplier = {
       ...currentSupplier,
       name: nextName,
+      serviceCategory:
+        payload.serviceCategory !== undefined && String(payload.serviceCategory).trim().length > 0
+          ? String(payload.serviceCategory).trim()
+          : currentSupplier.serviceCategory,
       contactPerson:
         payload.contactPerson !== undefined
           ? normalizeOptionalField(payload.contactPerson)

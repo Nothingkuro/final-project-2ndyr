@@ -1,6 +1,7 @@
 export interface Supplier {
   id: string;
   name: string;
+  serviceCategory: string;
   contactPerson: string | null;
   contactNumber: string | null;
   address: string | null;
@@ -20,6 +21,7 @@ export interface SupplierTransaction {
 
 export interface SupplierFormData {
   name: string;
+  serviceCategory: string;
   contactPerson: string;
   contactNumber: string;
   address: string;

@@ -24,6 +24,7 @@ export default function SupplierFormModal({
 }: SupplierFormModalProps) {
   const [formData, setFormData] = useState<SupplierFormData>({
     name: '',
+    serviceCategory: '',
     contactPerson: '',
     contactNumber: '',
     address: '',
@@ -39,6 +40,7 @@ export default function SupplierFormModal({
     const resetTimer = window.setTimeout(() => {
       setFormData({
         name: initialData?.name ?? '',
+        serviceCategory: initialData?.serviceCategory ?? '',
         contactPerson: initialData?.contactPerson ?? '',
         contactNumber: initialData?.contactNumber ?? '',
         address: initialData?.address ?? '',
@@ -96,6 +98,7 @@ export default function SupplierFormModal({
 
     onSubmit({
       name: formData.name.trim(),
+      serviceCategory: formData.serviceCategory.trim(),
       contactPerson: formData.contactPerson.trim(),
       contactNumber: formData.contactNumber.trim(),
       address: formData.address.trim(),
@@ -154,6 +157,18 @@ export default function SupplierFormModal({
             onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
             disabled={isSubmitting}
             required
+            className={inputClasses}
+          />
+
+          <input
+            type="text"
+            name="serviceCategory"
+            placeholder="Service Category (e.g. Equipment, Nutrition)"
+            value={formData.serviceCategory}
+            onChange={(event) =>
+              setFormData((prev) => ({ ...prev, serviceCategory: event.target.value }))
+            }
+            disabled={isSubmitting}
             className={inputClasses}
           />
 
