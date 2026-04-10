@@ -5,6 +5,7 @@ import {
   storyPaymentPlans,
   storyPlansWithLongDescription,
   storyPlansWithMissingDescription,
+  mockManyMembershipPlans,
 } from '../mocks/mockMembershipPlans';
 
 const meta = {
