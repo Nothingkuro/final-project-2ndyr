@@ -1,19 +1,39 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { FRONTEND_URL, LOGIN_PASSWORD, LOGIN_USERNAME } from './env';
+import {
+  FRONTEND_URL,
+  LOGIN_PASSWORD,
+  LOGIN_USERNAME,
+  OWNER_LOGIN_PASSWORD,
+  OWNER_LOGIN_USERNAME,
+} from './env';
 
-export async function loginAsStaff(page: Page): Promise<void> {
-  if (!LOGIN_PASSWORD) {
+interface LoginAsRoleOptions {
+  role: 'Staff' | 'Owner';
+  username: string;
+  password?: string;
+  missingPasswordMessage: string;
+}
+
+async function loginAsRole(page: Page, options: LoginAsRoleOptions): Promise<void> {
+  const {
+    role,
+    username,
+    password,
+    missingPasswordMessage,
+  } = options;
+
+  if (!password) {
     throw new Error(
-      'Missing login password. Set E2E_LOGIN_PASSWORD or SEED_STAFF_PASSWORD before running E2E tests.',
+      missingPasswordMessage,
     );
   }
 
   await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Staff' }).click();
+  await page.getByRole('button', { name: role }).click();
 
-  await page.getByPlaceholder('Username').fill(LOGIN_USERNAME);
-  await page.getByPlaceholder('Password').fill(LOGIN_PASSWORD);
+  await page.getByPlaceholder('Username').fill(username);
+  await page.getByPlaceholder('Password').fill(password);
   const loginResponsePromise = page.waitForResponse((response) => {
     return response.url().includes('/api/auth/login') && response.request().method() === 'POST';
   });
@@ -49,6 +69,26 @@ export async function loginAsStaff(page: Page): Promise<void> {
 
   // Keep a soft URL check
   await expect(page).toHaveURL(/\/dashboard\/members\/?(\?.*)?$/);
+}
+
+export async function loginAsStaff(page: Page): Promise<void> {
+  await loginAsRole(page, {
+    role: 'Staff',
+    username: LOGIN_USERNAME,
+    password: LOGIN_PASSWORD,
+    missingPasswordMessage:
+      'Missing login password. Set E2E_LOGIN_PASSWORD or SEED_STAFF_PASSWORD before running E2E tests.',
+  });
+}
+
+export async function loginAsOwner(page: Page): Promise<void> {
+  await loginAsRole(page, {
+    role: 'Owner',
+    username: OWNER_LOGIN_USERNAME,
+    password: OWNER_LOGIN_PASSWORD,
+    missingPasswordMessage:
+      'Missing owner login password. Set E2E_OWNER_PASSWORD or SEED_OWNER_PASSWORD before running E2E tests.',
+  });
 }
 
 export function uniqueToken(): string {

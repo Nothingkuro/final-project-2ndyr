@@ -135,16 +135,16 @@ jobs:
       NODE_ENV: test
       DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/testdb?schema=public
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb?schema=public
-      SEED_OWNER_PASSWORD: owner123
-      SEED_STAFF_PASSWORD: staff123
+      E2E_LOGIN_USERNAME: staff
+      E2E_LOGIN_PASSWORD: staff123
+      E2E_OWNER_USERNAME: owner
+      E2E_OWNER_PASSWORD: owner123
       E2E_BASE_URL: http://localhost:5173
       VITE_API_BASE_URL: http://localhost:5001
       E2E_HEADLESS: true
       E2E_UI_TIMEOUT_MS: 60000
       E2E_ALLOW_NON_TEST_DB_RESET: true
       E2E_USE_EXISTING_BACKEND: false
-      E2E_LOGIN_USERNAME: staff
-      E2E_LOGIN_PASSWORD: staff123
 
     steps:
       - name: Checkout repository
