@@ -1,8 +1,8 @@
 import { Bell, Menu } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import SearchBar from '../common/SearchBar';
-import { reportData } from '../reports/mockReportData';
+import { getUpcomingExpirations } from '../../services/reportsApi';
 import type { MembershipExpiryAlert } from '../../types/report';
 
 interface HeaderProps {
@@ -19,26 +19,41 @@ export default function Header({
 }: HeaderProps) {
   const [mobileSearch, setMobileSearch] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [expiringMembershipAlerts, setExpiringMembershipAlerts] = useState<
+    MembershipExpiryAlert[]
+  >([]);
   const storedUsername = window.sessionStorage.getItem('authUsername')?.trim();
   const displayName = storedUsername ? storedUsername : 'None';
 
-  const expiringMembershipAlerts = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
+  useEffect(() => {
+    let cancelled = false;
 
-    const maxDate = new Date(now);
-    maxDate.setDate(maxDate.getDate() + 3);
+    const loadAlerts = async () => {
+      try {
+        const alerts = await getUpcomingExpirations(3);
+        if (cancelled) {
+          return;
+        }
 
-    return reportData.membershipExpiryAlerts
-      .filter((member) => {
-        const expiryDate = new Date(member.expiryDate);
-        expiryDate.setHours(0, 0, 0, 0);
-        return expiryDate >= now && expiryDate <= maxDate;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime(),
-      );
+        const sorted = [...alerts].sort(
+          (a, b) =>
+            new Date(a.expiryDate).getTime() -
+            new Date(b.expiryDate).getTime(),
+        );
+
+        setExpiringMembershipAlerts(sorted);
+      } catch {
+        if (!cancelled) {
+          setExpiringMembershipAlerts([]);
+        }
+      }
+    };
+
+    void loadAlerts();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const shouldShowNotificationDot =
