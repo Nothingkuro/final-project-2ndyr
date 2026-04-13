@@ -5,6 +5,7 @@ import type {
   MembershipPlan,
   PaymentMethod,
 } from '../../types/payment';
+import type { MembershipExpiryAlert } from '../../types/report';
 import type { Supplier, SupplierTransaction } from '../../types/supplier';
 import {
   createMockEquipment,
@@ -16,6 +17,7 @@ import {
 import { storyMembers } from './mockMembers';
 import { mockManyMembershipPlans } from './mockMembershipPlans';
 import { MOCK_MEMBER_PAYMENTS } from './mockPayments';
+import { storyReportData } from './mockReports';
 import { mockSuppliers, mockTransactions } from './mockSuppliers';
 
 type MembersListResponse = {
@@ -328,6 +330,56 @@ function formatSupplierId(id: number): string {
 
 function formatSupplierTransactionId(id: number): string {
   return `STX-${String(id).padStart(3, '0')}`;
+}
+
+function filterExpiringMembers(alerts: MembershipExpiryAlert[], days: number): MembershipExpiryAlert[] {
+  const safeDays = Math.max(0, days);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const thresholdDate = new Date(today);
+  thresholdDate.setDate(thresholdDate.getDate() + safeDays);
+
+  return alerts.filter((alert) => {
+    const expiryDate = new Date(alert.expiryDate);
+    if (Number.isNaN(expiryDate.getTime())) {
+      return false;
+    }
+
+    return expiryDate >= today && expiryDate <= thresholdDate;
+  });
+}
+
+async function handleReportsApi(url: URL, method: string): Promise<Response | null> {
+  if (method !== 'GET') {
+    return null;
+  }
+
+  if (url.pathname === '/api/reports/overview') {
+    const threshold = Math.max(0, Number.parseInt(url.searchParams.get('threshold') ?? '5', 10) || 5);
+    const days = Math.max(0, Number.parseInt(url.searchParams.get('days') ?? '3', 10) || 3);
+
+    return jsonResponse({
+      dailyRevenue: { ...storyReportData.dailyRevenue },
+      monthlyRevenue: storyReportData.monthlyRevenue.map((record) => ({ ...record })),
+      membershipExpiryAlerts: filterExpiringMembers(storyReportData.membershipExpiryAlerts, days)
+        .map((alert) => ({ ...alert })),
+      inventoryAlerts: storyReportData.inventoryAlerts.map((alert) => ({
+        ...alert,
+        threshold,
+      })),
+    });
+  }
+
+  if (url.pathname === '/api/reports/upcoming-expirations') {
+    const days = Math.max(0, Number.parseInt(url.searchParams.get('days') ?? '3', 10) || 3);
+    const alerts = filterExpiringMembers(storyReportData.membershipExpiryAlerts, days)
+      .map((alert) => ({ ...alert }));
+
+    return jsonResponse(alerts);
+  }
+
+  return null;
 }
 
 async function handleMembersApi(url: URL, method: string, body: unknown): Promise<Response | null> {
@@ -823,6 +875,7 @@ async function handleMockRequest(input: RequestInfo | URL, init?: RequestInit): 
     handleMembersApi,
     handlePlansApi,
     handlePaymentsApi,
+    handleReportsApi,
     handleSuppliersApi,
     handleEquipmentApi,
   ];
