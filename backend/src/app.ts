@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import memberRoutes from './routes/member.routes';
 import equipmentRoutes from './routes/equipment.routes';
 import supplierRoutes from './routes/supplier.routes';
+import reportRoutes from './routes/report.routes';
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/api', memberRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api', equipmentRoutes);
 app.use('/api', supplierRoutes);
+app.use('/api', reportRoutes);
 
 
 export default app;

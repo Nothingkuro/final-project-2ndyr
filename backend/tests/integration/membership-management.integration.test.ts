@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { Role } from '@prisma/client';
 import app from '../../src/app';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import prisma, { disconnectPrisma } from '../../src/lib/prisma';
 import { hashPassword } from '../../src/utils/auth';
 

@@ -8,6 +8,7 @@ import {
   EquipmentPage,
   AdminAssetsPage,
   SuppliersPage,
+  ReportsPage,
 } from './pages';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -87,6 +88,17 @@ function App() {
             <MainLayout>
               <SuppliersPage />
             </MainLayout>
+          }
+        />
+
+        <Route
+          path="/dashboard/reports"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ReportsPage />
+              </MainLayout>
+            </ProtectedRoute>
           }
         />
 
