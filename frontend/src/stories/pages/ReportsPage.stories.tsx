@@ -98,6 +98,34 @@ export const AdminChangesMonthAndYear: Story = {
   },
 };
 
+export const AdminAdjustsInventoryThreshold: Story = {
+  parameters: {
+    authRole: 'ADMIN' as StoryRole,
+  },
+  render: () => <ReportsPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const slowUser = userEvent.setup({ delay: 100 });
+
+    await waitFor(() => {
+      expect(canvas.getByText('Low Inventory Alerts')).toBeInTheDocument();
+      expect(canvas.getByLabelText('Threshold')).toBeInTheDocument();
+      expect(canvas.getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
+    });
+
+    const thresholdInput = canvas.getByLabelText('Threshold') as HTMLInputElement;
+    await slowUser.clear(thresholdInput);
+    await slowUser.type(thresholdInput, '7');
+
+    await waitFor(() => {
+      expect(thresholdInput).toHaveValue(7);
+    });
+
+    const refreshButton = canvas.getByRole('button', { name: 'Refresh' });
+    await slowUser.click(refreshButton);
+  },
+};
+
 export const StaffRedirected: Story = {
   parameters: {
     authRole: 'STAFF' as StoryRole,

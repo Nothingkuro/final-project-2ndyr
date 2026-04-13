@@ -5,11 +5,17 @@ import ReportSectionCard from './ReportSectionCard';
 interface LowInventoryAlertListProps {
   alerts: InventoryAlert[];
   threshold?: number;
+  onThresholdChange?: (threshold: number) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export default function LowInventoryAlertList({
   alerts,
   threshold = 5,
+  onThresholdChange,
+  onRefresh,
+  isRefreshing = false,
 }: LowInventoryAlertListProps) {
   const effectiveThreshold = alerts[0]?.threshold ?? threshold;
 
@@ -23,6 +29,32 @@ export default function LowInventoryAlertList({
       subtitle={`Equipment below threshold (${effectiveThreshold} units)`}
       icon={<AlertTriangle size={20} />}
       iconClassName="bg-danger/20 text-danger"
+      actionSlot={
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="inventory-threshold" className="text-sm text-neutral-300">
+            Threshold
+          </label>
+          <input
+            id="inventory-threshold"
+            type="number"
+            min={0}
+            value={threshold}
+            onChange={(event) => {
+              const nextValue = Math.max(0, Number(event.target.value) || 0);
+              onThresholdChange?.(nextValue);
+            }}
+            className="w-24 rounded-md border border-neutral-700 bg-secondary px-3 py-2 text-sm text-text-light focus:outline-none focus:ring-2 focus:ring-danger/60"
+          />
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isRefreshing || !onRefresh}
+            className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-text-light transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      }
     >
       {lowStockItems.length === 0 ? (
         <p className="rounded-lg border border-neutral-600 bg-secondary px-4 py-3 text-sm text-neutral-300">

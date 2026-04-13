@@ -40,7 +40,10 @@ export default function MonthlyRevenueReportCard({
   onYearChange,
 }: MonthlyRevenueReportCardProps) {
   const currentYear = new Date().getFullYear();
-  const earliestYear = 2000;
+  const earliestYear = records.reduce(
+    (oldestYear, record) => Math.min(oldestYear, record.year),
+    currentYear,
+  );
   const resolvedYearOptions = Array.from(
     { length: currentYear - earliestYear + 1 },
     (_, index) => currentYear - index,

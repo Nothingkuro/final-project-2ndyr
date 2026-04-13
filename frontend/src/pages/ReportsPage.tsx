@@ -9,6 +9,8 @@ import {
 import { getReportsOverview } from '../services/reportsApi';
 import type { MonthlyRevenueRecord, ReportData } from '../types/report';
 
+const DEFAULT_INVENTORY_THRESHOLD = 5;
+
 function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord | null {
   if (records.length === 0) {
     return null;
@@ -31,7 +33,8 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [inventoryThreshold, setInventoryThreshold] = useState(5);
+  const [inventoryThreshold, setInventoryThreshold] = useState(DEFAULT_INVENTORY_THRESHOLD);
+  const isInitialLoading = isLoading && !reportData && !loadError;
 
   const latestMonthlyRecord = getLatestRecord(reportData?.monthlyRevenue ?? []);
   const currentDate = new Date();
@@ -63,7 +66,7 @@ export default function ReportsPage() {
 
     const loadInitialReports = async () => {
       try {
-        await loadReports(inventoryThreshold);
+        await loadReports(DEFAULT_INVENTORY_THRESHOLD);
 
         if (isCancelled) {
           return;
@@ -95,6 +98,7 @@ export default function ReportsPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load reports';
       setLoadError(message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -112,38 +116,21 @@ export default function ReportsPage() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <label htmlFor="inventory-threshold" className="text-sm text-secondary">
-            Inventory threshold
-          </label>
-          <input
-            id="inventory-threshold"
-            type="number"
-            min={0}
-            value={inventoryThreshold}
-            onChange={(event) => setInventoryThreshold(Math.max(0, Number(event.target.value) || 0))}
-            className="w-24 rounded-md border border-neutral-300 bg-surface px-3 py-2 text-sm text-secondary"
-          />
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-text-light hover:bg-primary-dark transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
+        {isLoading && reportData ? (
+          <p className="text-center text-sm text-secondary">Refreshing reports...</p>
+        ) : null}
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          {isLoading ? (
-            <div className="rounded-xl border border-neutral-300 bg-surface px-5 py-4 text-sm text-neutral-500">
-              Loading reports...
-            </div>
-          ) : loadError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-              {loadError}
-            </div>
-          ) : reportData ? (
-            <>
+        {isInitialLoading ? (
+          <div className="rounded-xl border border-neutral-300 bg-surface px-5 py-4 text-sm text-neutral-500">
+            Loading reports...
+          </div>
+        ) : loadError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+            {loadError}
+          </div>
+        ) : reportData ? (
+          <>
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <DailyRevenueSummaryCard revenue={reportData.dailyRevenue} />
               <MonthlyRevenueReportCard
                 records={reportData.monthlyRevenue}
@@ -152,18 +139,20 @@ export default function ReportsPage() {
                 onMonthChange={setSelectedMonth}
                 onYearChange={setSelectedYear}
               />
-            </>
-          ) : null}
-        </section>
+            </section>
 
-        <section className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
-          {reportData ? (
-            <>
+            <section className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
               <MembershipExpiryAlertList alerts={reportData.membershipExpiryAlerts} />
-              <LowInventoryAlertList alerts={reportData.inventoryAlerts} />
-            </>
-          ) : null}
-        </section>
+              <LowInventoryAlertList
+                alerts={reportData.inventoryAlerts}
+                threshold={inventoryThreshold}
+                onThresholdChange={setInventoryThreshold}
+                onRefresh={handleRefresh}
+                isRefreshing={isLoading}
+              />
+            </section>
+          </>
+        ) : null}
       </div>
     </div>
   );
