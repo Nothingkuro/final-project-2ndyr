@@ -5,9 +5,12 @@ import MemberFormModal, { type MemberFormData } from '../components/AddMemberMod
 import SearchBar from '../components/common/SearchBar';
 import FilterDropdown from '../components/common/FilterDropdown';
 import MemberTableRow from '../components/members/MemberTableRow';
+import { MembershipExpiryAlertList } from '../components/reports';
 import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
+import { getUpcomingExpirations } from '../services/reportsApi';
 import type { Member, MemberStatus } from '../types/member';
+import type { MembershipExpiryAlert } from '../types/report';
 
 type MembersFilter = 'ALL' | MemberStatus;
 
@@ -85,8 +88,52 @@ export default function MembersPage({
   const [membersLoadError, setMembersLoadError] = useState<string | null>(null);
   const [isSubmittingMember, setIsSubmittingMember] = useState(false);
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
+  const [expiryAlerts, setExpiryAlerts] = useState<MembershipExpiryAlert[]>([]);
+  const [isLoadingExpiryAlerts, setIsLoadingExpiryAlerts] = useState(false);
+  const [expiryAlertsError, setExpiryAlertsError] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const responseCacheRef = useRef<Map<string, ApiMembersResponse>>(new Map());
+  const authRole = window.sessionStorage.getItem('authRole');
+
+  useEffect(() => {
+    if (authRole !== 'STAFF') {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadExpiryAlerts = async () => {
+      try {
+        setIsLoadingExpiryAlerts(true);
+        setExpiryAlertsError(null);
+
+        const alerts = await getUpcomingExpirations(3);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setExpiryAlerts(alerts);
+      } catch (error: unknown) {
+        if (isCancelled) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : 'Failed to load upcoming expirations';
+        setExpiryAlertsError(message);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingExpiryAlerts(false);
+        }
+      }
+    };
+
+    void loadExpiryAlerts();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authRole]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -260,6 +307,22 @@ export default function MembersPage({
           Members
         </h1>
       </div>
+
+      {authRole === 'STAFF' && (
+        <div className="mb-6 mx-auto max-w-3xl">
+          {isLoadingExpiryAlerts ? (
+            <div className="rounded-xl border border-neutral-300 bg-surface px-5 py-4 text-sm text-neutral-500">
+              Loading upcoming expirations...
+            </div>
+          ) : expiryAlertsError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+              {expiryAlertsError}
+            </div>
+          ) : (
+            <MembershipExpiryAlertList alerts={expiryAlerts} />
+          )}
+        </div>
+      )}
 
       {/* ── Search & Filter Bar ── */}
       <div className="flex items-center gap-3 mb-6 max-w-2xl mx-auto">

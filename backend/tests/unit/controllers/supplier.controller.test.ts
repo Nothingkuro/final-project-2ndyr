@@ -437,4 +437,111 @@ describe('supplier controller (mocked)', () => {
       }),
     );
   });
+
+  it('returns 500 in getSuppliers when query fails', async () => {
+    mockedPrisma.$transaction.mockRejectedValue(new Error('db failure'));
+
+    const req = { query: {} } as unknown as Request;
+    const res = createResponse();
+
+    await getSuppliers(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch suppliers' });
+  });
+
+  it('returns 500 in getSupplierServiceCategories when query fails', async () => {
+    mockedPrisma.supplier.findMany.mockRejectedValue(new Error('db failure'));
+
+    const req = {} as unknown as Request;
+    const res = createResponse();
+
+    await getSupplierServiceCategories(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch supplier service categories' });
+  });
+
+  it('returns 500 in createSupplier when create fails', async () => {
+    mockedPrisma.supplier.create.mockRejectedValue(new Error('db failure'));
+
+    const req = {
+      body: {
+        name: 'Valid Supplier',
+        contactNumber: '09170000099',
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createSupplier(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to create supplier' });
+  });
+
+  it('returns 500 in updateSupplier when update fails', async () => {
+    mockedPrisma.supplier.findUnique.mockResolvedValue({ id: 'supplier-1' });
+    mockedPrisma.supplier.update.mockRejectedValue(new Error('db failure'));
+
+    const req = {
+      params: { supplierId: 'supplier-1' },
+      body: { name: 'Updated Name' },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateSupplier(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to update supplier' });
+  });
+
+  it('returns 500 in deleteSupplier when delete fails', async () => {
+    mockedPrisma.supplier.findUnique.mockResolvedValue({ id: 'supplier-1' });
+    mockedPrisma.supplier.delete.mockRejectedValue(new Error('db failure'));
+
+    const req = {
+      params: { supplierId: 'supplier-1' },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await deleteSupplier(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to delete supplier' });
+  });
+
+  it('returns 500 in getSupplierTransactions when query fails', async () => {
+    mockedPrisma.supplier.findUnique.mockResolvedValue({ id: 'supplier-1' });
+    mockedPrisma.$transaction.mockRejectedValue(new Error('db failure'));
+
+    const req = {
+      params: { supplierId: 'supplier-1' },
+      query: { page: '1', pageSize: '10' },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getSupplierTransactions(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch supplier transactions' });
+  });
+
+  it('returns 500 in createSupplierTransaction when create fails', async () => {
+    mockedPrisma.supplier.findUnique.mockResolvedValue({ id: 'supplier-1' });
+    mockedPrisma.supplierTransaction.create.mockRejectedValue(new Error('db failure'));
+
+    const req = {
+      params: { supplierId: 'supplier-1' },
+      body: {
+        itemsPurchased: 'Resistance bands',
+        totalCost: 2500,
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createSupplierTransaction(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to create supplier transaction' });
+  });
 });

@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { Role } from '@prisma/client';
 import app from '../../src/app';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import prisma, { disconnectPrisma } from '../../src/lib/prisma';
 import { hashPassword } from '../../src/utils/auth';
 
@@ -89,6 +90,32 @@ describe('Supplier management API', () => {
       .send({
         name: `No Auth Supplier ${suffix}`,
         contactNumber: '09170000010',
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to GET /api/suppliers/categories', async () => {
+    const response = await request(app).get('/api/suppliers/categories');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to supplier transactions list', async () => {
+    const response = await request(app).get('/api/suppliers/non-existent-id/transactions?page=1&pageSize=10');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects unauthenticated access to supplier transaction creation', async () => {
+    const response = await request(app)
+      .post('/api/suppliers/non-existent-id/transactions')
+      .send({
+        itemsPurchased: 'Unauthorized transaction',
+        totalCost: 123,
       });
 
     expect(response.status).toBe(401);
@@ -208,6 +235,33 @@ describe('Supplier management API', () => {
     expect(response.body.contactPerson).toBe('Jordan Mechanic');
   });
 
+  it('rejects unauthenticated supplier update', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .put(`/api/suppliers/${createdSupplierId}`)
+      .send({
+        serviceCategory: 'Unauthorized Update',
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects staff from updating suppliers', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .put(`/api/suppliers/${createdSupplierId}`)
+      .set('Cookie', staffCookie)
+      .send({
+        serviceCategory: 'Unauthorized Update',
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: 'Insufficient permissions' });
+  });
+
   it('rejects transaction creation with invalid payload', async () => {
     expect(createdSupplierId).toBeTruthy();
 
@@ -221,6 +275,55 @@ describe('Supplier management API', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBeDefined();
+  });
+
+  it('rejects supplier transaction creation with invalid transaction date type', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .post(`/api/suppliers/${createdSupplierId}/transactions`)
+      .set('Cookie', adminCookie)
+      .send({
+        itemsPurchased: 'Date type validation',
+        totalCost: 500,
+        transactionDate: 12345,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Transaction date must be a valid ISO date string',
+    });
+  });
+
+  it('rejects supplier transaction creation with invalid transaction date value', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .post(`/api/suppliers/${createdSupplierId}/transactions`)
+      .set('Cookie', adminCookie)
+      .send({
+        itemsPurchased: 'Date value validation',
+        totalCost: 500,
+        transactionDate: 'not-a-date',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Transaction date must be a valid ISO date string',
+    });
+  });
+
+  it('returns not found when creating transaction for unknown supplier', async () => {
+    const response = await request(app)
+      .post('/api/suppliers/non-existent-id/transactions')
+      .set('Cookie', adminCookie)
+      .send({
+        itemsPurchased: 'Unknown supplier transaction',
+        totalCost: 500,
+      });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'Supplier not found' });
   });
 
   it('creates supplier transaction as admin', async () => {
@@ -267,6 +370,26 @@ describe('Supplier management API', () => {
         itemsPurchased: 'Unauthorized entry',
         totalCost: 100,
       });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: 'Insufficient permissions' });
+  });
+
+  it('rejects unauthenticated supplier deletion', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app).delete(`/api/suppliers/${createdSupplierId}`);
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Authentication required' });
+  });
+
+  it('rejects staff from deleting suppliers', async () => {
+    expect(createdSupplierId).toBeTruthy();
+
+    const response = await request(app)
+      .delete(`/api/suppliers/${createdSupplierId}`)
+      .set('Cookie', staffCookie);
 
     expect(response.status).toBe(403);
     expect(response.body).toEqual({ error: 'Insufficient permissions' });
