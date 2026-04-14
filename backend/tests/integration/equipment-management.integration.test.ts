@@ -337,10 +337,10 @@ describe('Equipment management API', () => {
   });
 
   it('rejects staff from deleting equipment', async () => {
-    expect(secondaryEquipmentId).toBeTruthy();
+    expect(createdEquipmentId).toBeTruthy();
 
     const response = await request(app)
-      .delete(`/api/equipment/${secondaryEquipmentId}`)
+      .delete(`/api/equipment/${createdEquipmentId}`)
       .set('Cookie', staffCookie);
 
     expect(response.status).toBe(403);
