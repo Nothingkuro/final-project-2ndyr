@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Tag,
 } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
 ];
 
 const adminAdditionalNavItems: NavItem[] = [
+  { label: 'Membership Plans', icon: <Tag size={20} />, to: '/dashboard/membership-plans' },
   { label: 'Suppliers', icon: <Truck size={20} />, to: '/dashboard/suppliers' },
   { label: 'Reports', icon: <BarChart3 size={20} />, to: '/dashboard/reports' },
   { label: 'Assets Inventory', icon: <Database size={20} />, to: '/dashboard/manage-assets' },
