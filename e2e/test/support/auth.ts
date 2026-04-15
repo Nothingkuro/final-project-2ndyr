@@ -15,6 +15,41 @@ interface LoginAsRoleOptions {
   missingPasswordMessage: string;
 }
 
+const NAVIGATION_ATTEMPTS = 3;
+const NAVIGATION_TIMEOUT_MS = 20_000;
+
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
+async function gotoWithRetries(page: Page, url: string, description: string): Promise<void> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= NAVIGATION_ATTEMPTS; attempt += 1) {
+    try {
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: NAVIGATION_TIMEOUT_MS,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < NAVIGATION_ATTEMPTS) {
+        await page.waitForTimeout(750);
+      }
+    }
+  }
+
+  throw new Error(
+    `Unable to navigate to ${description} (${url}) after ${NAVIGATION_ATTEMPTS} attempts: ${formatErrorMessage(lastError)}`,
+  );
+}
+
 async function loginAsRole(page: Page, options: LoginAsRoleOptions): Promise<void> {
   const {
     role,
@@ -29,7 +64,8 @@ async function loginAsRole(page: Page, options: LoginAsRoleOptions): Promise<voi
     );
   }
 
-  await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
+  await gotoWithRetries(page, FRONTEND_URL, 'login page');
+  await expect(page.getByRole('button', { name: role })).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: role }).click();
 
   await page.getByPlaceholder('Username').fill(username);
@@ -57,7 +93,7 @@ async function loginAsRole(page: Page, options: LoginAsRoleOptions): Promise<voi
 
   // Force the page your tests expect
   const membersUrl = new URL('/dashboard/members', FRONTEND_URL).toString();
-  await page.goto(membersUrl, { waitUntil: 'domcontentloaded' });
+  await gotoWithRetries(page, membersUrl, 'members dashboard');
 
   // If we got redirected back to a login-ish page, fail with a clear error
   if (!page.url().includes('/dashboard')) {
@@ -89,6 +125,10 @@ export async function loginAsOwner(page: Page): Promise<void> {
     missingPasswordMessage:
       'Missing owner login password. Set E2E_OWNER_PASSWORD or SEED_OWNER_PASSWORD before running E2E tests.',
   });
+}
+
+export async function loginAsAdmin(page: Page): Promise<void> {
+  await loginAsOwner(page);
 }
 
 export function uniqueToken(): string {

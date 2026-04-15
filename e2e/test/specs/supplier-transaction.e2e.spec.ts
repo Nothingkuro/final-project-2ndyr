@@ -47,24 +47,20 @@ async function waitForSuppliersResponse(
   return page.waitForResponse((response) => {
     if (
       response.request().method() !== 'GET'
-      || !response.url().includes('/api/suppliers?')
       || !response.ok()
+      || !response.url().includes('/api/suppliers?')
     ) {
       return false;
     }
 
-    if (searchQuery) {
-      const encodedSearch = encodeURIComponent(searchQuery);
-      if (!response.url().includes(`search=${encodedSearch}`)) {
-        return false;
-      }
+    const params = new URL(response.url()).searchParams;
+
+    if (searchQuery && params.get('search') !== searchQuery) {
+      return false;
     }
 
-    if (serviceCategory) {
-      const encodedCategory = encodeURIComponent(serviceCategory);
-      if (!response.url().includes(`serviceCategory=${encodedCategory}`)) {
-        return false;
-      }
+    if (serviceCategory && params.get('serviceCategory') !== serviceCategory) {
+      return false;
     }
 
     return true;
@@ -176,20 +172,29 @@ test.describe('Supplier and transaction management e2e', () => {
   });
 
   test('owner searches supplier, opens purchase history, and logs a new transaction', async ({ page }) => {
-    const supplierSearchQuery = 'FitSupply';
-    const supplierName = 'FitSupply Trading';
     const token = uniqueToken();
+    const supplierName = `FitSupplyTrading${token}`;
     const newItemsPurchased = `NutritionRestock${token}`;
     const newTransactionCost = '3210.50';
 
-    const supplierSearchResponsePromise = waitForSuppliersResponse(page, {
-      searchQuery: supplierSearchQuery,
+    const createdSupplier = await createSupplier(page, {
+      name: supplierName,
+      serviceCategory: 'Equipment',
+      contactPerson: `SupplierContact${token.slice(0, 3)}`,
+      contactNumber: buildContactNumber(token),
+      address: `Supplier Ave ${token}`,
     });
-    await page.getByPlaceholder('Search supplier...').fill(supplierSearchQuery);
+
+    const supplierSearchResponsePromise = waitForSuppliersResponse(page, {
+      searchQuery: supplierName,
+    });
+    await page.getByPlaceholder('Search supplier...').fill(supplierName);
     const supplierSearchResponse = await supplierSearchResponsePromise;
     const supplierSearchPayload = (await supplierSearchResponse.json()) as SupplierListResponse;
 
-    const targetSupplier = supplierSearchPayload.items.find((supplier) => supplier.name === supplierName);
+    const targetSupplier =
+      supplierSearchPayload.items.find((supplier) => supplier.id === createdSupplier.id)
+      ?? supplierSearchPayload.items.find((supplier) => supplier.name === supplierName);
 
     if (!targetSupplier) {
       throw new Error(`Unable to find supplier in search results: ${supplierName}`);
@@ -199,7 +204,7 @@ test.describe('Supplier and transaction management e2e', () => {
     await page.getByRole('button', { name: `View transactions for ${supplierName}` }).click();
 
     await expect(page.getByRole('heading', { name: `Purchase Transactions: ${supplierName}` })).toBeVisible();
-    await expect(page.getByText(/Yoga Mats/i)).toBeVisible();
+    await expect(page.getByText(/No transaction records found for this supplier\./i)).toBeVisible();
 
     const createTransactionResponsePromise = page.waitForResponse((response) => (
       response.request().method() === 'POST'

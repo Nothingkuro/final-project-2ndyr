@@ -96,13 +96,16 @@ export async function seedE2EDatabase(): Promise<void> {
 			},
 		});
 
+		const expirationDate = new Date();
+		expirationDate.setDate(expirationDate.getDate() + 7);
+
 		const activeMember = await tx.member.create({
 			data: {
 				firstName: 'Carlos',
 				lastName: 'Reyes',
 				contactNumber: '09170000001',
 				joinDate: new Date('2026-01-15T08:00:00.000Z'),
-				expiryDate: new Date('2026-04-15T08:00:00.000Z'),
+				expiryDate: expirationDate,
 				status: MemberStatus.ACTIVE,
 			},
 			select: { id: true },
