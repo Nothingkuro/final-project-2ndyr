@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import MemberFormModal, { type MemberFormData } from '../components/AddMemberModal';
+import MemberFormModal, { type MemberFormData } from '../components/members/AddMemberModal';
 import ActionGroup from '../components/common/ActionGroup';
 import ProfileInfoRow from '../components/members/ProfileInfoRow';
 import StatusBadge from '../components/members/StatusBadge';

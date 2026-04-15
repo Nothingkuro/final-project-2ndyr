@@ -3,7 +3,9 @@ import { AlertTriangle } from 'lucide-react';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
-  planName: string;
+  planName?: string;
+  itemName?: string;
+  title?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -11,6 +13,8 @@ interface DeleteConfirmModalProps {
 export default function DeleteConfirmModal({
   isOpen,
   planName,
+  itemName,
+  title,
   onConfirm,
   onCancel,
 }: DeleteConfirmModalProps) {
@@ -66,11 +70,11 @@ export default function DeleteConfirmModal({
         </div>
 
         <h3 className="text-lg font-semibold text-secondary mb-2">
-          Delete Plan
+          {planName ? 'Delete Plan' : (title || 'Delete Item')}
         </h3>
         <p className="text-sm text-neutral-500 mb-6">
           Are you sure you want to delete{' '}
-          <span className="font-semibold text-secondary">"{planName}"</span>?
+          <span className="font-semibold text-secondary">"{planName || itemName}"</span>?
           This action cannot be undone.
         </p>
 

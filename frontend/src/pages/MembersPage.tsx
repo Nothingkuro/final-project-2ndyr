@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import MemberFormModal, { type MemberFormData } from '../components/AddMemberModal';
+import MemberFormModal, { type MemberFormData } from '../components/members/AddMemberModal';
 import SearchBar from '../components/common/SearchBar';
 import FilterDropdown from '../components/common/FilterDropdown';
 import MemberTableRow from '../components/members/MemberTableRow';

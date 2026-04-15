@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import type { MembershipPlan, MembershipPlanFormData } from '../types/membershipPlan';
 import MembershipPlanTable from '../components/membership-plans/MembershipPlanTable';
 import MembershipPlanModal from '../components/membership-plans/MembershipPlanModal';
-import DeleteConfirmModal from '../components/membership-plans/DeleteConfirmModal';
+import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
 import {
   createMembershipPlan,
   deleteMembershipPlan,
@@ -128,14 +128,14 @@ export default function MembershipPlansPage({
             prev.map((plan) =>
               plan.id === activePlan.id
                 ? {
-                    ...plan,
-                    name: data.name,
-                    description: data.description || null,
-                    durationDays: data.durationDays,
-                    price: data.price,
-                    isActive: data.isActive,
-                    updatedAt: now,
-                  }
+                  ...plan,
+                  name: data.name,
+                  description: data.description || null,
+                  durationDays: data.durationDays,
+                  price: data.price,
+                  isActive: data.isActive,
+                  updatedAt: now,
+                }
                 : plan,
             ),
           );

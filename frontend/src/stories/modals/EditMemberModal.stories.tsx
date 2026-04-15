@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import MemberFormModal from '../../components/AddMemberModal';
+import MemberFormModal from '../../components/members/AddMemberModal';
 
 const meta = {
   title: 'App/Modals/Edit Member Modal',

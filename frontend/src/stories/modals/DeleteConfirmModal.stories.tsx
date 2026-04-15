@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import DeleteConfirmModal from '../../components/membership-plans/DeleteConfirmModal';
+import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
 import { storyMembershipPlanConfigDeletePlanName } from '../mocks/mockMembershipPlanConfig';
 
 const meta = {
-  title: 'App/Membership Plans/Delete Confirm Modal',
+  title: 'App/Common/Delete Confirm Modal',
   component: DeleteConfirmModal,
   tags: ['autodocs'],
   parameters: {
@@ -12,7 +12,6 @@ const meta = {
   },
   args: {
     isOpen: true,
-    planName: storyMembershipPlanConfigDeletePlanName,
     onConfirm: fn(),
     onCancel: fn(),
   },
@@ -21,7 +20,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const DeleteMembershipPlan: Story = {
+  args: {
+    planName: storyMembershipPlanConfigDeletePlanName,
+  },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const slowUser = userEvent.setup({ delay: 75 });
@@ -32,8 +34,23 @@ export const Default: Story = {
   },
 };
 
+export const DeleteAsset: Story = {
+  args: {
+    itemName: 'Treadmill 2000',
+    title: 'Delete Asset',
+  },
+};
+
+export const DeleteSupplier: Story = {
+  args: {
+    itemName: 'GymBro Equipments Inc.',
+    title: 'Delete Supplier',
+  },
+};
+
 export const Closed: Story = {
   args: {
     isOpen: false,
+    itemName: 'Hidden Item',
   },
 };

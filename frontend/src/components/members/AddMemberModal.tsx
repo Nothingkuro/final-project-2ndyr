@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { X } from 'lucide-react';
-import arrowheadLogo from '../assets/arrowhead-logo.png';
+import arrowheadLogo from '../../assets/arrowhead-logo.png';
 
 interface MemberFormModalProps {
   isOpen: boolean;

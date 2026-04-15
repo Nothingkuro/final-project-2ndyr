@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/common/SearchBar';
 import FilterDropdown from '../components/common/FilterDropdown';
+import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
 import AssetFormModal, { type AssetFormData } from '../components/equipment/AssetFormModal';
 import EquipmentTableRow from '../components/equipment/EquipmentTableRow';
 import { EquipmentCondition, type Equipment } from '../types/equipment';
@@ -43,6 +44,9 @@ export default function AdminAssetsPage() {
   const [isSubmittingAsset, setIsSubmittingAsset] = useState(false);
   const [assetModalError, setAssetModalError] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<Equipment | null>(null);
 
   useEffect(() => {
     const role = window.sessionStorage.getItem('authRole');
@@ -169,23 +173,25 @@ export default function AdminAssetsPage() {
     }
   };
 
-  const handleDeleteAsset = async (equipment: Equipment) => {
-    const isConfirmed = window.confirm(
-      `Delete ${equipment.itemName}? This action cannot be undone.`,
-    );
+  const handleDeleteAsset = (equipment: Equipment) => {
+    setAssetToDelete(equipment);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!isConfirmed) {
-      return;
-    }
+  const confirmDeleteAsset = async () => {
+    if (!assetToDelete) return;
 
     setAssetsLoadError(null);
 
     try {
-      await deleteEquipment(equipment.id);
+      await deleteEquipment(assetToDelete.id);
       setRefreshNonce((prev) => prev + 1);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to delete asset';
       setAssetsLoadError(message);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setAssetToDelete(null);
     }
   };
 
@@ -346,6 +352,14 @@ export default function AdminAssetsPage() {
         }
         isSubmitting={isSubmittingAsset}
         errorMessage={assetModalError}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        itemName={assetToDelete?.itemName ?? ''}
+        title="Delete Asset"
+        onConfirm={confirmDeleteAsset}
+        onCancel={() => setIsDeleteModalOpen(false)}
       />
     </div>
   );

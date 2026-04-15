@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FilterDropdown from '../components/common/FilterDropdown';
 import SearchBar from '../components/common/SearchBar';
+import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
 import AddTransactionModal from '../components/suppliers/AddTransactionModal';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
 import SupplierTable from '../components/suppliers/SupplierTable';
@@ -61,6 +62,9 @@ export default function SuppliersPage() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isSubmittingTransaction, setIsSubmittingTransaction] = useState(false);
   const [transactionModalError, setTransactionModalError] = useState<string | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
 
   const categoryFilterOptions = useMemo(
     () => [
@@ -280,21 +284,20 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleDeleteSupplier = async (supplier: Supplier) => {
-    const isConfirmed = window.confirm(
-      `Delete supplier ${supplier.name}? This action cannot be undone.`,
-    );
+  const handleDeleteSupplier = (supplier: Supplier) => {
+    setSupplierToDelete(supplier);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!isConfirmed) {
-      return;
-    }
+  const confirmDeleteSupplier = async () => {
+    if (!supplierToDelete) return;
 
     setSuppliersLoadError(null);
 
     try {
-      await deleteSupplier(supplier.id);
+      await deleteSupplier(supplierToDelete.id);
 
-      if (selectedSupplier?.id === supplier.id) {
+      if (selectedSupplier?.id === supplierToDelete.id) {
         setSelectedSupplier(null);
         setIsTransactionModalOpen(false);
       }
@@ -303,6 +306,9 @@ export default function SuppliersPage() {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to delete supplier';
       setSuppliersLoadError(message);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSupplierToDelete(null);
     }
   };
 
@@ -509,6 +515,14 @@ export default function SuppliersPage() {
         onSubmit={handleSubmitTransaction}
         isSubmitting={isSubmittingTransaction}
         errorMessage={transactionModalError}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        itemName={supplierToDelete?.name ?? ''}
+        title="Delete Supplier"
+        onConfirm={confirmDeleteSupplier}
+        onCancel={() => setIsDeleteModalOpen(false)}
       />
     </div>
   );
