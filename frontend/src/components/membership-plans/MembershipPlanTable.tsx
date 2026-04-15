@@ -21,9 +21,9 @@ export default function MembershipPlanTable({
   }
 
   return (
-    <div className="max-h-[400px] border border-neutral-300 rounded-lg overflow-hidden bg-surface h-full flex flex-col">
+    <div className="max-h-100 border border-neutral-300 rounded-lg overflow-hidden bg-surface h-full flex flex-col">
       <div className="w-full flex-1 overflow-auto">
-        <table className="w-full min-w-[640px] border-collapse relative">
+        <table className="w-full min-w-160 border-collapse relative">
           <thead className="bg-surface-alt border-b border-neutral-300 sticky top-0 z-10">
             <tr>
               <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold tracking-wide text-neutral-600 uppercase">
