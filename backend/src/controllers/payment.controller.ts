@@ -39,7 +39,7 @@ export const createPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Amount paid must be a positive number' });
     }
 
-    const [plan, member] = await Promise.all([
+    const [plan, member, user] = await Promise.all([
       prisma.membershipPlan.findUnique({ where: { id: planId } }),
       prisma.member.findUnique({
         where: { id: memberId },
@@ -49,7 +49,12 @@ export const createPayment = async (req: Request, res: Response) => {
           expiryDate: true,
         },
       }),
+      prisma.user.findUnique({ where: { id: processedById } }),
     ]);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Authenticated user not found' });
+    }
 
     if (!plan || !member) {
       return res.status(404).json({ error: 'Member or Plan not found' });
