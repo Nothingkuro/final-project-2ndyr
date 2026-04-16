@@ -13,6 +13,12 @@ type MemberListItem = {
   notes: string;
 };
 
+type AttendanceListItem = {
+  id: string;
+  memberId: string;
+  checkInTime: string;
+};
+
 function normalizeFullName(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
@@ -48,6 +54,18 @@ function toMemberListItem(member: {
     expiryDate: member.expiryDate ? member.expiryDate.toISOString() : '',
     status: member.status,
     notes: member.notes,
+  };
+}
+
+function toAttendanceListItem(attendance: {
+  id: string;
+  memberId: string;
+  checkInTime: Date;
+}): AttendanceListItem {
+  return {
+    id: attendance.id,
+    memberId: attendance.memberId,
+    checkInTime: attendance.checkInTime.toISOString(),
   };
 }
 
@@ -333,5 +351,88 @@ export const deactivateMember = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     console.error('Error deactivating member:', error);
     res.status(500).json({ error: 'Failed to deactivate member' });
+  }
+};
+
+export const getMemberAttendances = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const memberIdParam = req.params.memberId;
+    const memberId = Array.isArray(memberIdParam) ? memberIdParam[0] : memberIdParam;
+
+    if (!memberId) {
+      res.status(400).json({ error: 'Member id is required' });
+      return;
+    }
+
+    const existingMember = await prisma.member.findUnique({
+      where: { id: memberId },
+      select: { id: true },
+    });
+
+    if (!existingMember) {
+      res.status(404).json({ error: 'Member not found' });
+      return;
+    }
+
+    const attendances = await prisma.attendance.findMany({
+      where: { memberId },
+      orderBy: { checkInTime: 'desc' },
+      select: {
+        id: true,
+        memberId: true,
+        checkInTime: true,
+      },
+    });
+
+    res.status(200).json({ items: attendances.map(toAttendanceListItem) });
+  } catch (error) {
+    console.error('Error fetching member attendances:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance records' });
+  }
+};
+
+export const checkInMember = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const memberIdParam = req.params.memberId;
+    const memberId = Array.isArray(memberIdParam) ? memberIdParam[0] : memberIdParam;
+
+    if (!memberId) {
+      res.status(400).json({ error: 'Member id is required' });
+      return;
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { id: memberId },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!member) {
+      res.status(404).json({ error: 'Member not found' });
+      return;
+    }
+
+    if (member.status !== MemberStatus.ACTIVE) {
+      res.status(400).json({ error: 'Only active members can check in' });
+      return;
+    }
+
+    const attendance = await prisma.attendance.create({
+      data: {
+        memberId,
+      },
+      select: {
+        id: true,
+        memberId: true,
+        checkInTime: true,
+      },
+    });
+
+    res.status(201).json(toAttendanceListItem(attendance));
+  } catch (error) {
+    console.error('Error checking in member:', error);
+    res.status(500).json({ error: 'Failed to check in member' });
   }
 };

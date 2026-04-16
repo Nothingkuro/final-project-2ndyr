@@ -69,7 +69,7 @@ test.describe('Membership management e2e', () => {
     await expect(page.getByText(buildMemberNamePattern(firstName, lastName))).toBeVisible();
   });
 
-  test('staff filters active list, edits profile, then deactivates member', async ({ page }) => {
+  test('staff checks in active member, edits profile, then deactivates member', async ({ page }) => {
     const token = uniqueToken();
     const firstName = `ManageFirst${token.slice(0, 3)}`;
     const lastName = `ManageLast${token.slice(3)}`;
@@ -107,10 +107,27 @@ test.describe('Membership management e2e', () => {
     await expect(page.getByText(updatedContact)).toBeVisible();
     await expect(page.getByText(updatedNotes)).toBeVisible();
 
+    const checkInResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'POST'
+      && /\/api\/members\/[^/]+\/check-in$/.test(response.url())
+      && response.ok()
+    ));
+
+    await page.getByRole('button', { name: 'Check-In' }).click();
+    await checkInResponsePromise;
+
+    await expect(page.getByRole('heading', { name: 'Attendance History' })).toBeVisible();
+    await expect(page.locator('tbody tr').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Attendance' }).click();
+    await expect(page.getByRole('button', { name: 'Deactivate' })).toBeVisible();
+
     const deactivateButton = page.getByRole('button', { name: 'Deactivate' });
+    const checkInButton = page.getByRole('button', { name: 'Check-In' });
     await deactivateButton.click();
 
     await expect(page.getByText('INACTIVE')).toBeVisible();
     await expect(deactivateButton).toBeDisabled();
+    await expect(checkInButton).toBeDisabled();
   });
 });

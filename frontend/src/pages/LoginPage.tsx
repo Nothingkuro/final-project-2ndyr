@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import arrowheadLogo from '../assets/arrowhead-logo.png';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 
+const USERNAME_UPDATED_EVENT = 'auth-username-updated';
+
 type Role = 'Staff' | 'Owner';
 
 type LoginStep = 'select-role' | 'enter-credentials';
@@ -73,6 +75,7 @@ export default function LoginPage({
 
       if (loggedInUsername) {
         window.sessionStorage.setItem('authUsername', loggedInUsername);
+        window.dispatchEvent(new Event(USERNAME_UPDATED_EVENT));
       }
 
       const apiRole = typeof data?.user?.role === 'string' ? data.user.role.toUpperCase() : '';

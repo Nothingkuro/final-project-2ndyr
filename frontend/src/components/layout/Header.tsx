@@ -1,9 +1,18 @@
 import { Bell, Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SearchBar from '../common/SearchBar';
 import { getUpcomingExpirations } from '../../services/reportsApi';
 import type { MembershipExpiryAlert } from '../../types/report';
+
+const ALERT_WINDOW_DAYS = 3;
+const ALERT_REFRESH_INTERVAL_MS = 30_000;
+const USERNAME_UPDATED_EVENT = 'auth-username-updated';
+
+function readStoredUsername(): string {
+  const storedUsername = window.sessionStorage.getItem('authUsername')?.trim();
+  return storedUsername ? storedUsername : 'None';
+}
 
 interface HeaderProps {
   /** Callback to toggle sidebar on mobile */
@@ -19,42 +28,94 @@ export default function Header({
 }: HeaderProps) {
   const [mobileSearch, setMobileSearch] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string>(() => readStoredUsername());
   const [expiringMembershipAlerts, setExpiringMembershipAlerts] = useState<
     MembershipExpiryAlert[]
   >([]);
-  const storedUsername = window.sessionStorage.getItem('authUsername')?.trim();
-  const displayName = storedUsername ? storedUsername : 'None';
+  const isMountedRef = useRef(true);
+  const isRefreshingAlertsRef = useRef(false);
+
+  const refreshExpiringMembershipAlerts = useCallback(async () => {
+    if (isRefreshingAlertsRef.current) {
+      return;
+    }
+
+    isRefreshingAlertsRef.current = true;
+
+    try {
+      const alerts = await getUpcomingExpirations(ALERT_WINDOW_DAYS);
+
+      const sorted = [...alerts].sort(
+        (a, b) =>
+          new Date(a.expiryDate).getTime() -
+          new Date(b.expiryDate).getTime(),
+      );
+
+      if (isMountedRef.current) {
+        setExpiringMembershipAlerts(sorted);
+      }
+    } catch {
+      if (isMountedRef.current) {
+        setExpiringMembershipAlerts([]);
+      }
+    } finally {
+      isRefreshingAlertsRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => () => {
+    isMountedRef.current = false;
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const syncDisplayName = () => {
+      setDisplayName(readStoredUsername());
+    };
 
-    const loadAlerts = async () => {
-      try {
-        const alerts = await getUpcomingExpirations(3);
-        if (cancelled) {
-          return;
-        }
+    syncDisplayName();
 
-        const sorted = [...alerts].sort(
-          (a, b) =>
-            new Date(a.expiryDate).getTime() -
-            new Date(b.expiryDate).getTime(),
-        );
+    window.addEventListener('storage', syncDisplayName);
+    window.addEventListener(USERNAME_UPDATED_EVENT, syncDisplayName);
+    window.addEventListener('focus', syncDisplayName);
 
-        setExpiringMembershipAlerts(sorted);
-      } catch {
-        if (!cancelled) {
-          setExpiringMembershipAlerts([]);
-        }
+    return () => {
+      window.removeEventListener('storage', syncDisplayName);
+      window.removeEventListener(USERNAME_UPDATED_EVENT, syncDisplayName);
+      window.removeEventListener('focus', syncDisplayName);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      void refreshExpiringMembershipAlerts();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshExpiringMembershipAlerts();
       }
     };
 
-    void loadAlerts();
+    void refreshExpiringMembershipAlerts();
+    const intervalId = window.setInterval(() => {
+      void refreshExpiringMembershipAlerts();
+    }, ALERT_REFRESH_INTERVAL_MS);
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [refreshExpiringMembershipAlerts]);
+
+  useEffect(() => {
+    if (isNotificationOpen) {
+      void refreshExpiringMembershipAlerts();
+    }
+  }, [isNotificationOpen, refreshExpiringMembershipAlerts]);
 
   const shouldShowNotificationDot =
     showNotificationDot && expiringMembershipAlerts.length > 0;
@@ -89,7 +150,16 @@ export default function Header({
           {/* Notification Bell */}
           <div className="relative">
             <button
-              onClick={() => setIsNotificationOpen((prev) => !prev)}
+              onClick={() => {
+                setIsNotificationOpen((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    void refreshExpiringMembershipAlerts();
+                  }
+
+                  return next;
+                });
+              }}
               className="
                 relative p-2 rounded-lg text-neutral-500
                 hover:bg-neutral-100 hover:text-secondary
@@ -157,7 +227,7 @@ function MembershipExpiryNotificationList({
           Membership Expiry Alerts
         </p>
         <p className="mt-2 text-sm text-neutral-500">
-          No subscriptions expire within the next 3 days.
+          No subscriptions expire within the next {ALERT_WINDOW_DAYS} days.
         </p>
       </div>
     );
@@ -169,7 +239,7 @@ function MembershipExpiryNotificationList({
         Membership Expiry Alerts
       </p>
       <p className="mt-1 text-xs text-neutral-500">
-        Expiring within 3 days
+        Expiring within {ALERT_WINDOW_DAYS} days
       </p>
 
       <ul className="mt-3 max-h-64 overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300">

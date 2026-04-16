@@ -9,7 +9,7 @@ test.describe('Profile management e2e', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAsOwner(page);
-    await page.getByRole('link', { name: 'Profile' }).click();
+    await page.getByRole('link', { name: 'Profiles' }).click();
     await expect(page).toHaveURL(/\/dashboard\/profile/);
     await expect(page.getByRole('heading', { name: 'Profiles' })).toBeVisible();
   });
@@ -21,8 +21,30 @@ test.describe('Profile management e2e', () => {
     const newAdminPassword = `Owner${token}Pass`;
     const newStaffPassword = `Staff${token}Pass`;
 
-    await expect(page.getByText('Created At').first()).toBeVisible();
-    await expect(page.getByText('Last Updated').first()).toBeVisible();
+    const adminUsernameInput = page.getByPlaceholder('Admin username');
+    const adminPasswordInput = page.getByPlaceholder('Admin new password');
+    const staffUsernameInput = page.getByPlaceholder('Staff username');
+    const staffPasswordInput = page.getByPlaceholder('Staff new password');
+
+    await expect(adminUsernameInput).toBeVisible();
+    await expect(adminPasswordInput).toBeVisible();
+    await expect(staffUsernameInput).toBeVisible();
+    await expect(staffPasswordInput).toBeVisible();
+
+    await expect(adminUsernameInput).toHaveValue(/.+/);
+    await expect(staffUsernameInput).toHaveValue(/.+/);
+
+    await expect(page.getByText('Created At')).toHaveCount(2);
+    await expect(page.getByText('Last Updated')).toHaveCount(2);
+
+    await expect(
+      page.locator([
+        'input[placeholder="Admin username"]',
+        'input[placeholder="Admin new password"]',
+        'input[placeholder="Staff username"]',
+        'input[placeholder="Staff new password"]',
+      ].join(', '))
+    ).toHaveCount(4);
 
     const updateAdminResponsePromise = page.waitForResponse((response) => (
       response.request().method() === 'PUT'
@@ -30,13 +52,13 @@ test.describe('Profile management e2e', () => {
       && response.ok()
     ));
 
-    await page.getByPlaceholder('Admin username').fill(newAdminUsername);
-    await page.getByPlaceholder('Admin new password').fill(newAdminPassword);
+    await adminUsernameInput.fill(newAdminUsername);
+    await adminPasswordInput.fill(newAdminPassword);
     await page.getByRole('button', { name: 'Save Admin Profile' }).click();
 
     await updateAdminResponsePromise;
     await expect(page.getByText('Admin credentials updated successfully.')).toBeVisible();
-    await expect(page.getByPlaceholder('Admin username')).toHaveValue(newAdminUsername);
+    await expect(adminUsernameInput).toHaveValue(newAdminUsername);
 
     const updateStaffResponsePromise = page.waitForResponse((response) => (
       response.request().method() === 'PUT'
@@ -44,12 +66,12 @@ test.describe('Profile management e2e', () => {
       && response.ok()
     ));
 
-    await page.getByPlaceholder('Staff username').fill(newStaffUsername);
-    await page.getByPlaceholder('Staff new password').fill(newStaffPassword);
+    await staffUsernameInput.fill(newStaffUsername);
+    await staffPasswordInput.fill(newStaffPassword);
     await page.getByRole('button', { name: 'Save Staff Profile' }).click();
 
     await updateStaffResponsePromise;
     await expect(page.getByText('Staff credentials updated successfully.')).toBeVisible();
-    await expect(page.getByPlaceholder('Staff username')).toHaveValue(newStaffUsername);
+    await expect(staffUsernameInput).toHaveValue(newStaffUsername);
   });
 });

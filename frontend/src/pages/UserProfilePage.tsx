@@ -7,6 +7,8 @@ import {
   updateUserProfile,
 } from '../services/profileApi';
 
+const USERNAME_UPDATED_EVENT = 'auth-username-updated';
+
 interface UserProfilePageProps {
   users?: User[];
   initialLoading?: boolean;
@@ -94,7 +96,7 @@ export default function UserProfilePage({
     }
 
     setAdminUsername(adminAccount.username);
-  }, [adminAccount?.id, adminAccount?.username]);
+  }, [adminAccount]);
 
   useEffect(() => {
     if (!primaryStaffAccount) {
@@ -103,7 +105,7 @@ export default function UserProfilePage({
     }
 
     setStaffUsername(primaryStaffAccount.username);
-  }, [primaryStaffAccount?.id, primaryStaffAccount?.username]);
+  }, [primaryStaffAccount]);
 
   useEffect(() => {
     if (isLocalMode) {
@@ -171,6 +173,14 @@ export default function UserProfilePage({
       } else {
         const updatedAdmin = await updateOwnProfile(payload);
         setAccounts((prev) => prev.map((user) => (user.id === updatedAdmin.id ? updatedAdmin : user)));
+      }
+
+      if (payload.username) {
+        const updatedUsername = payload.username.trim();
+        if (updatedUsername) {
+          window.sessionStorage.setItem('authUsername', updatedUsername);
+          window.dispatchEvent(new Event(USERNAME_UPDATED_EVENT));
+        }
       }
 
       setAdminPassword('');

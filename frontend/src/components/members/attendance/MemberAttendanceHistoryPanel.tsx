@@ -60,7 +60,7 @@ export default function MemberAttendanceHistoryPanel({
           No attendance records yet. Use Check-In to add a new entry.
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-md border border-neutral-300 bg-surface">
+        <div className="mt-6 max-h-80 overflow-x-auto overflow-y-auto rounded-md border border-neutral-300 bg-surface">
           <table className="min-w-full border-collapse text-left text-sm text-secondary">
             <thead className="bg-secondary-light text-text-light">
               <tr>

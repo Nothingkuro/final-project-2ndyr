@@ -13,12 +13,18 @@ jest.mock('../../../src/lib/prisma', () => ({
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    attendance: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+    },
   },
 }));
 
 import {
+  checkInMember,
   createMember,
   deactivateMember,
+  getMemberAttendances,
   getMembers,
   updateMember,
 } from '../../../src/controllers/member.controller';
@@ -523,5 +529,160 @@ describe('member controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Failed to deactivate member' });
+  });
+
+  it('returns 400 in getMemberAttendances when member id is missing', async () => {
+    const req = { params: {} } as unknown as Request;
+    const res = createResponse();
+
+    await getMemberAttendances(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Member id is required' });
+  });
+
+  it('returns 404 in getMemberAttendances when member is not found', async () => {
+    const req = { params: { memberId: 'missing-member' } } as unknown as Request;
+    const res = createResponse();
+
+    mockedPrisma.member.findUnique.mockResolvedValue(null);
+
+    await getMemberAttendances(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Member not found' });
+  });
+
+  it('returns attendance history in getMemberAttendances', async () => {
+    const req = { params: { memberId: 'member-1' } } as unknown as Request;
+    const res = createResponse();
+    const checkInTime = new Date('2026-04-16T08:00:00.000Z');
+
+    mockedPrisma.member.findUnique.mockResolvedValue({ id: 'member-1' });
+    mockedPrisma.attendance.findMany.mockResolvedValue([
+      {
+        id: 'attendance-1',
+        memberId: 'member-1',
+        checkInTime,
+      },
+    ]);
+
+    await getMemberAttendances(req, res);
+
+    expect(mockedPrisma.attendance.findMany).toHaveBeenCalledWith({
+      where: { memberId: 'member-1' },
+      orderBy: { checkInTime: 'desc' },
+      select: {
+        id: true,
+        memberId: true,
+        checkInTime: true,
+      },
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      items: [
+        {
+          id: 'attendance-1',
+          memberId: 'member-1',
+          checkInTime: checkInTime.toISOString(),
+        },
+      ],
+    });
+  });
+
+  it('returns 500 in getMemberAttendances on unexpected errors', async () => {
+    const req = { params: { memberId: 'member-1' } } as unknown as Request;
+    const res = createResponse();
+
+    mockedPrisma.member.findUnique.mockRejectedValue(new Error('database is down'));
+
+    await getMemberAttendances(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch attendance records' });
+  });
+
+  it('returns 400 in checkInMember when member id is missing', async () => {
+    const req = { params: {} } as unknown as Request;
+    const res = createResponse();
+
+    await checkInMember(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Member id is required' });
+  });
+
+  it('returns 404 in checkInMember when member is not found', async () => {
+    const req = { params: { memberId: 'missing-member' } } as unknown as Request;
+    const res = createResponse();
+
+    mockedPrisma.member.findUnique.mockResolvedValue(null);
+
+    await checkInMember(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Member not found' });
+  });
+
+  it('returns 400 in checkInMember when member is not active', async () => {
+    const req = { params: { memberId: 'member-2' } } as unknown as Request;
+    const res = createResponse();
+
+    mockedPrisma.member.findUnique.mockResolvedValue({
+      id: 'member-2',
+      status: MemberStatus.INACTIVE,
+    });
+
+    await checkInMember(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Only active members can check in' });
+  });
+
+  it('creates attendance in checkInMember for active member', async () => {
+    const req = { params: { memberId: 'member-3' } } as unknown as Request;
+    const res = createResponse();
+    const checkInTime = new Date('2026-04-16T09:30:00.000Z');
+
+    mockedPrisma.member.findUnique.mockResolvedValue({
+      id: 'member-3',
+      status: MemberStatus.ACTIVE,
+    });
+    mockedPrisma.attendance.create.mockResolvedValue({
+      id: 'attendance-2',
+      memberId: 'member-3',
+      checkInTime,
+    });
+
+    await checkInMember(req, res);
+
+    expect(mockedPrisma.attendance.create).toHaveBeenCalledWith({
+      data: {
+        memberId: 'member-3',
+      },
+      select: {
+        id: true,
+        memberId: true,
+        checkInTime: true,
+      },
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      id: 'attendance-2',
+      memberId: 'member-3',
+      checkInTime: checkInTime.toISOString(),
+    });
+  });
+
+  it('returns 500 in checkInMember on unexpected errors', async () => {
+    const req = { params: { memberId: 'member-4' } } as unknown as Request;
+    const res = createResponse();
+
+    mockedPrisma.member.findUnique.mockRejectedValue(new Error('database is down'));
+
+    await checkInMember(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to check in member' });
   });
 });

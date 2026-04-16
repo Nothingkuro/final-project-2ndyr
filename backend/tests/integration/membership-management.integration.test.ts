@@ -14,6 +14,7 @@ describe('Membership management API', () => {
   let createdMemberId: string | null = null;
   let originalContactNumber = '';
   let updatedContactNumber = '';
+  let createdAttendanceId: string | null = null;
 
   beforeAll(async () => {
     const passwordHash = await hashPassword(password);
@@ -153,6 +154,47 @@ describe('Membership management API', () => {
     expect(found).toBeDefined();
   });
 
+  it('records check-in for an active member', async () => {
+    expect(createdMemberId).toBeTruthy();
+
+    const response = await request(app)
+      .post(`/api/members/${createdMemberId}/check-in`)
+      .set('Cookie', authCookie)
+      .send();
+
+    expect(response.status).toBe(201);
+    expect(response.body.memberId).toBe(createdMemberId);
+    expect(typeof response.body.id).toBe('string');
+    expect(new Date(response.body.checkInTime).toString()).not.toBe('Invalid Date');
+
+    createdAttendanceId = response.body.id;
+  });
+
+  it('returns member attendance history', async () => {
+    expect(createdMemberId).toBeTruthy();
+
+    const response = await request(app)
+      .get(`/api/members/${createdMemberId}/attendance`)
+      .set('Cookie', authCookie);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.items)).toBe(true);
+
+    const foundAttendance = response.body.items.find(
+      (item: { id: string }) => item.id === createdAttendanceId
+    );
+    expect(foundAttendance).toBeDefined();
+  });
+
+  it('returns 404 for attendance history when member does not exist', async () => {
+    const response = await request(app)
+      .get('/api/members/non-existent-member-id/attendance')
+      .set('Cookie', authCookie);
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'Member not found' });
+  });
+
   it('updates an existing member', async () => {
     expect(createdMemberId).toBeTruthy();
 
@@ -234,6 +276,18 @@ describe('Membership management API', () => {
     expect(response.body.id).toBe(createdMemberId);
     expect(response.body.status).toBe('INACTIVE');
     expect(response.body.expiryDate).toBe('');
+  });
+
+  it('rejects check-in when member is inactive', async () => {
+    expect(createdMemberId).toBeTruthy();
+
+    const response = await request(app)
+      .post(`/api/members/${createdMemberId}/check-in`)
+      .set('Cookie', authCookie)
+      .send();
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Only active members can check in' });
   });
 
   it('returns 404 when deactivating a non-existent member', async () => {
