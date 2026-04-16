@@ -27,6 +27,11 @@ type ApiPlan = {
   price: number | string;
 };
 
+function findPreferredMonthlyPlanId(plans: MembershipPlan[]): string | null {
+  const monthlyPlan = plans.find((plan) => plan.durationDays >= 28 && plan.durationDays <= 31);
+  return monthlyPlan?.id ?? null;
+}
+
 async function parseApiResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
 
@@ -200,7 +205,8 @@ export default function PaymentsPage({
       return;
     }
 
-    setSelectedPlanId(plansList[0].id);
+    const preferredMonthlyPlanId = findPreferredMonthlyPlanId(plansList);
+    setSelectedPlanId(preferredMonthlyPlanId ?? plansList[0].id);
   }, [plansList, selectedPlanId]);
 
   useEffect(() => {

@@ -39,23 +39,20 @@ export const createPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Amount paid must be a positive number' });
     }
 
-    const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } });
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      select: {
-        id: true,
-        status: true,
-        expiryDate: true,
-      },
-    });
-    const processedBy = await prisma.user.findUnique({ where: { id: processedById } });
+    const [plan, member] = await Promise.all([
+      prisma.membershipPlan.findUnique({ where: { id: planId } }),
+      prisma.member.findUnique({
+        where: { id: memberId },
+        select: {
+          id: true,
+          status: true,
+          expiryDate: true,
+        },
+      }),
+    ]);
 
     if (!plan || !member) {
       return res.status(404).json({ error: 'Member or Plan not found' });
-    }
-
-    if (!processedBy) {
-      return res.status(401).json({ error: 'Authenticated user not found' });
     }
 
     const finalAmount = parsedAmountPaid ?? Number(plan.price);
@@ -82,7 +79,7 @@ export const createPayment = async (req: Request, res: Response) => {
           planId,
           amount: finalAmount,
           paymentMethod,
-          processedById: processedBy.id,
+          processedById,
         },
       });
 
