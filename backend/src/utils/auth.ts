@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { AuthUser, SessionTokenPayload } from '../types/auth';
 
-const DEFAULT_SESSION_TTL = '7d';
+const DEFAULT_SESSION_TTL = '5m';
 const DEFAULT_COOKIE_NAME = 'arrowhead_session';
 const DEV_JWT_SECRET = 'dev-only-change-this-secret';
 const DEFAULT_PROD_COOKIE_SAME_SITE = 'none';
@@ -62,7 +62,7 @@ export function getSessionCookieOptions(): CookieOptions {
     secure: getSessionCookieSecure(sameSite),
     sameSite,
     path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 5 * 60 * 1000, // 5 minutes
   };
 }
 

@@ -108,3 +108,25 @@ export const logout = async (_req: Request, res: Response): Promise<void> => {
 
   res.status(200).json({ message: 'Logged out successfully' });
 };
+
+export const refresh = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.authUser) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const token = signSessionToken({
+      id: req.authUser.id,
+      username: req.authUser.username,
+      role: req.authUser.role,
+    });
+
+    res.cookie(getSessionCookieName(), token, getSessionCookieOptions());
+
+    res.status(200).json({ message: 'Session refreshed successfully' });
+  } catch (error) {
+    console.error('Session refresh error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
