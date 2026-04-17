@@ -37,6 +37,16 @@ const preview: Preview = {
 
     viewport: {
       defaultViewport: 'responsive',
+      viewports: {
+        mobile375: {
+          name: 'Mobile (375px)',
+          styles: {
+            width: '375px',
+            height: '812px',
+          },
+          type: 'mobile',
+        },
+      },
     },
 
     a11y: {
