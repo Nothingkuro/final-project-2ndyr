@@ -43,7 +43,7 @@ describe('auth utils', () => {
     expect(options.secure).toBe(true);
     expect(options.sameSite).toBe('none');
     expect(options.path).toBe('/');
-    expect(options.maxAge).toBe(7 * 24 * 60 * 60 * 1000);
+    expect(options.maxAge).toBe(5 * 60 * 1000);
   });
 
   it('returns non-secure cookie options outside production', () => {

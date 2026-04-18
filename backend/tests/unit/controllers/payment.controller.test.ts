@@ -135,6 +135,13 @@ describe('payment controller (mocked)', () => {
 
     mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
       callback({
+        $queryRaw: jest.fn().mockResolvedValue([
+          {
+            id: 'member-1',
+            status: 'INACTIVE',
+            expiryDate: null,
+          },
+        ]),
         payment: {
           create: jest.fn().mockResolvedValue(createdPayment),
         },
@@ -385,6 +392,13 @@ describe('payment controller (mocked)', () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1' });
     mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
       callback({
+        $queryRaw: jest.fn().mockResolvedValue([
+          {
+            id: 'member-1',
+            status: 'ACTIVE',
+            expiryDate: existingExpiry,
+          },
+        ]),
         payment: {
           create: txPaymentCreate,
         },

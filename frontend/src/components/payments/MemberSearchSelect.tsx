@@ -18,6 +18,18 @@ function formatMemberName(member: PaymentMember | undefined) {
   return `${member.firstName} ${member.lastName}`;
 }
 
+function getStatusBadgeClass(status: PaymentMember['status']): string {
+  if (status === 'ACTIVE') {
+    return 'bg-success/10 text-success border-success/30';
+  }
+
+  if (status === 'EXPIRED') {
+    return 'bg-warning/20 text-secondary border-warning/40';
+  }
+
+  return 'bg-neutral-100 text-neutral-600 border-neutral-300';
+}
+
 export default function MemberSearchSelect({
   members,
   selectedMemberId,
@@ -92,6 +104,17 @@ export default function MemberSearchSelect({
         inputClassName="bg-white border-neutral-300 text-secondary placeholder:text-neutral-400"
       />
 
+      {selectedMember && (
+        <p className="mt-2 text-xs text-secondary">
+          Status:{' '}
+          <span
+            className={`inline-flex rounded-full border px-2 py-0.5 font-semibold ${getStatusBadgeClass(selectedMember.status)}`}
+          >
+            {selectedMember.status}
+          </span>
+        </p>
+      )}
+
       {showSuggestions && (
         <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-neutral-300 bg-surface">
           {filteredMembers.length === 0 ? (
@@ -115,8 +138,15 @@ export default function MemberSearchSelect({
                     ${isSelected ? 'bg-warning text-secondary font-semibold' : 'hover:bg-surface-alt/70 text-secondary'}
                   `}
                 >
-                  <span>{formatMemberName(member)}</span>
-                  <span className="text-xs text-neutral-500">{member.contactNumber}</span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate">{formatMemberName(member)}</span>
+                    <span className="text-xs text-neutral-500">{member.contactNumber}</span>
+                  </div>
+                  <span
+                    className={`ml-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getStatusBadgeClass(member.status)}`}
+                  >
+                    {member.status}
+                  </span>
                 </button>
               );
             })

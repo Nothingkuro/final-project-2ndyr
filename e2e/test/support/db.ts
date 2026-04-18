@@ -6,7 +6,7 @@ const repoRoot = path.resolve(__dirname, '../../..');
 const backendRoot = path.join(repoRoot, 'backend');
 const DB_RESET_TIMEOUT_MS = Number(process.env.E2E_DB_RESET_TIMEOUT_MS ?? '180000');
 
-export function resetDatabase(trigger: string): void {
+export async function resetDatabase(trigger: string): Promise<void> {
   const resolvedDatabaseUrl = process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL;
 
   if (!resolvedDatabaseUrl) {

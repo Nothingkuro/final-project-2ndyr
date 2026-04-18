@@ -165,4 +165,60 @@ describe('Payment and subscription API', () => {
     expect(createdPayment.processedBy).toBe(username);
     expect(createdPayment.amountPhp).toBe(1200);
   });
+
+  it('rolls back payment creation when member expiry update fails', async () => {
+    expect(createdMemberId).toBeTruthy();
+
+    const memberId = createdMemberId as string;
+
+    await prisma.member.update({
+      where: { id: memberId },
+      data: {
+        status: 'INACTIVE',
+        expiryDate: null,
+      },
+    });
+
+    const overflowPlan = await prisma.membershipPlan.create({
+      data: {
+        name: `Overflow Plan ${suffix}`,
+        durationDays: 2147483647,
+        price: 800,
+        isActive: true,
+      },
+    });
+
+    try {
+      const paymentsBefore = await prisma.payment.count({ where: { memberId } });
+
+      const paymentResponse = await request(app)
+        .post('/api/payments')
+        .set('Cookie', authCookie)
+        .send({
+          memberId,
+          planId: overflowPlan.id,
+          paymentMethod: 'CASH',
+        });
+
+      expect(paymentResponse.status).toBe(500);
+      expect(paymentResponse.body).toEqual({ error: 'Failed to process payment' });
+
+      const paymentsAfter = await prisma.payment.count({ where: { memberId } });
+      expect(paymentsAfter).toBe(paymentsBefore);
+
+      const memberAfter = await prisma.member.findUnique({
+        where: { id: memberId },
+        select: {
+          status: true,
+          expiryDate: true,
+        },
+      });
+
+      expect(memberAfter?.status).toBe('INACTIVE');
+      expect(memberAfter?.expiryDate).toBeNull();
+    } finally {
+      await prisma.payment.deleteMany({ where: { planId: overflowPlan.id } });
+      await prisma.membershipPlan.deleteMany({ where: { id: overflowPlan.id } });
+    }
+  });
 });

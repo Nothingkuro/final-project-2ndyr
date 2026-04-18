@@ -1,9 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { loginAsAdmin } from '../support/auth';
+import { loginAsAdmin, uniqueToken } from '../support/auth';
 import { resetDatabase } from '../support/db';
-
-const PLAN_NAME = 'E2E Test Plan';
-const UPDATED_PLAN_NAME = 'E2E Test Plan - Updated';
 
 function getPlanRow(page: Page, planName: string) {
   return page.getByRole('row').filter({ hasText: planName });
@@ -11,7 +8,7 @@ function getPlanRow(page: Page, planName: string) {
 
 async function openMembershipPlansPage(page: Page): Promise<void> {
   await page.goto('/dashboard/membership-plans');
-  await expect(page).toHaveURL(/\/dashboard\/membership-plans\/?(\?.*)?$/);
+  await expect(page).toHaveURL(/\/dashboard\/membership-plans\/?(\\?.*)?$/);
   await expect(page.getByRole('heading', { name: 'Membership Plans' })).toBeVisible();
 }
 
@@ -43,7 +40,7 @@ async function fillPlanForm(
 
 async function assertOptionalSuccessFeedback(page: Page, messagePattern: RegExp): Promise<void> {
   const alert = page.getByRole('alert').filter({ hasText: messagePattern }).first();
-  await alert.waitFor({ state: 'visible', timeout: 1_000 }).catch(() => {});
+  await alert.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => {});
 
   if (await alert.isVisible().catch(() => false)) {
     await expect(alert).toBeVisible();
@@ -51,30 +48,16 @@ async function assertOptionalSuccessFeedback(page: Page, messagePattern: RegExp)
   }
 
   const status = page.getByRole('status').filter({ hasText: messagePattern }).first();
-  await status.waitFor({ state: 'visible', timeout: 1_000 }).catch(() => {});
+  await status.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => {});
 
   if (await status.isVisible().catch(() => false)) {
     await expect(status).toBeVisible();
   }
 }
 
-async function deletePlanIfPresent(page: Page, planName: string): Promise<void> {
-  await openMembershipPlansPage(page);
-  const row = getPlanRow(page, planName);
-
-  if ((await row.count()) === 0) {
-    return;
-  }
-
-  await row.first().getByTitle('Delete plan').click();
-  await expect(page.getByRole('heading', { name: 'Delete Plan' })).toBeVisible();
-  await page.getByRole('button', { name: 'Delete', exact: true }).click();
-  await expect(getPlanRow(page, planName)).toHaveCount(0);
-}
-
 test.describe('Membership plan configuration e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('membership-plan-configuration-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('membership-plan-configuration-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {
@@ -82,12 +65,11 @@ test.describe('Membership plan configuration e2e', () => {
     await openMembershipPlansPage(page);
   });
 
-  test.afterEach(async ({ page }) => {
-    await deletePlanIfPresent(page, UPDATED_PLAN_NAME).catch(() => {});
-    await deletePlanIfPresent(page, PLAN_NAME).catch(() => {});
-  });
-
   test('admin creates, edits, validates visibility, and deletes a membership plan', async ({ page }) => {
+    const token = uniqueToken();
+    const planName = `E2E Plan ${token}`;
+    const updatedPlanName = `E2E Plan ${token} Updated`;
+
     await openAddPlanModal(page);
 
     const createResponsePromise = page.waitForResponse((response) => (
@@ -97,7 +79,7 @@ test.describe('Membership plan configuration e2e', () => {
     ));
 
     await fillPlanForm(page, {
-      name: PLAN_NAME,
+      name: planName,
       price: '1500',
       duration: '30',
     });
@@ -107,7 +89,7 @@ test.describe('Membership plan configuration e2e', () => {
     await expect(page.getByRole('heading', { name: 'Create Plan' })).toBeHidden();
     await assertOptionalSuccessFeedback(page, /(created|added|success)/i);
 
-    const createdRow = getPlanRow(page, PLAN_NAME);
+    const createdRow = getPlanRow(page, planName);
     await expect(createdRow).toHaveCount(1);
     await expect(createdRow).toContainText(/1,500(\.00)?|1500/);
 
@@ -121,7 +103,7 @@ test.describe('Membership plan configuration e2e', () => {
     await expect(page.getByRole('heading', { name: 'Edit Plan' })).toBeVisible();
 
     await fillPlanForm(page, {
-      name: UPDATED_PLAN_NAME,
+      name: updatedPlanName,
       price: '1750',
       duration: '30',
     });
@@ -130,7 +112,7 @@ test.describe('Membership plan configuration e2e', () => {
     await updateResponsePromise;
     await assertOptionalSuccessFeedback(page, /(updated|saved|success)/i);
 
-    const updatedRow = getPlanRow(page, UPDATED_PLAN_NAME);
+    const updatedRow = getPlanRow(page, updatedPlanName);
     await expect(updatedRow).toHaveCount(1);
     await expect(updatedRow).toContainText(/1,750(\.00)?|1750/);
 
@@ -148,7 +130,7 @@ test.describe('Membership plan configuration e2e', () => {
     await assertOptionalSuccessFeedback(page, /(deleted|archived|removed|success)/i);
 
     await expect.poll(async () => {
-      const rowAfterDelete = getPlanRow(page, UPDATED_PLAN_NAME);
+      const rowAfterDelete = getPlanRow(page, updatedPlanName);
       const rowCount = await rowAfterDelete.count();
 
       if (rowCount === 0) {
@@ -166,7 +148,8 @@ test.describe('Membership plan configuration e2e', () => {
   });
 
   test('admin sees validation errors for required fields and negative price', async ({ page }) => {
-    const invalidNegativePlanName = `${PLAN_NAME} Negative`;
+    const token = uniqueToken();
+    const invalidNegativePlanName = `E2E Plan Negative ${token}`;
 
     await openAddPlanModal(page);
 

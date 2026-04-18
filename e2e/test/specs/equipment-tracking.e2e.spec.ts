@@ -32,13 +32,12 @@ async function openAssetsInventoryPage(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Assets Inventory' })).toBeVisible();
 }
 
-async function waitForAssetListResponse(
-  page: Page,
+function buildAssetListResponseMatcher(
   options: { searchQuery?: string; condition?: EquipmentConditionFilter } = {},
-): Promise<Response> {
+): (response: Response) => boolean {
   const { searchQuery, condition } = options;
 
-  return page.waitForResponse((response) => {
+  return (response: Response): boolean => {
     if (
       response.request().method() !== 'GET'
       || !response.ok()
@@ -58,7 +57,19 @@ async function waitForAssetListResponse(
     }
 
     return true;
-  });
+  };
+}
+
+async function searchAssetsAndWait(
+  page: Page,
+  searchPlaceholder: string,
+  searchQuery: string,
+  options: { condition?: EquipmentConditionFilter } = {},
+): Promise<Response> {
+  const responseMatcher = buildAssetListResponseMatcher({ searchQuery, condition: options.condition });
+  const responsePromise = page.waitForResponse(responseMatcher);
+  await page.getByPlaceholder(searchPlaceholder).fill(searchQuery);
+  return responsePromise;
 }
 
 async function createAsset(
@@ -82,8 +93,8 @@ async function createAsset(
 }
 
 test.describe('Inventory and equipment tracking e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('equipment-tracking-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('equipment-tracking-beforeAll');
   });
 
   test('staff filters and updates an equipment condition', async ({ page }) => {
@@ -102,20 +113,37 @@ test.describe('Inventory and equipment tracking e2e', () => {
     await loginAsStaff(page);
     await openEquipmentStatusPage(page);
 
+    // Set up filter response listener BEFORE clicking filter
+    const goodFilterResponsePromise = page.waitForResponse(
+      buildAssetListResponseMatcher({ condition: 'GOOD' }),
+    );
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Good', exact: true }).click();
+    await goodFilterResponsePromise;
 
-    const goodAssetsResponsePromise = waitForAssetListResponse(page, {
-      searchQuery: assetName,
-      condition: 'GOOD',
-    });
-    await page.getByPlaceholder('Search equipment...').fill(assetName);
-    await goodAssetsResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchAssetsAndWait(page, 'Search equipment...', assetName, { condition: 'GOOD' });
 
     await expect(page.getByRole('button', { name: `Edit condition for ${assetName}` })).toBeVisible();
     await page.getByRole('button', { name: `Edit condition for ${assetName}` }).click();
     await page.getByRole('combobox', { name: `Condition for ${assetName}` }).selectOption({ label: 'Broken' });
+    const saveConditionResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PUT' &&
+        response.url().includes('/api/equipment/') &&
+        response.url().includes('/condition') &&
+        response.ok(),
+    );
     await page.getByRole('button', { name: `Save condition for ${assetName}` }).click();
+    await saveConditionResponsePromise;
+
+    // Set up filter response listener BEFORE switching to Broken filter
+    const brokenFilterResponsePromise = page.waitForResponse(
+      buildAssetListResponseMatcher({ searchQuery: assetName, condition: 'BROKEN' }),
+    );
+    await page.getByRole('button', { name: 'Filter' }).click();
+    await page.getByRole('button', { name: 'Broken', exact: true }).click();
+    await brokenFilterResponsePromise;
 
     await expect(page.getByRole('cell', { name: /Broken/i })).toBeVisible();
   });
@@ -135,15 +163,18 @@ test.describe('Inventory and equipment tracking e2e', () => {
       conditionLabel: 'Broken',
     });
 
+    // Set up filter response listener BEFORE clicking filter
+    const brokenFilterResponsePromise = page.waitForResponse(
+      buildAssetListResponseMatcher({ condition: 'BROKEN' }),
+    );
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Broken', exact: true }).click();
+    await brokenFilterResponsePromise;
 
-    const brokenAssetsResponsePromise = waitForAssetListResponse(page, {
-      searchQuery: originalAssetName,
-      condition: 'BROKEN',
-    });
-    await page.getByPlaceholder('Search assets...').fill(originalAssetName);
-    const brokenAssetsResponse = await brokenAssetsResponsePromise;
+    // Set up search response listener BEFORE filling search
+    const brokenAssetsResponse = await searchAssetsAndWait(
+      page, 'Search assets...', originalAssetName, { condition: 'BROKEN' },
+    );
     const brokenAssetsPayload = (await brokenAssetsResponse.json()) as EquipmentListResponse;
 
     const assetBeforeEdit =
@@ -177,15 +208,16 @@ test.describe('Inventory and equipment tracking e2e', () => {
       new Date(assetBeforeEdit.updatedAt).getTime(),
     );
 
+    // Set up filter response listener BEFORE clicking filter
+    const goodFilterResponsePromise = page.waitForResponse(
+      buildAssetListResponseMatcher({ condition: 'GOOD' }),
+    );
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Good', exact: true }).click();
+    await goodFilterResponsePromise;
 
-    const goodAssetsResponsePromise = waitForAssetListResponse(page, {
-      searchQuery: updatedAssetName,
-      condition: 'GOOD',
-    });
-    await page.getByPlaceholder('Search assets...').fill(updatedAssetName);
-    await goodAssetsResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchAssetsAndWait(page, 'Search assets...', updatedAssetName, { condition: 'GOOD' });
 
     await expect(page.getByRole('button', { name: `Edit asset ${updatedAssetName}` })).toBeVisible();
     await expect(page.getByRole('button', { name: `Edit asset ${originalAssetName}` })).toHaveCount(0);
@@ -205,15 +237,16 @@ test.describe('Inventory and equipment tracking e2e', () => {
       conditionLabel: 'Good',
     });
 
+    // Set up filter response listener BEFORE clicking filter
+    const goodFilterResponsePromise = page.waitForResponse(
+      buildAssetListResponseMatcher({ condition: 'GOOD' }),
+    );
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Good', exact: true }).click();
+    await goodFilterResponsePromise;
 
-    const goodAssetsBeforeDeleteResponsePromise = waitForAssetListResponse(page, {
-      searchQuery: deletableAssetName,
-      condition: 'GOOD',
-    });
-    await page.getByPlaceholder('Search assets...').fill(deletableAssetName);
-    await goodAssetsBeforeDeleteResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchAssetsAndWait(page, 'Search assets...', deletableAssetName, { condition: 'GOOD' });
 
     await page.getByRole('button', { name: `Delete asset ${deletableAssetName}` }).click();
     await expect(page.getByRole('heading', { name: 'Delete Asset' })).toBeVisible();
@@ -235,12 +268,8 @@ test.describe('Inventory and equipment tracking e2e', () => {
       conditionLabel: 'Good',
     });
 
-    const goodAssetsAfterAddResponsePromise = waitForAssetListResponse(page, {
-      searchQuery: replacementAssetName,
-      condition: 'GOOD',
-    });
-    await page.getByPlaceholder('Search assets...').fill(replacementAssetName);
-    await goodAssetsAfterAddResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchAssetsAndWait(page, 'Search assets...', replacementAssetName, { condition: 'GOOD' });
 
     await expect(page.getByRole('button', { name: `Edit asset ${replacementAssetName}` })).toBeVisible();
   });

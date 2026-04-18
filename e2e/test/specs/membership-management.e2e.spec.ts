@@ -9,15 +9,15 @@ function buildMemberNamePattern(firstName: string, lastName: string): RegExp {
 async function searchMemberByContact(page: Page, contactNumber: string): Promise<void> {
   const encodedContact = encodeURIComponent(contactNumber);
 
-  await Promise.all([
-    page.waitForResponse((response) => (
-      response.request().method() === 'GET'
-      && response.url().includes('/api/members?')
-      && response.url().includes(`search=${encodedContact}`)
-      && response.ok()
-    )),
-    page.getByPlaceholder('Search member...').fill(contactNumber),
-  ]);
+  const searchResponsePromise = page.waitForResponse((response) => (
+    response.request().method() === 'GET'
+    && response.url().includes('/api/members?')
+    && response.url().includes(`search=${encodedContact}`)
+    && response.ok()
+  ));
+
+  await page.getByPlaceholder('Search member...').fill(contactNumber);
+  await searchResponsePromise;
 
   const loadingMembersText = page.getByText('Loading members...');
   if (await loadingMembersText.isVisible().catch(() => false)) {
@@ -25,27 +25,50 @@ async function searchMemberByContact(page: Page, contactNumber: string): Promise
   }
 }
 
+async function waitForMembersFilterResponse(
+  page: Page,
+  filterParams: Record<string, string> = {},
+): Promise<void> {
+  const filterResponsePromise = page.waitForResponse((response) => {
+    if (
+      response.request().method() !== 'GET'
+      || !response.ok()
+      || !response.url().includes('/api/members?')
+    ) {
+      return false;
+    }
+
+    const params = new URL(response.url()).searchParams;
+
+    for (const [key, value] of Object.entries(filterParams)) {
+      if (params.get(key) !== value) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  await filterResponsePromise;
+}
+
 async function submitMemberModal(page: Page): Promise<void> {
   const firstNameInput = page.getByPlaceholder('First Name');
 
+  const submitResponsePromise = page.waitForResponse((response) => (
+    response.request().method() === 'POST'
+    && response.url().includes('/api/members')
+    && response.ok()
+  ));
+
   await page.getByRole('button', { name: 'Submit' }).click();
-
-  try {
-    await expect(firstNameInput).toBeHidden({ timeout: 5_000 });
-  } catch {
-    const closeModalButton = page.getByRole('button', { name: 'Close modal' });
-
-    if (await closeModalButton.isVisible().catch(() => false)) {
-      await closeModalButton.click({ force: true });
-    }
-
-    await expect(firstNameInput).toBeHidden({ timeout: 5_000 });
-  }
+  await submitResponsePromise;
+  await expect(firstNameInput).toBeHidden({ timeout: 10_000 });
 }
 
 test.describe('Membership management e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('membership-management-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('membership-management-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {
@@ -82,8 +105,16 @@ test.describe('Membership management e2e', () => {
     await page.getByPlaceholder('Notes').fill(`Manage member notes ${token}`);
     await submitMemberModal(page);
 
+    // Set up listener BEFORE clicking filter to avoid race
+    const activeFilterResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'GET'
+      && response.url().includes('/api/members?')
+      && response.ok()
+    ));
+
     await page.getByRole('button', { name: 'Filter' }).click();
     await page.getByRole('button', { name: 'Active', exact: true }).click();
+    await activeFilterResponsePromise;
 
     await searchMemberByContact(page, contactNumber);
     await page.getByText(buildMemberNamePattern(firstName, lastName)).click();

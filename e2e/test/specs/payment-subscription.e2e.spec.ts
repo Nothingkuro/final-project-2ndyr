@@ -8,8 +8,8 @@ const SEEDED_ACTIVE_MEMBER = {
 };
 
 test.describe('Payment and subscription tracking e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('payment-subscription-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('payment-subscription-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {
@@ -23,6 +23,7 @@ test.describe('Payment and subscription tracking e2e', () => {
 
     await page.getByPlaceholder('Search member...').fill(SEEDED_ACTIVE_MEMBER.contactNumber);
     await expect(page.getByText(SEEDED_ACTIVE_MEMBER.fullName, { exact: true })).toBeVisible();
+    await expect(page.getByText('ACTIVE', { exact: true })).toBeVisible();
     await page.getByText(SEEDED_ACTIVE_MEMBER.fullName, { exact: true }).click();
 
     await page.getByRole('combobox', { name: /payment method/i }).selectOption({ label: 'GCASH' });

@@ -3,8 +3,8 @@ import { loginAsOwner, uniqueToken } from '../support/auth';
 import { resetDatabase } from '../support/db';
 
 test.describe('Profile management e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('profile-management-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('profile-management-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {

@@ -38,13 +38,12 @@ async function openSuppliersPage(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Suppliers' })).toBeVisible();
 }
 
-async function waitForSuppliersResponse(
-  page: Page,
+function buildSuppliersResponseMatcher(
   options: { searchQuery?: string; serviceCategory?: string } = {},
-): Promise<Response> {
+): (response: Response) => boolean {
   const { searchQuery, serviceCategory } = options;
 
-  return page.waitForResponse((response) => {
+  return (response: Response): boolean => {
     if (
       response.request().method() !== 'GET'
       || !response.ok()
@@ -64,7 +63,18 @@ async function waitForSuppliersResponse(
     }
 
     return true;
-  });
+  };
+}
+
+async function searchSuppliersAndWait(
+  page: Page,
+  searchQuery: string,
+  options: { serviceCategory?: string } = {},
+): Promise<Response> {
+  const responseMatcher = buildSuppliersResponseMatcher({ searchQuery, serviceCategory: options.serviceCategory });
+  const responsePromise = page.waitForResponse(responseMatcher);
+  await page.getByPlaceholder('Search supplier...').fill(searchQuery);
+  return responsePromise;
 }
 
 async function createSupplier(
@@ -100,8 +110,8 @@ async function createSupplier(
 }
 
 test.describe('Supplier and transaction management e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('supplier-transaction-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('supplier-transaction-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {
@@ -124,17 +134,19 @@ test.describe('Supplier and transaction management e2e', () => {
       address: `Nutrition St ${token}`,
     });
 
+    // Set up filter response listener BEFORE clicking filter
+    const nutritionFilterResponsePromise = page.waitForResponse(
+      buildSuppliersResponseMatcher({ serviceCategory: 'Nutrition' }),
+    );
     await page.getByRole('button', { name: 'Filter' }).click();
     await expect(page.getByRole('button', { name: 'Nutrition', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Nutrition', exact: true }).click();
+    await nutritionFilterResponsePromise;
 
-    const filteredSuppliersResponsePromise = waitForSuppliersResponse(page, {
-      searchQuery: supplierName,
-      serviceCategory: 'Nutrition',
-    });
-    await page.getByPlaceholder('Search supplier...').fill(supplierName);
-    await filteredSuppliersResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchSuppliersAndWait(page, supplierName, { serviceCategory: 'Nutrition' });
 
+    // Set up edit response listener BEFORE triggering edit
     const updateSupplierResponsePromise = page.waitForResponse((response) => (
       response.request().method() === 'PUT'
       && response.url().includes(`/api/suppliers/${createdSupplier.id}`)
@@ -161,12 +173,8 @@ test.describe('Supplier and transaction management e2e', () => {
     expect(updatedSupplierPayload.serviceCategory).toBe('Nutrition');
     expect(updatedSupplierPayload.contactNumber).toBe(updatedContactNumber);
 
-    const updatedSearchResponsePromise = waitForSuppliersResponse(page, {
-      searchQuery: updatedSupplierName,
-      serviceCategory: 'Nutrition',
-    });
-    await page.getByPlaceholder('Search supplier...').fill(updatedSupplierName);
-    await updatedSearchResponsePromise;
+    // Set up search response listener BEFORE filling search
+    await searchSuppliersAndWait(page, updatedSupplierName, { serviceCategory: 'Nutrition' });
 
     await expect(page.getByRole('button', { name: `Edit supplier ${updatedSupplierName}` })).toBeVisible();
   });
@@ -185,11 +193,8 @@ test.describe('Supplier and transaction management e2e', () => {
       address: `Supplier Ave ${token}`,
     });
 
-    const supplierSearchResponsePromise = waitForSuppliersResponse(page, {
-      searchQuery: supplierName,
-    });
-    await page.getByPlaceholder('Search supplier...').fill(supplierName);
-    const supplierSearchResponse = await supplierSearchResponsePromise;
+    // Set up search response listener BEFORE filling search
+    const supplierSearchResponse = await searchSuppliersAndWait(page, supplierName);
     const supplierSearchPayload = (await supplierSearchResponse.json()) as SupplierListResponse;
 
     const targetSupplier =

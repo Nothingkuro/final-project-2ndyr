@@ -10,6 +10,7 @@ import supplierRoutes from './routes/supplier.routes';
 import reportRoutes from './routes/report.routes';
 import membershipPlanRoutes from './routes/membershipPlan.routes';
 import profileRoutes from './routes/profile.routes';
+import healthRoutes from './routes/health.routes';
 
 const app = express();
 
@@ -60,6 +61,9 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+
+// Public health check (No auth middleware!)
+app.use('/api', healthRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api', memberRoutes);

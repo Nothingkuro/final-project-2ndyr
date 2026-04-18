@@ -45,8 +45,8 @@ async function waitForOverviewResponse(page: Page, threshold: number): Promise<R
 }
 
 test.describe('Reporting and analytics e2e', () => {
-  test.beforeAll(() => {
-    resetDatabase('reporting-analytics-beforeAll');
+  test.beforeAll(async () => {
+    await resetDatabase('reporting-analytics-beforeAll');
   });
 
   test.beforeEach(async ({ page }) => {

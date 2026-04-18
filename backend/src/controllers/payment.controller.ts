@@ -1,6 +1,17 @@
-import { PaymentMethod } from '@prisma/client';
+import { MemberStatus, PaymentMethod, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+
+const MEMBER_NOT_FOUND_DURING_PAYMENT_TX = 'MEMBER_NOT_FOUND_DURING_PAYMENT_TX';
+const MAX_PAYMENT_TX_ATTEMPTS = 3;
+
+function isRetryableTransactionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return false;
+  }
+
+  return (error as { code?: string }).code === 'P2034';
+}
 
 export const getPlans = async (req: Request, res: Response) => {
   try {
@@ -39,73 +50,139 @@ export const createPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Amount paid must be a positive number' });
     }
 
-    const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } });
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      select: {
-        id: true,
-        status: true,
-        expiryDate: true,
-      },
-    });
-    const processedBy = await prisma.user.findUnique({ where: { id: processedById } });
+    const [plan, member, user] = await Promise.all([
+      prisma.membershipPlan.findUnique({ where: { id: planId } }),
+      prisma.member.findUnique({
+        where: { id: memberId },
+        select: {
+          id: true,
+          status: true,
+          expiryDate: true,
+        },
+      }),
+      prisma.user.findUnique({ where: { id: processedById } }),
+    ]);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Authenticated user not found' });
+    }
 
     if (!plan || !member) {
       return res.status(404).json({ error: 'Member or Plan not found' });
     }
 
-    if (!processedBy) {
-      return res.status(401).json({ error: 'Authenticated user not found' });
-    }
-
     const finalAmount = parsedAmountPaid ?? Number(plan.price);
 
-    const now = new Date();
-    let newExpiryDate: Date;
+    let result:
+      | {
+          payment: {
+            id: string;
+            memberId: string;
+            planId: string;
+            amount: Prisma.Decimal;
+            paymentMethod: PaymentMethod;
+            transactionDate: Date;
+            processedById: string;
+          };
+          updatedMember: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            contactNumber: string;
+            joinDate: Date;
+            expiryDate: Date | null;
+            status: MemberStatus;
+          };
+        }
+      | null = null;
 
-    // Logic: 
-    // If a member is Inactive or their membership has expired: Current Date + Plan Duration (in months/days based on definition).
-    // The schema says `durationDays`.
-    if (member.status === 'INACTIVE' || !member.expiryDate || member.expiryDate < now) {
-      newExpiryDate = new Date();
-      newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
-    } else {
-      newExpiryDate = new Date(member.expiryDate);
-      newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
+    for (let attempt = 1; attempt <= MAX_PAYMENT_TX_ATTEMPTS; attempt += 1) {
+      try {
+        result = await prisma.$transaction(
+          async (tx) => {
+            const lockedMembers = await tx.$queryRaw<
+              Array<{
+                id: string;
+                status: MemberStatus;
+                expiryDate: Date | null;
+              }>
+            >`SELECT id, status, "expiryDate" FROM "members" WHERE id = ${memberId} FOR UPDATE`;
+
+            const lockedMember = lockedMembers[0];
+
+            if (!lockedMember) {
+              throw new Error(MEMBER_NOT_FOUND_DURING_PAYMENT_TX);
+            }
+
+            const now = new Date();
+            let newExpiryDate: Date;
+
+            if (
+              lockedMember.status === MemberStatus.INACTIVE ||
+              !lockedMember.expiryDate ||
+              lockedMember.expiryDate < now
+            ) {
+              newExpiryDate = new Date(now);
+              newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
+            } else {
+              newExpiryDate = new Date(lockedMember.expiryDate);
+              newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
+            }
+
+            const payment = await tx.payment.create({
+              data: {
+                memberId,
+                planId,
+                amount: finalAmount,
+                paymentMethod,
+                processedById,
+              },
+            });
+
+            const updatedMember = await tx.member.update({
+              where: { id: memberId },
+              data: {
+                expiryDate: newExpiryDate,
+                status: MemberStatus.ACTIVE,
+              },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                contactNumber: true,
+                joinDate: true,
+                expiryDate: true,
+                status: true,
+              },
+            });
+
+            return { payment, updatedMember };
+          },
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          },
+        );
+
+        break;
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === MEMBER_NOT_FOUND_DURING_PAYMENT_TX
+        ) {
+          return res.status(404).json({ error: 'Member or Plan not found' });
+        }
+
+        if (isRetryableTransactionError(error) && attempt < MAX_PAYMENT_TX_ATTEMPTS) {
+          continue;
+        }
+
+        throw error;
+      }
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Create payment
-      const payment = await tx.payment.create({
-        data: {
-          memberId,
-          planId,
-          amount: finalAmount,
-          paymentMethod,
-          processedById: processedBy.id,
-        },
-      });
-
-      // Update Member
-      const updatedMember = await tx.member.update({
-        where: { id: memberId },
-        data: {
-          expiryDate: newExpiryDate,
-          status: 'ACTIVE',
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          contactNumber: true,
-          joinDate: true,
-          expiryDate: true,
-          status: true,
-        },
-      });
-
-      return { payment, updatedMember };
-    });
+    if (!result) {
+      throw new Error('Failed to process payment transaction');
+    }
 
     res.status(201).json({
       payment: {
