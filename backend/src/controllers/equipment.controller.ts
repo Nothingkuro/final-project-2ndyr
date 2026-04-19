@@ -12,6 +12,12 @@ type EquipmentListItem = {
   updatedAt: string;
 };
 
+/**
+ * Maps Prisma equipment records into API-friendly list items.
+ *
+ * @param equipment Equipment row selected from Prisma.
+ * @returns Equipment item with ISO date strings.
+ */
 function toEquipmentListItem(equipment: {
   id: string;
   itemName: string;
@@ -32,6 +38,13 @@ function toEquipmentListItem(equipment: {
   };
 }
 
+/**
+ * Lists equipment inventory with optional filtering and pagination.
+ *
+ * @param req Express request containing query filters.
+ * @param res Express response containing paginated equipment items.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
     const searchRaw = typeof req.query.search === 'string' ? req.query.search : '';
@@ -86,6 +99,13 @@ export const getEquipment = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+/**
+ * Creates a new equipment item.
+ *
+ * @param req Express request containing equipment payload.
+ * @param res Express response containing created equipment item.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { itemName, quantity, condition } = req.body;
@@ -130,6 +150,13 @@ export const createEquipment = async (req: Request, res: Response): Promise<void
   }
 };
 
+/**
+ * Updates editable fields for an equipment item.
+ *
+ * @param req Express request containing equipment id and patch payload.
+ * @param res Express response containing updated equipment item.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
     const equipmentId = Array.isArray(req.params.equipmentId)
@@ -193,6 +220,13 @@ export const updateEquipment = async (req: Request, res: Response): Promise<void
   }
 };
 
+/**
+ * Updates only the condition state of an equipment item.
+ *
+ * @param req Express request containing equipment id and condition.
+ * @param res Express response containing updated equipment item.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateEquipmentCondition = async (req: Request, res: Response): Promise<void> => {
   try {
     const equipmentId = Array.isArray(req.params.equipmentId)
@@ -242,6 +276,13 @@ export const updateEquipmentCondition = async (req: Request, res: Response): Pro
   }
 };
 
+/**
+ * Removes an equipment item from inventory.
+ *
+ * @param req Express request containing equipment id.
+ * @param res Express response confirming deletion.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const deleteEquipment = async (req: Request, res: Response): Promise<void> => {
   try {
     const equipmentId = Array.isArray(req.params.equipmentId)

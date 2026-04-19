@@ -9,6 +9,16 @@ import {
   verifyPassword,
 } from '../utils/auth';
 
+/**
+ * Authenticates a user and starts a cookie-backed session.
+ *
+ * This endpoint validates credentials, enforces role mapping from frontend terms,
+ * and upgrades legacy plaintext passwords to bcrypt after successful login.
+ *
+ * @param req Express request containing username, password, and role.
+ * @param res Express response with session cookie and user payload.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password, role } = req.body;
@@ -72,6 +82,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/**
+ * Returns the currently authenticated user's profile.
+ *
+ * @param req Express request with auth context from middleware.
+ * @param res Express response containing the current user.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const me = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.authUser) {
@@ -100,6 +117,13 @@ export const me = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/**
+ * Clears the session cookie to terminate the current login session.
+ *
+ * @param _req Express request (unused).
+ * @param res Express response confirming logout.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const logout = async (_req: Request, res: Response): Promise<void> => {
   res.clearCookie(getSessionCookieName(), {
     ...getSessionCookieOptions(),
@@ -109,6 +133,13 @@ export const logout = async (_req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
+/**
+ * Rotates the current session token while preserving user identity.
+ *
+ * @param req Express request with authenticated user context.
+ * @param res Express response with refreshed session cookie.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.authUser) {

@@ -1,12 +1,30 @@
 import type { MembershipPlan } from '../../types/membershipPlan';
 import MembershipPlanTableRow from './MembershipPlanTableRow';
 
+/**
+ * Defines membership plan table props used by feature UI behavior.
+ */
 interface MembershipPlanTableProps {
+  /**
+   * Collection data rendered by plans UI.
+   */
   plans: MembershipPlan[];
+  /**
+   * Callback fired when edit.
+   */
   onEdit: (plan: MembershipPlan) => void;
+  /**
+   * Callback fired when delete.
+   */
   onDelete: (plan: MembershipPlan) => void;
 }
 
+/**
+ * Renders the membership plan table interface for feature UI behavior.
+ *
+ * @param params Input used by membership plan table.
+ * @returns Rendered JSX output.
+ */
 export default function MembershipPlanTable({
   plans,
   onEdit,

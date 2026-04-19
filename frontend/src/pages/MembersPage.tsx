@@ -9,6 +9,9 @@ import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { Member, MemberStatus } from '../types/member';
 
+/**
+ * Type alias for members filter in route-level dashboard orchestration.
+ */
 type MembersFilter = 'ALL' | MemberStatus;
 
 const filterOptions: Array<{ label: string; value: MembersFilter }> = [
@@ -21,6 +24,9 @@ const filterOptions: Array<{ label: string; value: MembersFilter }> = [
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 150;
 
+/**
+ * Type alias for api member in route-level dashboard orchestration.
+ */
 type ApiMember = {
   id: string;
   firstName: string;
@@ -32,6 +38,9 @@ type ApiMember = {
   notes?: string;
 };
 
+/**
+ * Type alias for api members response in route-level dashboard orchestration.
+ */
 type ApiMembersResponse = {
   items: ApiMember[];
   total: number;
@@ -40,6 +49,12 @@ type ApiMembersResponse = {
   totalPages: number;
 };
 
+/**
+ * Handles normalize member logic for page-level dashboard orchestration.
+ *
+ * @param apiMember Input used by normalize member.
+ * @returns Computed value for the caller.
+ */
 function normalizeMember(apiMember: ApiMember): Member {
   let computedStatus = apiMember.status;
   if (computedStatus === 'ACTIVE' && apiMember.expiryDate) {
@@ -62,15 +77,42 @@ function normalizeMember(apiMember: ApiMember): Member {
   };
 }
 
+/**
+ * Defines members page props used by route-level dashboard orchestration.
+ */
 interface MembersPageProps {
+  /**
+   * Collection data rendered by members UI.
+   */
   members?: Member[];
+  /**
+   * Initial state value for search query.
+   */
   initialSearchQuery?: string;
+  /**
+   * Initial state value for filter.
+   */
   initialFilter?: MembersFilter;
+  /**
+   * Initial state value for filter open.
+   */
   initialFilterOpen?: boolean;
+  /**
+   * Initial state value for add modal open.
+   */
   initialAddModalOpen?: boolean;
+  /**
+   * Data used for disable navigation behavior.
+   */
   disableNavigation?: boolean;
 }
 
+/**
+ * Renders the members page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by members page.
+ * @returns Rendered JSX output.
+ */
 export default function MembersPage({
   members,
   initialSearchQuery = '',
@@ -139,6 +181,10 @@ export default function MembersPage({
 
     const controller = new AbortController();
 
+    /**
+     * Handles load members for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadMembers = async () => {
       try {
         const params = new URLSearchParams({
@@ -211,6 +257,12 @@ export default function MembersPage({
     };
   }, [members, debouncedSearchQuery, activeFilter, currentPage, refreshNonce]);
 
+  /**
+   * Handles handle add member for route-level dashboard orchestration.
+   *
+   * @param data Input consumed by handle add member.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleAddMember = async (data: MemberFormData) => {
     if (isSubmittingMember) return;
 

@@ -1,15 +1,42 @@
 import type { Member } from '../../types/member';
 import StatusBadge from './StatusBadge';
 
+/**
+ * Defines member table row props used by feature UI behavior.
+ */
 interface MemberTableRowProps {
+  /**
+   * Data used for member behavior.
+   */
   member: Member;
+  /**
+   * Data used for index behavior.
+   */
   index: number;
+  /**
+   * Data used for is hovered behavior.
+   */
   isHovered: boolean;
+  /**
+   * Callback fired when mouse enter.
+   */
   onMouseEnter: () => void;
+  /**
+   * Callback fired when mouse leave.
+   */
   onMouseLeave: () => void;
+  /**
+   * Callback fired when click.
+   */
   onClick: () => void;
 }
 
+/**
+ * Renders the member table row interface for feature UI behavior.
+ *
+ * @param params Input used by member table row.
+ * @returns Rendered JSX output.
+ */
 export default function MemberTableRow({
   member,
   index,

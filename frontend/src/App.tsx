@@ -13,7 +13,31 @@ import {
   UserProfilePage,
 } from './pages';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+/**
+ * Props for the route-guard wrapper used in dashboard routes.
+ */
+interface ProtectedRouteProps {
+  /**
+   * Protected page content rendered only when the local auth role marker exists.
+   */
+  children: React.ReactNode;
+}
+
+/**
+ * Guards dashboard routes using the client-side auth marker in sessionStorage.
+ *
+ * The login flow writes `authRole` into sessionStorage after successful
+ * authentication. ProtectedRoute checks that marker and redirects unauthenticated
+ * visitors back to the login route.
+ *
+ * This guard intentionally performs a lightweight presence check only. It does
+ * not verify token freshness, server session validity, or role permissions.
+ * Backend middleware remains the source of truth for authorization.
+ *
+ * @param children Protected route content wrapped by this guard.
+ * @returns Wrapped children when `authRole` exists; otherwise a redirect to `/`.
+ */
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const authRole = sessionStorage.getItem('authRole');
   if (!authRole) {
     return <Navigate to="/" replace />;
@@ -21,6 +45,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+/**
+ * Declares application route composition for public and dashboard pages.
+ *
+ * @returns Router tree containing login, protected dashboard routes, and fallback routing.
+ */
 function App() {
   return (
     <BrowserRouter>

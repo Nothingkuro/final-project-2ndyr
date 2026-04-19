@@ -3,19 +3,55 @@ import { X } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 import { EquipmentCondition } from '../../types/equipment';
 
+/**
+ * Defines add equipment modal props used by feature UI behavior.
+ */
 interface AddEquipmentModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: EquipmentFormData) => void;
+  /**
+   * Initial state value for data.
+   */
   initialData?: Partial<EquipmentFormData>;
+  /**
+   * Data used for is submitting behavior.
+   */
   isSubmitting?: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
+  /**
+   * Data used for title behavior.
+   */
   title?: string;
+  /**
+   * Data used for submit label behavior.
+   */
   submitLabel?: string;
+  /**
+   * Data used for submitting label behavior.
+   */
   submittingLabel?: string;
+  /**
+   * Data used for condition only edit behavior.
+   */
   conditionOnlyEdit?: boolean;
 }
 
+/**
+ * Defines equipment form data used by feature UI behavior.
+ */
 export interface EquipmentFormData {
   itemName: string;
   quantity: number;
@@ -28,6 +64,12 @@ const conditionOptions: Array<{ label: string; value: EquipmentCondition }> = [
   { label: 'Broken', value: EquipmentCondition.BROKEN },
 ];
 
+/**
+ * Renders the add equipment modal interface for feature UI behavior.
+ *
+ * @param params Input used by add equipment modal.
+ * @returns Rendered JSX output.
+ */
 export default function AddEquipmentModal({
   isOpen,
   onClose,
@@ -65,6 +107,12 @@ export default function AddEquipmentModal({
   }, [isOpen, conditionOnlyEdit]);
 
   useEffect(() => {
+    /**
+     * Handles handle key down for feature UI behavior.
+     *
+     * @param event Input consumed by handle key down.
+     * @returns Computed value for the caller.
+     */
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
@@ -107,12 +155,24 @@ export default function AddEquipmentModal({
     transition-all duration-200
   `;
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param event Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (event: React.MouseEvent) => {
     if (event.target === backdropRef.current) {
       onClose();
     }
   };
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param event Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 

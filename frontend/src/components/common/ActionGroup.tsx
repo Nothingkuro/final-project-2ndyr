@@ -1,5 +1,11 @@
+/**
+ * Type alias for action variant in shared UI behavior.
+ */
 export type ActionVariant = 'secondary' | 'neutral' | 'danger';
 
+/**
+ * Defines action group item used by shared UI behavior.
+ */
 export interface ActionGroupItem {
   label: string;
   onClick: () => void;
@@ -7,11 +13,27 @@ export interface ActionGroupItem {
   variant?: ActionVariant;
 }
 
+/**
+ * Defines action group props used by shared UI behavior.
+ */
 interface ActionGroupProps {
+  /**
+   * Data used for actions behavior.
+   */
   actions: ActionGroupItem[];
+  /**
+   * Optional utility classes merged into the root element.
+   */
   className?: string;
 }
 
+/**
+ * Handles variant classes for shared UI behavior.
+ *
+ * @param variant Input consumed by variant classes.
+ * @param disabled Input consumed by variant classes.
+ * @returns Computed value for the caller.
+ */
 function variantClasses(variant: ActionVariant, disabled: boolean) {
   if (disabled) {
     return 'border-neutral-200 text-neutral-300 bg-neutral-50 cursor-not-allowed';
@@ -28,6 +50,12 @@ function variantClasses(variant: ActionVariant, disabled: boolean) {
   }
 }
 
+/**
+ * Renders the action group view for shared UI behavior.
+ *
+ * @param params Input consumed by action group.
+ * @returns Rendered JSX content.
+ */
 export default function ActionGroup({ actions, className }: ActionGroupProps) {
   return (
     <div className={`flex flex-wrap items-center justify-center gap-4 ${className ?? ''}`}>

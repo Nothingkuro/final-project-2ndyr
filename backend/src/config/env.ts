@@ -1,5 +1,14 @@
 const DATABASE_URL_PREFIX = 'DATABASE_URL=';
 
+/**
+ * Normalizes DATABASE_URL values copied from shell exports or .env files.
+ *
+ * This prevents startup failures when developers paste values that still include
+ * `DATABASE_URL=` prefixes or wrapping quotes.
+ *
+ * @param rawValue Raw environment value.
+ * @returns Clean connection string, or undefined when input is empty.
+ */
 export function normalizeDatabaseUrl(rawValue: string | undefined | null): string | undefined {
   if (!rawValue) {
     return undefined;

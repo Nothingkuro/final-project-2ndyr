@@ -2,11 +2,29 @@ import { Calendar } from 'lucide-react';
 import type { MonthlyRevenueRecord } from '../../types/report';
 import ReportSectionCard from './ReportSectionCard';
 
+/**
+ * Defines monthly revenue report card props used by feature UI behavior.
+ */
 interface MonthlyRevenueReportCardProps {
+  /**
+   * Collection data rendered by records UI.
+   */
   records: MonthlyRevenueRecord[];
+  /**
+   * Data used for selected month behavior.
+   */
   selectedMonth: number;
+  /**
+   * Data used for selected year behavior.
+   */
   selectedYear: number;
+  /**
+   * Callback fired when month change.
+   */
   onMonthChange: (month: number) => void;
+  /**
+   * Callback fired when year change.
+   */
   onYearChange: (year: number) => void;
 }
 
@@ -32,6 +50,12 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 0,
 });
 
+/**
+ * Renders the monthly revenue report card interface for feature UI behavior.
+ *
+ * @param params Input used by monthly revenue report card.
+ * @returns Rendered JSX output.
+ */
 export default function MonthlyRevenueReportCard({
   records,
   selectedMonth,

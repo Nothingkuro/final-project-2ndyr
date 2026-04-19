@@ -1,15 +1,45 @@
 import type { ReactNode } from 'react';
 
+/**
+ * Defines report section card props used by feature UI behavior.
+ */
 interface ReportSectionCardProps {
+  /**
+   * Data used for title behavior.
+   */
   title: string;
+  /**
+   * Data used for subtitle behavior.
+   */
   subtitle: string;
+  /**
+   * Data used for icon behavior.
+   */
   icon: ReactNode;
+  /**
+   * Data used for icon class name behavior.
+   */
   iconClassName?: string;
+  /**
+   * Data used for content max height class name behavior.
+   */
   contentMaxHeightClassName?: string;
+  /**
+   * Nested content rendered inside the component wrapper.
+   */
   children: ReactNode;
+  /**
+   * Data used for action slot behavior.
+   */
   actionSlot?: ReactNode;
 }
 
+/**
+ * Renders the report section card interface for feature UI behavior.
+ *
+ * @param params Input used by report section card.
+ * @returns Rendered JSX output.
+ */
 export default function ReportSectionCard({
   title,
   subtitle,

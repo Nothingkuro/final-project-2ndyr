@@ -2,16 +2,34 @@ import { AlertTriangle } from 'lucide-react';
 import type { MembershipExpiryAlert } from '../../types/report';
 import ReportSectionCard from './ReportSectionCard';
 
+/**
+ * Defines membership expiry alert list props used by feature UI behavior.
+ */
 interface MembershipExpiryAlertListProps {
+  /**
+   * Collection data rendered by alerts UI.
+   */
   alerts: MembershipExpiryAlert[];
 }
 
+/**
+ * Handles to date only logic for feature UI behavior.
+ *
+ * @param value Input used by to date only.
+ * @returns Computed value for the caller.
+ */
 function toDateOnly(value: string): Date {
   const parsedDate = new Date(value);
   parsedDate.setHours(0, 0, 0, 0);
   return parsedDate;
 }
 
+/**
+ * Handles format expiry date logic for feature UI behavior.
+ *
+ * @param value Input used by format expiry date.
+ * @returns Computed value for the caller.
+ */
 function formatExpiryDate(value: string): string {
   return new Intl.DateTimeFormat('en-PH', {
     month: 'short',
@@ -20,6 +38,12 @@ function formatExpiryDate(value: string): string {
   }).format(new Date(value));
 }
 
+/**
+ * Handles get expiring members logic for feature UI behavior.
+ *
+ * @param alerts Input used by get expiring members.
+ * @returns Computed value for the caller.
+ */
 function getExpiringMembers(alerts: MembershipExpiryAlert[]): MembershipExpiryAlert[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -35,6 +59,12 @@ function getExpiringMembers(alerts: MembershipExpiryAlert[]): MembershipExpiryAl
     .sort((a, b) => toDateOnly(a.expiryDate).getTime() - toDateOnly(b.expiryDate).getTime());
 }
 
+/**
+ * Renders the membership expiry alert list view for feature UI behavior.
+ *
+ * @param params Input consumed by membership expiry alert list.
+ * @returns Rendered JSX content.
+ */
 export default function MembershipExpiryAlertList({ alerts }: MembershipExpiryAlertListProps) {
   const expiringMembers = getExpiringMembers(alerts);
 

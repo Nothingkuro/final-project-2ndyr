@@ -1,9 +1,21 @@
 const FALLBACK_API_BASE_URL = 'http://localhost:5001';
 
+/**
+ * Handles normalize base url logic for API integration behavior.
+ *
+ * @param value Input used by normalize base url.
+ * @returns Computed value for the caller.
+ */
 function normalizeBaseUrl(value: string): string {
   return value.trim().replace(/\/$/, '');
 }
 
+/**
+ * Handles to api origin logic for API integration behavior.
+ *
+ * @param value Input used by to api origin.
+ * @returns Computed value for the caller.
+ */
 function toApiOrigin(value: string): string {
   if (!value) {
     return '';
@@ -21,6 +33,12 @@ function toApiOrigin(value: string): string {
   }
 }
 
+/**
+ * Handles is frontend origin logic for API integration behavior.
+ *
+ * @param url Input used by is frontend origin.
+ * @returns Computed value for the caller.
+ */
 function isFrontendOrigin(url: string): boolean {
   if (typeof window === 'undefined') {
     return false;

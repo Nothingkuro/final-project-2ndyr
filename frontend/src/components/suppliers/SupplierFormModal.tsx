@@ -3,16 +3,46 @@ import { X } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 import type { SupplierFormData } from '../../types/supplier';
 
+/**
+ * Defines supplier form modal props used by feature UI behavior.
+ */
 interface SupplierFormModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Data used for mode behavior.
+   */
   mode: 'add' | 'edit';
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: SupplierFormData) => void;
+  /**
+   * Initial state value for data.
+   */
   initialData?: Partial<SupplierFormData>;
+  /**
+   * Data used for is submitting behavior.
+   */
   isSubmitting?: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
 }
 
+/**
+ * Renders the supplier form modal interface for feature UI behavior.
+ *
+ * @param params Input used by supplier form modal.
+ * @returns Rendered JSX output.
+ */
 export default function SupplierFormModal({
   isOpen,
   mode,
@@ -56,6 +86,12 @@ export default function SupplierFormModal({
       return;
     }
 
+    /**
+     * Handles on escape for feature UI behavior.
+     *
+     * @param event Input consumed by on escape.
+     * @returns Computed value for the caller.
+     */
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isSubmitting) {
         onClose();
@@ -81,14 +117,32 @@ export default function SupplierFormModal({
     transition-all duration-200
   `;
 
+  /**
+   * Normalizes a contact number to digits only with an 11-digit cap.
+   *
+   * @param value Raw contact number input.
+   * @returns Sanitized contact number value.
+   */
   const normalizeContactNumber = (value: string): string => value.replace(/\D/g, '').slice(0, 11);
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param event Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (event: React.MouseEvent) => {
     if (event.target === backdropRef.current && !isSubmitting) {
       onClose();
     }
   };
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param event Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 

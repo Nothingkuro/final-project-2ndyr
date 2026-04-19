@@ -9,18 +9,39 @@ const ALERT_WINDOW_DAYS = 3;
 const ALERT_REFRESH_INTERVAL_MS = 30_000;
 const USERNAME_UPDATED_EVENT = 'auth-username-updated';
 
+/**
+ * Handles read stored username logic for dashboard layout behavior.
+ * @returns Computed value for the caller.
+ */
 function readStoredUsername(): string {
   const storedUsername = window.sessionStorage.getItem('authUsername')?.trim();
   return storedUsername ? storedUsername : 'None';
 }
 
+/**
+ * Defines header props used by dashboard shell behavior.
+ */
 interface HeaderProps {
-  /** Callback to toggle sidebar on mobile */
+  /**
+  * Callback fired when the mobile menu button is pressed.
+   */
   onMenuToggle: () => void;
+  /**
+   * Data used for show notification dot behavior.
+   */
   showNotificationDot?: boolean;
+  /**
+   * Data used for notification widget behavior.
+   */
   notificationWidget?: ReactNode;
 }
 
+/**
+ * Renders the header interface for dashboard layout behavior.
+ *
+ * @param params Input used by header.
+ * @returns Rendered JSX output.
+ */
 export default function Header({
   onMenuToggle,
   showNotificationDot = true,
@@ -68,6 +89,10 @@ export default function Header({
   }, []);
 
   useEffect(() => {
+    /**
+     * Handles sync display name for dashboard shell behavior.
+     * @returns Computed value for the caller.
+     */
     const syncDisplayName = () => {
       setDisplayName(readStoredUsername());
     };
@@ -86,10 +111,18 @@ export default function Header({
   }, []);
 
   useEffect(() => {
+    /**
+     * Handles handle focus for dashboard shell behavior.
+     * @returns Computed value for the caller.
+     */
     const handleFocus = () => {
       void refreshExpiringMembershipAlerts();
     };
 
+    /**
+     * Handles handle visibility change for dashboard shell behavior.
+     * @returns Computed value for the caller.
+     */
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         void refreshExpiringMembershipAlerts();
@@ -207,6 +240,12 @@ export default function Header({
   );
 }
 
+/**
+ * Handles format expiry date logic for dashboard layout behavior.
+ *
+ * @param expiryDate Input used by format expiry date.
+ * @returns Computed value for the caller.
+ */
 function formatExpiryDate(expiryDate: string): string {
   return new Intl.DateTimeFormat('en-PH', {
     month: 'short',
@@ -215,6 +254,12 @@ function formatExpiryDate(expiryDate: string): string {
   }).format(new Date(expiryDate));
 }
 
+/**
+ * Renders the membership expiry notification list interface for dashboard layout behavior.
+ *
+ * @param params Input used by membership expiry notification list.
+ * @returns Rendered JSX output.
+ */
 function MembershipExpiryNotificationList({
   alerts,
 }: {

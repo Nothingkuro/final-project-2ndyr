@@ -2,16 +2,46 @@ import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Supplier } from '../../types/supplier';
 
+/**
+ * Defines supplier table props used by feature UI behavior.
+ */
 interface SupplierTableProps {
+  /**
+   * Collection data rendered by suppliers UI.
+   */
   suppliers: Supplier[];
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   isLoading: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
+  /**
+   * Identifier used for selected supplier lookups.
+   */
   selectedSupplierId?: string | null;
+  /**
+   * Callback fired when edit supplier.
+   */
   onEditSupplier: (supplier: Supplier) => void;
+  /**
+   * Callback fired when delete supplier.
+   */
   onDeleteSupplier: (supplier: Supplier) => void;
+  /**
+   * Callback fired when view transactions.
+   */
   onViewTransactions: (supplier: Supplier) => void;
 }
 
+/**
+ * Handles get display value logic for feature UI behavior.
+ *
+ * @param value Input used by get display value.
+ * @returns Computed value for the caller.
+ */
 function getDisplayValue(value: string | null): string {
   if (!value) {
     return 'N/A';
@@ -21,6 +51,13 @@ function getDisplayValue(value: string | null): string {
   return trimmedValue.length > 0 ? trimmedValue : 'N/A';
 }
 
+/**
+ * Handles truncate text logic for feature UI behavior.
+ *
+ * @param value Input used by truncate text.
+ * @param maxLength Input used by truncate text.
+ * @returns Computed value for the caller.
+ */
 function truncateText(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
     return value;
@@ -29,6 +66,12 @@ function truncateText(value: string, maxLength: number): string {
   return `${value.slice(0, maxLength)}...`;
 }
 
+/**
+ * Renders the supplier table interface for feature UI behavior.
+ *
+ * @param params Input used by supplier table.
+ * @returns Rendered JSX output.
+ */
 export default function SupplierTable({
   suppliers,
   isLoading,

@@ -1,19 +1,55 @@
 import { Search } from 'lucide-react';
 
+/**
+ * Defines search bar props used by shared UI behavior.
+ */
 interface SearchBarProps {
+  /**
+   * Current selected value.
+   */
   value: string;
+  /**
+   * Callback fired when change.
+   */
   onChange: (value: string) => void;
+  /**
+   * Data used for placeholder behavior.
+   */
   placeholder?: string;
+  /**
+   * Disables user interaction when true.
+   */
   disabled?: boolean;
+  /**
+   * Optional utility classes merged into the root element.
+   */
   className?: string;
+  /**
+   * Data used for input class name behavior.
+   */
   inputClassName?: string;
+  /**
+   * Data used for show icon behavior.
+   */
   showIcon?: boolean;
 }
 
+/**
+ * Handles join classes for shared UI behavior.
+ *
+ * @param classes Input consumed by join classes.
+ * @returns Computed value for the caller.
+ */
 function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
+/**
+ * Renders the search bar interface for shared UI behavior.
+ *
+ * @param params Input used by search bar.
+ * @returns Rendered JSX output.
+ */
 export default function SearchBar({
   value,
   onChange,

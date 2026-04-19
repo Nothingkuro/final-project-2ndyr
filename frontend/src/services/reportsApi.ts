@@ -8,6 +8,9 @@ import type {
   RevenueBreakdown,
 } from '../types/report';
 
+/**
+ * Type alias for reports overview response in API integration behavior.
+ */
 type ReportsOverviewResponse = {
   dailyRevenue: RevenueBreakdown;
   monthlyRevenue: MonthlyRevenueRecord[];
@@ -15,6 +18,13 @@ type ReportsOverviewResponse = {
   inventoryAlerts: InventoryAlert[];
 };
 
+/**
+ * Handles make request logic for API integration behavior.
+ *
+ * @param endpoint Input used by make request.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 async function makeRequest<T extends object>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
     method: 'GET',
@@ -47,6 +57,13 @@ async function makeRequest<T extends object>(endpoint: string): Promise<T> {
   return data as T;
 }
 
+/**
+ * Handles get reports overview logic for API integration behavior.
+ *
+ * @param params Input used by get reports overview.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function getReportsOverview(params?: {
   threshold?: number;
   days?: number;
@@ -73,6 +90,13 @@ export async function getReportsOverview(params?: {
   };
 }
 
+/**
+ * Handles get upcoming expirations logic for API integration behavior.
+ *
+ * @param days Input used by get upcoming expirations.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function getUpcomingExpirations(days = 3): Promise<MembershipExpiryAlert[]> {
   const search = new URLSearchParams({ days: String(days) });
   return makeRequest<MembershipExpiryAlert[]>(`/reports/upcoming-expirations?${search.toString()}`);

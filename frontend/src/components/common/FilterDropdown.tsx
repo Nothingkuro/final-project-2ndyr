@@ -1,19 +1,55 @@
 import { ChevronDown } from 'lucide-react';
 
+/**
+ * Defines filter dropdown props used by shared UI behavior.
+ */
 interface FilterDropdownProps {
+  /**
+   * Data used for label behavior.
+   */
   label?: string;
+  /**
+   * Data used by options behavior.
+   */
   options: Array<{ label: string; value: string }>;
+  /**
+   * Data used for active option behavior.
+   */
   activeOption: string;
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Callback fired when toggle.
+   */
   onToggle: () => void;
+  /**
+   * Callback fired when select.
+   */
   onSelect: (option: string) => void;
+  /**
+   * Optional utility classes merged into the root element.
+   */
   className?: string;
 }
 
+/**
+ * Handles join classes for shared UI behavior.
+ *
+ * @param classes Input consumed by join classes.
+ * @returns Computed value for the caller.
+ */
 function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
+/**
+ * Renders the filter dropdown interface for shared UI behavior.
+ *
+ * @param params Input used by filter dropdown.
+ * @returns Rendered JSX output.
+ */
 export default function FilterDropdown({
   label = 'Filter',
   options,

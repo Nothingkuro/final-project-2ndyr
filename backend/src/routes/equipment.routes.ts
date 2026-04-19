@@ -10,6 +10,7 @@ import { requireAuth, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Middleware chain base: all equipment endpoints require an authenticated user.
 router.use(requireAuth);
 
 // List all equipment with filtering and pagination (accessible to all authenticated users)

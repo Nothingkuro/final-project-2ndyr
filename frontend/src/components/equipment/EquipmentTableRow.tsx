@@ -2,24 +2,78 @@ import { CheckCircle, Edit, Trash2, X } from 'lucide-react';
 import { EquipmentCondition, type Equipment } from '../../types/equipment';
 import ConditionBadge from './ConditionBadge';
 
+/**
+ * Defines equipment table row props used by feature UI behavior.
+ */
 interface EquipmentTableRowProps {
+  /**
+   * Collection data rendered by equipment UI.
+   */
   equipment: Equipment;
+  /**
+   * Data used for mode behavior.
+   */
   mode: 'status' | 'admin';
+  /**
+   * Data used for index behavior.
+   */
   index: number;
+  /**
+   * Data used for is hovered behavior.
+   */
   isHovered: boolean;
+  /**
+   * Callback fired when mouse enter.
+   */
   onMouseEnter: () => void;
+  /**
+   * Callback fired when mouse leave.
+   */
   onMouseLeave: () => void;
+  /**
+   * Callback fired when edit status.
+   */
   onEditStatus?: (equipment: Equipment) => void;
+  /**
+   * Callback fired when edit asset.
+   */
   onEditAsset?: (equipment: Equipment) => void;
+  /**
+   * Callback fired when delete asset.
+   */
   onDeleteAsset?: (equipment: Equipment) => void;
+  /**
+   * Data used for is editing condition behavior.
+   */
   isEditingCondition?: boolean;
+  /**
+   * Data used for edited condition behavior.
+   */
   editedCondition?: EquipmentCondition;
+  /**
+   * Callback fired when condition change.
+   */
   onConditionChange?: (condition: EquipmentCondition) => void;
+  /**
+   * Callback fired when save condition.
+   */
   onSaveCondition?: () => void;
+  /**
+   * Callback fired when cancel condition edit.
+   */
   onCancelConditionEdit?: () => void;
+  /**
+   * Callback fired when click.
+   */
   onClick?: () => void;
 }
 
+/**
+ * Handles format date time logic for feature UI behavior.
+ *
+ * @param value Input used by format date time.
+ * @returns Computed value for the caller.
+ */
 function formatDateTime(value: string | null): string {
   if (!value) {
     return 'N/A';
@@ -34,6 +88,12 @@ function formatDateTime(value: string | null): string {
   });
 }
 
+/**
+ * Renders the equipment table row interface for feature UI behavior.
+ *
+ * @param params Input used by equipment table row.
+ * @returns Rendered JSX output.
+ */
 export default function EquipmentTableRow({
   equipment,
   mode,

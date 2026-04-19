@@ -21,6 +21,12 @@ type MembershipPlanPayload = {
   isActive?: unknown;
 };
 
+/**
+ * Converts a Prisma membership plan into API output format.
+ *
+ * @param plan Membership plan row selected from Prisma.
+ * @returns Membership plan item with decimal values converted to numbers.
+ */
 function toMembershipPlanItem(plan: {
   id: string;
   name: string;
@@ -43,6 +49,12 @@ function toMembershipPlanItem(plan: {
   };
 }
 
+/**
+ * Parses optional description input from untyped request payloads.
+ *
+ * @param value Raw payload value.
+ * @returns Trimmed description or null when missing/invalid.
+ */
 function parseOptionalDescription(value: unknown): string | null {
   if (value === undefined || value === null) {
     return null;
@@ -56,6 +68,12 @@ function parseOptionalDescription(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Parses and validates a plan name.
+ *
+ * @param value Raw payload value.
+ * @returns Trimmed name or null when missing/invalid.
+ */
 function parseName(value: unknown): string | null {
   if (typeof value !== 'string') {
     return null;
@@ -65,6 +83,12 @@ function parseName(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Parses and validates membership duration in days.
+ *
+ * @param value Raw payload value.
+ * @returns Integer number of days or null when invalid.
+ */
 function parseDuration(value: unknown): number | null {
   const parsed = Number(value);
 
@@ -75,6 +99,12 @@ function parseDuration(value: unknown): number | null {
   return parsed;
 }
 
+/**
+ * Parses and validates membership plan price.
+ *
+ * @param value Raw payload value.
+ * @returns Non-negative numeric price or null when invalid.
+ */
 function parsePrice(value: unknown): number | null {
   const parsed = Number(value);
 
@@ -85,6 +115,13 @@ function parsePrice(value: unknown): number | null {
   return parsed;
 }
 
+/**
+ * Returns membership plans for management views.
+ *
+ * @param req Express request with optional includeArchived query.
+ * @param res Express response containing plan list.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getMembershipPlans = async (req: Request, res: Response): Promise<void> => {
   try {
     const includeArchived = typeof req.query.includeArchived === 'string'
@@ -109,6 +146,13 @@ export const getMembershipPlans = async (req: Request, res: Response): Promise<v
   }
 };
 
+/**
+ * Creates a new membership plan after payload validation.
+ *
+ * @param req Express request containing plan payload.
+ * @param res Express response containing created plan.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createMembershipPlan = async (req: Request, res: Response): Promise<void> => {
   try {
     const payload = req.body as MembershipPlanPayload;
@@ -156,6 +200,13 @@ export const createMembershipPlan = async (req: Request, res: Response): Promise
   }
 };
 
+/**
+ * Updates an existing membership plan.
+ *
+ * @param req Express request containing plan id and patch data.
+ * @param res Express response containing updated plan.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateMembershipPlan = async (req: Request, res: Response): Promise<void> => {
   try {
     const planId = Array.isArray(req.params.planId) ? req.params.planId[0] : req.params.planId;
@@ -252,6 +303,13 @@ export const updateMembershipPlan = async (req: Request, res: Response): Promise
   }
 };
 
+/**
+ * Deletes a membership plan when it has no dependent records.
+ *
+ * @param req Express request containing plan id.
+ * @param res Express response confirming deletion.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const deleteMembershipPlan = async (req: Request, res: Response): Promise<void> => {
   try {
     const planId = Array.isArray(req.params.planId) ? req.params.planId[0] : req.params.planId;

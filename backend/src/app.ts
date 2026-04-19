@@ -14,6 +14,16 @@ import healthRoutes from './routes/health.routes';
 
 const app = express();
 
+/**
+ * Builds the frontend allowlist used by CORS checks.
+ *
+ * The backend always trusts local Vite development origins so new contributors
+ * can run frontend and backend without extra environment setup. Deployments can
+ * then append additional origins through FRONTEND_URL as a comma-separated list.
+ *
+ * @param value Raw FRONTEND_URL environment variable value.
+ * @returns A deduplicated set of normalized origins allowed to call the API.
+ */
 function parseAllowedOrigins(value: string | undefined): Set<string> {
 	const defaults = [
 		'http://localhost:5173',
@@ -32,6 +42,17 @@ function parseAllowedOrigins(value: string | undefined): Set<string> {
 
 const allowedOrigins = parseAllowedOrigins(process.env.FRONTEND_URL);
 
+/**
+ * Validates whether a browser origin is trusted for cross-site API calls.
+ *
+ * Besides explicit allowlisted origins, this intentionally accepts any
+ * `.vercel.app` hostname so Vercel preview deployments can test cookie-based
+ * authentication flows before production release. This keeps strict CORS by
+ * default while enabling review environments used by the team.
+ *
+ * @param origin Request origin header value.
+ * @returns True when the origin can receive credentialed CORS responses.
+ */
 function isAllowedFrontendOrigin(origin: string): boolean {
 	if (allowedOrigins.has(origin)) {
 		return true;
@@ -48,6 +69,7 @@ function isAllowedFrontendOrigin(origin: string): boolean {
 
 app.use(
 	cors({
+		// CORS must allow credentials only for known frontend origins.
 		origin: (origin, callback) => {
 			if (!origin || isAllowedFrontendOrigin(origin)) {
 				callback(null, true);
@@ -73,7 +95,6 @@ app.use('/api', supplierRoutes);
 app.use('/api', reportRoutes);
 app.use('/api', membershipPlanRoutes);
 app.use('/api', profileRoutes);
-
 
 export default app;
 

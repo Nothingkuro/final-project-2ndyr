@@ -5,20 +5,56 @@ import { API_BASE_URL } from '../services/apiBaseUrl';
 
 const USERNAME_UPDATED_EVENT = 'auth-username-updated';
 
+/**
+ * Type alias for role in route-level dashboard orchestration.
+ */
 type Role = 'Staff' | 'Owner';
 
+/**
+ * Type alias for login step in route-level dashboard orchestration.
+ */
 type LoginStep = 'select-role' | 'enter-credentials';
 
+/**
+ * Defines login page props used by route-level dashboard orchestration.
+ */
 interface LoginPageProps {
+  /**
+   * Initial state value for step.
+   */
   initialStep?: LoginStep;
+  /**
+   * Initial state value for role.
+   */
   initialRole?: Role | null;
+  /**
+   * Initial state value for username.
+   */
   initialUsername?: string;
+  /**
+   * Initial state value for password.
+   */
   initialPassword?: string;
+  /**
+   * Error message shown when an operation fails.
+   */
   initialError?: string | null;
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   initialLoading?: boolean;
+  /**
+   * Data used for disable submit behavior.
+   */
   disableSubmit?: boolean;
 }
 
+/**
+ * Renders the login page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by login page.
+ * @returns Rendered JSX output.
+ */
 export default function LoginPage({
   initialStep = 'select-role',
   initialRole = null,
@@ -36,12 +72,24 @@ export default function LoginPage({
   const [error, setError] = useState<string | null>(initialError);
   const [isLoading, setIsLoading] = useState(initialLoading);
 
+  /**
+   * Handles handle role select for route-level dashboard orchestration.
+   *
+   * @param role Input consumed by handle role select.
+   * @returns Computed value for the caller.
+   */
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
     setStep('enter-credentials');
     setError(null); // Reset error on role change
   };
 
+  /**
+   * Handles handle login for route-level dashboard orchestration.
+   *
+   * @param e Input consumed by handle login.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (disableSubmit) return;
@@ -95,6 +143,10 @@ export default function LoginPage({
     }
   };
 
+  /**
+   * Handles handle back for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleBack = () => {
     setStep('select-role');
     setSelectedRole(null);

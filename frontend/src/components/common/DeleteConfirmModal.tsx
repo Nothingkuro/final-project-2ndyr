@@ -1,15 +1,42 @@
 import { useRef, useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
+/**
+ * Defines delete confirm modal props used by shared UI behavior.
+ */
 interface DeleteConfirmModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Data used for plan name behavior.
+   */
   planName?: string;
+  /**
+   * Data used for item name behavior.
+   */
   itemName?: string;
+  /**
+   * Data used for title behavior.
+   */
   title?: string;
+  /**
+   * Callback fired when confirm.
+   */
   onConfirm: () => void;
+  /**
+   * Callback fired when cancel.
+   */
   onCancel: () => void;
 }
 
+/**
+ * Renders the delete confirm modal interface for shared UI behavior.
+ *
+ * @param params Input used by delete confirm modal.
+ * @returns Rendered JSX output.
+ */
 export default function DeleteConfirmModal({
   isOpen,
   planName,
@@ -30,6 +57,12 @@ export default function DeleteConfirmModal({
   }, [isOpen]);
 
   useEffect(() => {
+    /**
+     * Handles handle key for shared UI behavior.
+     *
+     * @param e Input consumed by handle key.
+     * @returns Computed value for the caller.
+     */
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
     };
@@ -39,6 +72,12 @@ export default function DeleteConfirmModal({
 
   if (!isOpen) return null;
 
+  /**
+   * Handles handle backdrop click for shared UI behavior.
+   *
+   * @param e Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onCancel();
   };

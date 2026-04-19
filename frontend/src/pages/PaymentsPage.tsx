@@ -9,6 +9,9 @@ import type { MembershipPlan, PaymentMember, PaymentMethod } from '../types/paym
 
 const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'GCASH'];
 
+/**
+ * Type alias for api members response in route-level dashboard orchestration.
+ */
 type ApiMembersResponse = {
   items: Array<{
     id: string;
@@ -19,6 +22,9 @@ type ApiMembersResponse = {
   }>;
 };
 
+/**
+ * Type alias for api plan in route-level dashboard orchestration.
+ */
 type ApiPlan = {
   id: string;
   name: string;
@@ -27,11 +33,23 @@ type ApiPlan = {
   price: number | string;
 };
 
+/**
+ * Handles find preferred monthly plan id logic for page-level dashboard orchestration.
+ *
+ * @param plans Input used by find preferred monthly plan id.
+ * @returns Computed value for the caller.
+ */
 function findPreferredMonthlyPlanId(plans: MembershipPlan[]): string | null {
   const monthlyPlan = plans.find((plan) => plan.durationDays >= 28 && plan.durationDays <= 31);
   return monthlyPlan?.id ?? null;
 }
 
+/**
+ * Handles parse api response logic for page-level dashboard orchestration.
+ *
+ * @param response Input used by parse api response.
+ * @returns A promise that resolves when processing is complete.
+ */
 async function parseApiResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
 
@@ -48,15 +66,42 @@ async function parseApiResponse(response: Response): Promise<unknown> {
   );
 }
 
+/**
+ * Defines payments page props used by route-level dashboard orchestration.
+ */
 interface PaymentsPageProps {
+  /**
+   * Collection data rendered by members UI.
+   */
   members?: PaymentMember[];
+  /**
+   * Collection data rendered by plans UI.
+   */
   plans?: MembershipPlan[];
+  /**
+   * Initial state value for selected member id.
+   */
   initialSelectedMemberId?: string;
+  /**
+   * Initial state value for payment method.
+   */
   initialPaymentMethod?: PaymentMethod;
+  /**
+   * Initial state value for selected plan id.
+   */
   initialSelectedPlanId?: string;
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   initialLoading?: boolean;
 }
 
+/**
+ * Renders the payments page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by payments page.
+ * @returns Rendered JSX output.
+ */
 export default function PaymentsPage({
   members,
   plans,
@@ -97,6 +142,10 @@ export default function PaymentsPage({
 
     const controller = new AbortController();
 
+    /**
+     * Handles load payments context for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadPaymentsContext = async () => {
       try {
         setIsLoading(true);
@@ -217,6 +266,10 @@ export default function PaymentsPage({
     setSelectedPaymentMethod(initialPaymentMethod);
   }, [initialPaymentMethod]);
 
+  /**
+   * Handles handle submit payment for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleSubmitPayment = async () => {
     if (!selectedMemberId || !selectedPlanId || isSubmitting || isLoading) {
       return;

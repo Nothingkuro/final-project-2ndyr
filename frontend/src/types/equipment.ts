@@ -4,6 +4,9 @@ export enum EquipmentCondition {
   BROKEN = 'BROKEN',
 }
 
+/**
+ * Defines equipment used by frontend domain models.
+ */
 export interface Equipment {
   id: string;
   itemName: string;

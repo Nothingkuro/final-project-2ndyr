@@ -3,19 +3,46 @@ import { X } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 import { EquipmentCondition } from '../../types/equipment';
 
+/**
+ * Defines asset form data used by feature UI behavior.
+ */
 export interface AssetFormData {
   itemName: string;
   quantity: number;
   condition: EquipmentCondition;
 }
 
+/**
+ * Defines asset form modal props used by feature UI behavior.
+ */
 interface AssetFormModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Data used for mode behavior.
+   */
   mode: 'add' | 'edit';
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: AssetFormData) => void;
+  /**
+   * Initial state value for data.
+   */
   initialData?: Partial<AssetFormData>;
+  /**
+   * Data used for is submitting behavior.
+   */
   isSubmitting?: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
 }
 
@@ -25,6 +52,12 @@ const conditionOptions: Array<{ label: string; value: EquipmentCondition }> = [
   { label: 'Broken', value: EquipmentCondition.BROKEN },
 ];
 
+/**
+ * Renders the asset form modal interface for feature UI behavior.
+ *
+ * @param params Input used by asset form modal.
+ * @returns Rendered JSX output.
+ */
 export default function AssetFormModal({
   isOpen,
   mode,
@@ -64,6 +97,12 @@ export default function AssetFormModal({
       return;
     }
 
+    /**
+     * Handles on escape for feature UI behavior.
+     *
+     * @param event Input consumed by on escape.
+     * @returns Computed value for the caller.
+     */
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isSubmitting) {
         onClose();
@@ -90,12 +129,24 @@ export default function AssetFormModal({
     transition-all duration-200
   `;
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param event Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (event: React.MouseEvent) => {
     if (event.target === backdropRef.current && !isSubmitting) {
       onClose();
     }
   };
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param event Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 

@@ -5,6 +5,12 @@ import prisma from '../lib/prisma';
 const MEMBER_NOT_FOUND_DURING_PAYMENT_TX = 'MEMBER_NOT_FOUND_DURING_PAYMENT_TX';
 const MAX_PAYMENT_TX_ATTEMPTS = 3;
 
+/**
+ * Detects Prisma transaction conflicts that are safe to retry.
+ *
+ * @param error Unknown error thrown by Prisma transaction calls.
+ * @returns True when the error indicates a serializable transaction conflict.
+ */
 function isRetryableTransactionError(error: unknown): boolean {
   if (!error || typeof error !== 'object' || !('code' in error)) {
     return false;
@@ -13,6 +19,13 @@ function isRetryableTransactionError(error: unknown): boolean {
   return (error as { code?: string }).code === 'P2034';
 }
 
+/**
+ * Lists active membership plans for payment selection screens.
+ *
+ * @param req Express request.
+ * @param res Express response containing active plans sorted by price.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getPlans = async (req: Request, res: Response) => {
   try {
     const plans = await prisma.membershipPlan.findMany({
@@ -26,6 +39,16 @@ export const getPlans = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Creates a payment record and extends member expiry in one serializable transaction.
+ *
+ * Retrying on transaction conflicts prevents lost updates when multiple staff
+ * process payments for the same member around the same time.
+ *
+ * @param req Express request containing payment payload.
+ * @param res Express response containing payment and updated membership state.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createPayment = async (req: Request, res: Response) => {
   try {
     const { memberId, planId, paymentMethod, amountPaid } = req.body;
@@ -210,6 +233,13 @@ export const createPayment = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Returns payment history for a single member.
+ *
+ * @param req Express request containing member id.
+ * @param res Express response containing normalized payment records.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getMemberPayments = async (req: Request, res: Response) => {
   try {
     const memberIdParam = req.params.memberId;

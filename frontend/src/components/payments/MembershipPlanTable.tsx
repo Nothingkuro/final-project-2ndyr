@@ -1,12 +1,33 @@
 import type { MembershipPlan } from '../../types/payment';
 
+/**
+ * Defines membership plan table props used by feature UI behavior.
+ */
 interface MembershipPlanTableProps {
+  /**
+   * Collection data rendered by plans UI.
+   */
   plans: MembershipPlan[];
+  /**
+   * Identifier used for selected plan lookups.
+   */
   selectedPlanId: string;
+  /**
+   * Callback fired when select plan.
+   */
   onSelectPlan: (planId: string) => void;
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   isLoading?: boolean;
 }
 
+/**
+ * Handles format php logic for feature UI behavior.
+ *
+ * @param value Input used by format php.
+ * @returns Computed value for the caller.
+ */
 function formatPhp(value: number): string {
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -15,6 +36,12 @@ function formatPhp(value: number): string {
   }).format(value);
 }
 
+/**
+ * Renders the membership plan table interface for feature UI behavior.
+ *
+ * @param params Input used by membership plan table.
+ * @returns Rendered JSX output.
+ */
 export default function MembershipPlanTable({
   plans,
   selectedPlanId,

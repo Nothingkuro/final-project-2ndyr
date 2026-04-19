@@ -1,7 +1,16 @@
+/**
+ * Type alias for payment method in frontend domain models.
+ */
 export type PaymentMethod = 'CASH' | 'GCASH';
 
+/**
+ * Type alias for payment member status in frontend domain models.
+ */
 export type PaymentMemberStatus = 'ACTIVE' | 'EXPIRED' | 'INACTIVE';
 
+/**
+ * Defines payment member used by frontend domain models.
+ */
 export interface PaymentMember {
   id: string;
   firstName: string;
@@ -10,6 +19,9 @@ export interface PaymentMember {
   status: PaymentMemberStatus;
 }
 
+/**
+ * Defines membership plan used by frontend domain models.
+ */
 export interface MembershipPlan {
   id: string;
   name: string;
@@ -18,6 +30,9 @@ export interface MembershipPlan {
   description?: string;
 }
 
+/**
+ * Defines member payment history record used by frontend domain models.
+ */
 export interface MemberPaymentHistoryRecord {
   id: string;
   memberId: string;

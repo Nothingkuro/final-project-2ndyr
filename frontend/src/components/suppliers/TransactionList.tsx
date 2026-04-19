@@ -1,16 +1,49 @@
 import type { SupplierTransaction } from '../../types/supplier';
 
+/**
+ * Defines transaction list props used by feature UI behavior.
+ */
 interface TransactionListProps {
+  /**
+   * Collection data rendered by transactions UI.
+   */
   transactions: SupplierTransaction[];
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   isLoading: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
+  /**
+   * Data used for current page behavior.
+   */
   currentPage: number;
+  /**
+   * Data used for total pages behavior.
+   */
   totalPages: number;
+  /**
+   * Collection data rendered by total transactions UI.
+   */
   totalTransactions: number;
+  /**
+   * Callback fired when previous page.
+   */
   onPreviousPage: () => void;
+  /**
+   * Callback fired when next page.
+   */
   onNextPage: () => void;
 }
 
+/**
+ * Handles format cost logic for feature UI behavior.
+ *
+ * @param value Input used by format cost.
+ * @returns Computed value for the caller.
+ */
 function formatCost(value: number): string {
   if (Number.isNaN(value)) {
     return 'N/A';
@@ -24,6 +57,12 @@ function formatCost(value: number): string {
   }).format(value);
 }
 
+/**
+ * Handles format date logic for feature UI behavior.
+ *
+ * @param value Input used by format date.
+ * @returns Computed value for the caller.
+ */
 function formatDate(value: string): string {
   const parsedDate = new Date(value);
 
@@ -38,6 +77,12 @@ function formatDate(value: string): string {
   });
 }
 
+/**
+ * Renders the transaction list interface for feature UI behavior.
+ *
+ * @param params Input used by transaction list.
+ * @returns Rendered JSX output.
+ */
 export default function TransactionList({
   transactions,
   isLoading,

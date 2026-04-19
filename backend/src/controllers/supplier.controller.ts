@@ -23,6 +23,12 @@ type SupplierTransactionItem = {
   updatedAt: string;
 };
 
+/**
+ * Normalizes optional text payload fields for supplier records.
+ *
+ * @param value Raw payload value.
+ * @returns Trimmed text or null when missing/empty.
+ */
 function normalizeOptionalText(value: unknown): string | null {
   if (typeof value !== 'string') {
     return null;
@@ -32,10 +38,22 @@ function normalizeOptionalText(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Keeps only digits from supplier contact numbers.
+ *
+ * @param value Raw contact number string.
+ * @returns Digits-only contact number.
+ */
 function normalizeContactNumber(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+/**
+ * Maps supplier records to API output format.
+ *
+ * @param supplier Supplier row from Prisma.
+ * @returns Supplier list item with ISO date strings.
+ */
 function toSupplierItem(supplier: {
   id: string;
   name: string;
@@ -58,6 +76,12 @@ function toSupplierItem(supplier: {
   };
 }
 
+/**
+ * Maps supplier transaction records to API output format.
+ *
+ * @param transaction Supplier transaction row from Prisma.
+ * @returns Transaction list item with numeric total cost.
+ */
 function toSupplierTransactionItem(transaction: {
   id: string;
   itemsPurchased: string;
@@ -78,6 +102,13 @@ function toSupplierTransactionItem(transaction: {
   };
 }
 
+/**
+ * Lists suppliers with optional search, category filtering, and pagination.
+ *
+ * @param req Express request containing optional filters.
+ * @param res Express response containing paginated suppliers.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getSuppliers = async (req: Request, res: Response): Promise<void> => {
   try {
     const searchRaw = typeof req.query.search === 'string' ? req.query.search : '';
@@ -147,6 +178,13 @@ export const getSuppliers = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+/**
+ * Returns distinct supplier service categories for filter dropdowns.
+ *
+ * @param _req Express request (unused).
+ * @param res Express response containing service category values.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getSupplierServiceCategories = async (
   _req: Request,
   res: Response,
@@ -169,6 +207,13 @@ export const getSupplierServiceCategories = async (
   }
 };
 
+/**
+ * Creates a new supplier record.
+ *
+ * @param req Express request containing supplier payload.
+ * @param res Express response containing created supplier.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createSupplier = async (req: Request, res: Response): Promise<void> => {
   try {
     const rawName = req.body?.name;
@@ -215,6 +260,13 @@ export const createSupplier = async (req: Request, res: Response): Promise<void>
   }
 };
 
+/**
+ * Updates supplier details for an existing record.
+ *
+ * @param req Express request containing supplier id and patch payload.
+ * @param res Express response containing updated supplier.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateSupplier = async (req: Request, res: Response): Promise<void> => {
   try {
     const supplierId = Array.isArray(req.params.supplierId)
@@ -295,6 +347,13 @@ export const updateSupplier = async (req: Request, res: Response): Promise<void>
   }
 };
 
+/**
+ * Deletes a supplier record.
+ *
+ * @param req Express request containing supplier id.
+ * @param res Express response confirming deletion.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const deleteSupplier = async (req: Request, res: Response): Promise<void> => {
   try {
     const supplierId = Array.isArray(req.params.supplierId)
@@ -327,6 +386,13 @@ export const deleteSupplier = async (req: Request, res: Response): Promise<void>
   }
 };
 
+/**
+ * Lists paginated transaction history for a supplier.
+ *
+ * @param req Express request containing supplier id and pagination query.
+ * @param res Express response containing transaction records.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getSupplierTransactions = async (req: Request, res: Response): Promise<void> => {
   try {
     const supplierId = Array.isArray(req.params.supplierId)
@@ -383,6 +449,13 @@ export const getSupplierTransactions = async (req: Request, res: Response): Prom
   }
 };
 
+/**
+ * Creates a transaction entry for a supplier purchase.
+ *
+ * @param req Express request containing supplier id and purchase payload.
+ * @param res Express response containing created transaction.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createSupplierTransaction = async (req: Request, res: Response): Promise<void> => {
   try {
     const supplierId = Array.isArray(req.params.supplierId)

@@ -1,3 +1,6 @@
+/**
+ * Defines supplier used by frontend domain models.
+ */
 export interface Supplier {
   id: string;
   name: string;
@@ -9,6 +12,9 @@ export interface Supplier {
   updatedAt: string;
 }
 
+/**
+ * Defines supplier transaction used by frontend domain models.
+ */
 export interface SupplierTransaction {
   id: string;
   itemsPurchased: string;
@@ -19,6 +25,9 @@ export interface SupplierTransaction {
   updatedAt: string;
 }
 
+/**
+ * Defines supplier form data used by frontend domain models.
+ */
 export interface SupplierFormData {
   name: string;
   serviceCategory: string;
@@ -27,6 +36,9 @@ export interface SupplierFormData {
   address: string;
 }
 
+/**
+ * Defines transaction form data used by frontend domain models.
+ */
 export interface TransactionFormData {
   supplierId: string;
   itemsPurchased: string;

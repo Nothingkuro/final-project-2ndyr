@@ -6,6 +6,9 @@ import type {
 } from '../types/supplier';
 import { API_BASE_URL } from './apiBaseUrl';
 
+/**
+ * Defines supplier list response used by API integration behavior.
+ */
 export interface SupplierListResponse {
   items: Supplier[];
   total: number;
@@ -14,6 +17,9 @@ export interface SupplierListResponse {
   totalPages: number;
 }
 
+/**
+ * Defines supplier transaction list response used by API integration behavior.
+ */
 export interface SupplierTransactionListResponse {
   items: SupplierTransaction[];
   total: number;
@@ -22,15 +28,31 @@ export interface SupplierTransactionListResponse {
   totalPages: number;
 }
 
+/**
+ * Defines supplier service category list response used by API integration behavior.
+ */
 interface SupplierServiceCategoryListResponse {
   items: string[];
 }
 
+/**
+ * Handles get auth token logic for API integration behavior.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 async function getAuthToken(): Promise<string | null> {
   const token = window.sessionStorage.getItem('authToken');
   return token;
 }
 
+/**
+ * Handles make request logic for API integration behavior.
+ *
+ * @param endpoint Input used by make request.
+ * @param options Input used by make request.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 async function makeRequest<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -73,6 +95,13 @@ async function makeRequest<T>(
   return response.json();
 }
 
+/**
+ * Handles list suppliers logic for API integration behavior.
+ *
+ * @param params Input used by list suppliers.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function listSuppliers(params: {
   page: number;
   pageSize: number;
@@ -96,6 +125,11 @@ export async function listSuppliers(params: {
   return makeRequest<SupplierListResponse>(`/suppliers?${searchParams.toString()}`);
 }
 
+/**
+ * Handles list supplier service categories logic for API integration behavior.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function listSupplierServiceCategories(): Promise<string[]> {
   const response = await makeRequest<SupplierServiceCategoryListResponse>(
     '/suppliers/categories',
@@ -104,6 +138,13 @@ export async function listSupplierServiceCategories(): Promise<string[]> {
   return response.items;
 }
 
+/**
+ * Handles create supplier logic for API integration behavior.
+ *
+ * @param data Input used by create supplier.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function createSupplier(data: SupplierFormData): Promise<Supplier> {
   return makeRequest<Supplier>('/suppliers', {
     method: 'POST',
@@ -111,6 +152,14 @@ export async function createSupplier(data: SupplierFormData): Promise<Supplier> 
   });
 }
 
+/**
+ * Handles update supplier logic for API integration behavior.
+ *
+ * @param supplierId Input used by update supplier.
+ * @param data Input used by update supplier.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function updateSupplier(
   supplierId: string,
   data: Partial<SupplierFormData>,
@@ -121,12 +170,27 @@ export async function updateSupplier(
   });
 }
 
+/**
+ * Handles delete supplier logic for API integration behavior.
+ *
+ * @param supplierId Input used by delete supplier.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function deleteSupplier(supplierId: string): Promise<void> {
   return makeRequest<void>(`/suppliers/${supplierId}`, {
     method: 'DELETE',
   });
 }
 
+/**
+ * Handles list transactions by supplier logic for API integration behavior.
+ *
+ * @param supplierId Input used by list transactions by supplier.
+ * @param params Input used by list transactions by supplier.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function listTransactionsBySupplier(
   supplierId: string,
   params: {
@@ -143,6 +207,14 @@ export async function listTransactionsBySupplier(
   );
 }
 
+/**
+ * Handles create transaction logic for API integration behavior.
+ *
+ * @param supplierId Input used by create transaction.
+ * @param data Input used by create transaction.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export async function createTransaction(
   supplierId: string,
   data: Omit<TransactionFormData, 'supplierId'>,

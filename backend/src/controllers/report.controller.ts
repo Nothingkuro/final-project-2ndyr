@@ -2,16 +2,34 @@ import { MemberStatus, PaymentMethod } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
+/**
+ * Computes the local start-of-day boundary for date-window reporting queries.
+ *
+ * @returns Date representing 00:00:00.000 in server local time.
+ */
 function startOfTodayLocal(): Date {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   return now;
 }
 
+/**
+ * Converts Prisma decimal-like values to native numbers.
+ *
+ * @param value Numeric value represented as Decimal, number, or string.
+ * @returns Parsed JavaScript number.
+ */
 function toNumber(value: { toString(): string } | number | string): number {
   return Number(value);
 }
 
+/**
+ * Returns today's revenue split by payment method.
+ *
+ * @param _req Express request (unused).
+ * @param res Express response containing daily totals.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getDailyRevenueSummary = async (_req: Request, res: Response): Promise<void> => {
   try {
     const start = startOfTodayLocal();
@@ -60,6 +78,13 @@ export const getDailyRevenueSummary = async (_req: Request, res: Response): Prom
   }
 };
 
+/**
+ * Returns historical monthly revenue totals.
+ *
+ * @param _req Express request (unused).
+ * @param res Express response containing sorted month/year totals.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getMonthlyRevenueRecords = async (_req: Request, res: Response): Promise<void> => {
   try {
     const payments = await prisma.payment.findMany({
@@ -99,6 +124,13 @@ export const getMonthlyRevenueRecords = async (_req: Request, res: Response): Pr
   }
 };
 
+/**
+ * Lists active members whose memberships expire within the configured window.
+ *
+ * @param req Express request with optional days query parameter.
+ * @param res Express response containing upcoming expirations.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getUpcomingExpirations = async (req: Request, res: Response): Promise<void> => {
   try {
     const daysRaw = typeof req.query.days === 'string' ? Number(req.query.days) : 3;
@@ -146,6 +178,13 @@ export const getUpcomingExpirations = async (req: Request, res: Response): Promi
   }
 };
 
+/**
+ * Lists inventory items below the requested threshold.
+ *
+ * @param req Express request with optional threshold query parameter.
+ * @param res Express response containing inventory alerts.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getLowInventoryAlerts = async (req: Request, res: Response): Promise<void> => {
   try {
     const thresholdRaw = typeof req.query.threshold === 'string' ? Number(req.query.threshold) : 5;
@@ -184,6 +223,13 @@ export const getLowInventoryAlerts = async (req: Request, res: Response): Promis
   }
 };
 
+/**
+ * Returns a consolidated dashboard payload for reports overview pages.
+ *
+ * @param req Express request with optional threshold and days query parameters.
+ * @param res Express response containing revenue and alert summaries.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getReportsOverview = async (req: Request, res: Response): Promise<void> => {
   try {
     const thresholdRaw = typeof req.query?.threshold === 'string' ? Number(req.query.threshold) : 5;
