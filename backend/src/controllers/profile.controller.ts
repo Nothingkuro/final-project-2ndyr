@@ -2,7 +2,13 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { hashPassword } from '../utils/auth';
 
-// Get all users (admin/staff credentials)
+/**
+ * Lists all users for admin profile management views.
+ *
+ * @param req Express request.
+ * @param res Express response containing user summaries.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
@@ -23,7 +29,13 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// Get current user profile
+/**
+ * Returns the authenticated user's current profile.
+ *
+ * @param req Express request with auth context.
+ * @param res Express response containing current user profile.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.authUser) {
@@ -54,7 +66,13 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// Update own profile (username/password)
+/**
+ * Updates the authenticated user's username and/or password.
+ *
+ * @param req Express request containing profile patch payload.
+ * @param res Express response containing updated user data.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateProfile = async (
   req: Request,
   res: Response
@@ -130,7 +148,15 @@ export const updateProfile = async (
   }
 };
 
-// Update another user (admin only - change staff username/password)
+/**
+ * Allows admins to update another user's credentials.
+ *
+ * Business rules prevent admins from editing other admin accounts.
+ *
+ * @param req Express request containing target user id and patch payload.
+ * @param res Express response containing updated user data.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.authUser) {

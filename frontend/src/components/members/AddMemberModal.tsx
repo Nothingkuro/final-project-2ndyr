@@ -2,18 +2,51 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { X } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 
+/**
+ * Defines member form modal props used by feature UI behavior.
+ */
 interface MemberFormModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: MemberFormData) => void;
+  /**
+   * Initial state value for data.
+   */
   initialData?: Partial<MemberFormData>;
+  /**
+   * Data used for is submitting behavior.
+   */
   isSubmitting?: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
+  /**
+   * Data used for title behavior.
+   */
   title?: string;
+  /**
+   * Data used for submit label behavior.
+   */
   submitLabel?: string;
+  /**
+   * Data used for submitting label behavior.
+   */
   submittingLabel?: string;
 }
 
+/**
+ * Defines member form data used by feature UI behavior.
+ */
 export interface MemberFormData {
   firstName: string;
   lastName: string;
@@ -21,6 +54,12 @@ export interface MemberFormData {
   notes: string;
 }
 
+/**
+ * Renders the member form modal interface for feature UI behavior.
+ *
+ * @param params Input used by member form modal.
+ * @returns Rendered JSX output.
+ */
 export default function MemberFormModal({
   isOpen,
   onClose,
@@ -58,6 +97,12 @@ export default function MemberFormModal({
 
   // Close on Escape key
   useEffect(() => {
+    /**
+     * Handles handle key for feature UI behavior.
+     *
+     * @param e Input consumed by handle key.
+     * @returns Computed value for the caller.
+     */
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -67,6 +112,12 @@ export default function MemberFormModal({
 
   if (!isOpen) return null;
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param e Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -80,6 +131,12 @@ export default function MemberFormModal({
     });
   };
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param e Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
   };

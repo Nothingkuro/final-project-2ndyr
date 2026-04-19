@@ -2,14 +2,38 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import SearchBar from '../common/SearchBar';
 import type { PaymentMember } from '../../types/payment';
 
+/**
+ * Defines member search select props used by feature UI behavior.
+ */
 interface MemberSearchSelectProps {
+  /**
+   * Collection data rendered by members UI.
+   */
   members: PaymentMember[];
+  /**
+   * Identifier used for selected member lookups.
+   */
   selectedMemberId: string;
+  /**
+   * Callback fired when select member.
+   */
   onSelectMember: (memberId: string) => void;
+  /**
+   * Disables user interaction when true.
+   */
   disabled?: boolean;
+  /**
+   * Data used for placeholder behavior.
+   */
   placeholder?: string;
 }
 
+/**
+ * Handles format member name for feature UI behavior.
+ *
+ * @param member Input consumed by format member name.
+ * @returns Computed value for the caller.
+ */
 function formatMemberName(member: PaymentMember | undefined) {
   if (!member) {
     return '';
@@ -18,6 +42,12 @@ function formatMemberName(member: PaymentMember | undefined) {
   return `${member.firstName} ${member.lastName}`;
 }
 
+/**
+ * Handles get status badge class logic for feature UI behavior.
+ *
+ * @param status Input used by get status badge class.
+ * @returns Computed value for the caller.
+ */
 function getStatusBadgeClass(status: PaymentMember['status']): string {
   if (status === 'ACTIVE') {
     return 'bg-success/10 text-success border-success/30';
@@ -30,6 +60,12 @@ function getStatusBadgeClass(status: PaymentMember['status']): string {
   return 'bg-neutral-100 text-neutral-600 border-neutral-300';
 }
 
+/**
+ * Renders the member search select interface for feature UI behavior.
+ *
+ * @param params Input used by member search select.
+ * @returns Rendered JSX output.
+ */
 export default function MemberSearchSelect({
   members,
   selectedMemberId,
@@ -61,6 +97,12 @@ export default function MemberSearchSelect({
   }, [members, searchQuery]);
 
   useEffect(() => {
+    /**
+     * Handles handle outside click for feature UI behavior.
+     *
+     * @param event Input consumed by handle outside click.
+     * @returns Computed value for the caller.
+     */
     const handleOutsideClick = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);

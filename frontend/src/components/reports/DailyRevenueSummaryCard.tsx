@@ -2,7 +2,13 @@ import { Smartphone, TrendingUp, Wallet } from 'lucide-react';
 import type { RevenueBreakdown } from '../../types/report';
 import ReportSectionCard from './ReportSectionCard';
 
+/**
+ * Defines daily revenue summary card props used by feature UI behavior.
+ */
 interface DailyRevenueSummaryCardProps {
+  /**
+   * Data used for revenue behavior.
+   */
   revenue: RevenueBreakdown;
 }
 
@@ -13,6 +19,12 @@ const pesoFormatter = new Intl.NumberFormat('en-PH', {
   maximumFractionDigits: 0,
 });
 
+/**
+ * Handles format date label logic for feature UI behavior.
+ *
+ * @param value Input used by format date label.
+ * @returns Computed value for the caller.
+ */
 function formatDateLabel(value: string): string {
   return new Intl.DateTimeFormat('en-PH', {
     weekday: 'short',
@@ -22,6 +34,12 @@ function formatDateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+/**
+ * Renders the daily revenue summary card view for feature UI behavior.
+ *
+ * @param params Input consumed by daily revenue summary card.
+ * @returns Rendered JSX content.
+ */
 export default function DailyRevenueSummaryCard({ revenue }: DailyRevenueSummaryCardProps) {
   return (
     <ReportSectionCard

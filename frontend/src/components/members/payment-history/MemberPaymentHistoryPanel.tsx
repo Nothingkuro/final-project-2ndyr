@@ -5,11 +5,26 @@ import type { MemberPaymentHistoryRecord } from '../../../types/payment';
 import { getAuthHeaders } from '../../../services/authHeaders';
 import { API_BASE_URL } from '../../../services/apiBaseUrl';
 
+/**
+ * Defines member payment history panel props used by feature UI behavior.
+ */
 interface MemberPaymentHistoryPanelProps {
+  /**
+   * Identifier used for member lookups.
+   */
   memberId: string;
+  /**
+   * Data used for payments behavior.
+   */
   payments?: MemberPaymentHistoryRecord[];
 }
 
+/**
+ * Renders the member payment history panel interface for feature UI behavior.
+ *
+ * @param params Input used by member payment history panel.
+ * @returns Rendered JSX output.
+ */
 export default function MemberPaymentHistoryPanel({
   memberId,
   payments,
@@ -29,6 +44,10 @@ export default function MemberPaymentHistoryPanel({
 
     const controller = new AbortController();
 
+    /**
+     * Handles load payments for feature UI behavior.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadPayments = async () => {
       try {
         setIsLoading(true);

@@ -1,5 +1,10 @@
 import { API_BASE_URL } from './apiBaseUrl';
 
+/**
+ * Handles refresh session logic for API integration behavior.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export const refreshSession = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
@@ -12,6 +17,11 @@ export const refreshSession = async (): Promise<boolean> => {
   }
 };
 
+/**
+ * Handles logout user logic for API integration behavior.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 export const logoutUser = async (): Promise<void> => {
   try {
     await fetch(`${API_BASE_URL}/api/auth/logout`, {

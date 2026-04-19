@@ -2,11 +2,26 @@ import { useMemo } from 'react';
 import { CalendarClock } from 'lucide-react';
 import type { Attendance } from '../../../types/attendance';
 
+/**
+ * Defines member attendance history panel props used by feature UI behavior.
+ */
 interface MemberAttendanceHistoryPanelProps {
+  /**
+   * Identifier used for member lookups.
+   */
   memberId: string;
+  /**
+   * Data used for attendances behavior.
+   */
   attendances?: Attendance[];
 }
 
+/**
+ * Handles format check in time logic for feature UI behavior.
+ *
+ * @param iso Input used by format check in time.
+ * @returns Computed value for the caller.
+ */
 function formatCheckInTime(iso: string): string {
   if (!iso) {
     return '--';
@@ -27,10 +42,22 @@ function formatCheckInTime(iso: string): string {
   });
 }
 
+/**
+ * Handles format attendance id logic for feature UI behavior.
+ *
+ * @param attendanceId Input used by format attendance id.
+ * @returns Computed value for the caller.
+ */
 function formatAttendanceId(attendanceId: string): string {
   return attendanceId.length > 16 ? `${attendanceId.slice(0, 16)}...` : attendanceId;
 }
 
+/**
+ * Renders the member attendance history panel interface for feature UI behavior.
+ *
+ * @param params Input used by member attendance history panel.
+ * @returns Rendered JSX output.
+ */
 export default function MemberAttendanceHistoryPanel({
   memberId,
   attendances = [],

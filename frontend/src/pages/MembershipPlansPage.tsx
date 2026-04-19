@@ -11,11 +11,26 @@ import {
   updateMembershipPlan,
 } from '../services/membershipPlanApi';
 
+/**
+ * Defines membership plans page props used by route-level dashboard orchestration.
+ */
 interface MembershipPlansPageProps {
+  /**
+   * Collection data rendered by plans UI.
+   */
   plans?: MembershipPlan[];
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   initialLoading?: boolean;
 }
 
+/**
+ * Renders the membership plans page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by membership plans page.
+ * @returns Rendered JSX output.
+ */
 export default function MembershipPlansPage({
   plans: providedPlans,
   initialLoading = false,
@@ -53,6 +68,10 @@ export default function MembershipPlansPage({
 
     let cancelled = false;
 
+    /**
+     * Handles load plans for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadPlans = async () => {
       try {
         setIsLoading(true);
@@ -83,6 +102,10 @@ export default function MembershipPlansPage({
   }, [isLocalMode]);
 
   /* ── Handlers ── */
+  /**
+   * Handles handle open add for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleOpenAdd = () => {
     setModalMode('add');
     setActivePlan(null);
@@ -90,6 +113,12 @@ export default function MembershipPlansPage({
     setIsModalOpen(true);
   };
 
+  /**
+   * Handles handle open edit for route-level dashboard orchestration.
+   *
+   * @param plan Input consumed by handle open edit.
+   * @returns Computed value for the caller.
+   */
   const handleOpenEdit = (plan: MembershipPlan) => {
     setModalMode('edit');
     setActivePlan(plan);
@@ -97,11 +126,21 @@ export default function MembershipPlansPage({
     setIsModalOpen(true);
   };
 
+  /**
+   * Handles handle close modal for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalError(null);
   };
 
+  /**
+   * Handles handle submit for route-level dashboard orchestration.
+   *
+   * @param data Input consumed by handle submit.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleSubmit = async (data: MembershipPlanFormData) => {
     try {
       setModalError(null);
@@ -160,11 +199,21 @@ export default function MembershipPlansPage({
     }
   };
 
+  /**
+   * Handles handle request delete for route-level dashboard orchestration.
+   *
+   * @param plan Input consumed by handle request delete.
+   * @returns Computed value for the caller.
+   */
   const handleRequestDelete = (plan: MembershipPlan) => {
     setPlanToDelete(plan);
     setIsDeleteOpen(true);
   };
 
+  /**
+   * Handles handle confirm delete for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleConfirmDelete = async () => {
     if (!planToDelete) {
       return;
@@ -188,6 +237,10 @@ export default function MembershipPlansPage({
     }
   };
 
+  /**
+   * Handles handle cancel delete for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCancelDelete = () => {
     setIsDeleteOpen(false);
     setPlanToDelete(null);

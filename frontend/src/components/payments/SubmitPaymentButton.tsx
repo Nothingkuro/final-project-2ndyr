@@ -1,9 +1,27 @@
+/**
+ * Defines submit payment button props used by feature UI behavior.
+ */
 interface SubmitPaymentButtonProps {
+  /**
+   * Callback fired when click.
+   */
   onClick?: () => void;
+  /**
+   * Disables user interaction when true.
+   */
   disabled?: boolean;
+  /**
+   * Data used for label behavior.
+   */
   label?: string;
 }
 
+/**
+ * Renders the submit payment button interface for feature UI behavior.
+ *
+ * @param params Input used by submit payment button.
+ * @returns Rendered JSX output.
+ */
 export default function SubmitPaymentButton({
   onClick,
   disabled = false,

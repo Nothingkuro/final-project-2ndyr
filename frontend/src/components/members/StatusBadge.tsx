@@ -1,10 +1,25 @@
 import type { MemberStatus } from '../../types/member';
 
+/**
+ * Type alias for badge variant in feature UI behavior.
+ */
 type BadgeVariant = 'text' | 'pill';
 
+/**
+ * Defines status badge props used by feature UI behavior.
+ */
 interface StatusBadgeProps {
+  /**
+   * Data used for status behavior.
+   */
   status: MemberStatus;
+  /**
+   * Data used for variant behavior.
+   */
   variant?: BadgeVariant;
+  /**
+   * Optional utility classes merged into the root element.
+   */
   className?: string;
 }
 
@@ -14,6 +29,12 @@ const statusStyles: Record<MemberStatus, { text: string; bg: string }> = {
   INACTIVE: { text: 'text-neutral-400', bg: 'bg-neutral-100' },
 };
 
+/**
+ * Renders the status badge interface for feature UI behavior.
+ *
+ * @param params Input used by status badge.
+ * @returns Rendered JSX output.
+ */
 export default function StatusBadge({
   status,
   variant = 'text',

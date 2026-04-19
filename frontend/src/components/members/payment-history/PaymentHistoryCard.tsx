@@ -1,5 +1,11 @@
 import type { MemberPaymentHistoryRecord } from '../../../types/payment';
 
+/**
+ * Handles format payment date logic for feature UI behavior.
+ *
+ * @param dateIso Input used by format payment date.
+ * @returns Computed value for the caller.
+ */
 function formatPaymentDate(dateIso: string): string {
   const dateValue = new Date(dateIso);
 
@@ -14,14 +20,32 @@ function formatPaymentDate(dateIso: string): string {
   });
 }
 
+/**
+ * Handles format payment id logic for feature UI behavior.
+ *
+ * @param paymentId Input used by format payment id.
+ * @returns Computed value for the caller.
+ */
 function formatPaymentId(paymentId: string): string {
   return paymentId.length > 10 ? `${paymentId.slice(0, 10)}...` : paymentId;
 }
 
+/**
+ * Defines payment history card props used by feature UI behavior.
+ */
 interface PaymentHistoryCardProps {
+  /**
+   * Data used for payment behavior.
+   */
   payment: MemberPaymentHistoryRecord;
 }
 
+/**
+ * Renders the payment history card view for feature UI behavior.
+ *
+ * @param params Input consumed by payment history card.
+ * @returns Rendered JSX content.
+ */
 export default function PaymentHistoryCard({ payment }: PaymentHistoryCardProps) {
   const amountLabel = `${payment.amountPhp.toLocaleString('en-PH')} Php`;
   const paymentIdLabel = formatPaymentId(payment.id);

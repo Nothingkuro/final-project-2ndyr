@@ -3,13 +3,34 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import InactivityTimeout from '../common/InactivityTimeout';
 
+/**
+ * Defines main layout props used by dashboard shell behavior.
+ */
 interface MainLayoutProps {
+  /**
+   * Nested content rendered inside the component wrapper.
+   */
   children: ReactNode;
+  /**
+   * Initial state value for sidebar open.
+   */
   initialSidebarOpen?: boolean;
+  /**
+   * Data used for sidebar role behavior.
+   */
   sidebarRole?: 'staff' | 'owner' | 'STAFF' | 'ADMIN';
+  /**
+   * Data used for sidebar default collapsed behavior.
+   */
   sidebarDefaultCollapsed?: boolean;
 }
 
+/**
+ * Renders the main layout interface for dashboard layout behavior.
+ *
+ * @param params Input used by main layout.
+ * @returns Rendered JSX output.
+ */
 export default function MainLayout({
   children,
   initialSidebarOpen = false,
@@ -22,6 +43,10 @@ export default function MainLayout({
     : null;
   const resolvedSidebarRole = sidebarRole ?? (storedRole === 'ADMIN' ? 'ADMIN' : 'STAFF');
 
+  /**
+   * Handles toggle sidebar for dashboard shell behavior.
+    * @returns Void.
+   */
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (

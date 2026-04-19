@@ -11,6 +11,12 @@ import type { MonthlyRevenueRecord, ReportData } from '../types/report';
 
 const DEFAULT_INVENTORY_THRESHOLD = 5;
 
+/**
+ * Handles get latest record logic for page-level dashboard orchestration.
+ *
+ * @param records Input used by get latest record.
+ * @returns Computed value for the caller.
+ */
 function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord | null {
   if (records.length === 0) {
     return null;
@@ -29,6 +35,10 @@ function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord 
   });
 }
 
+/**
+ * Renders the reports page view for route-level dashboard orchestration.
+ * @returns Rendered JSX content.
+ */
 export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +57,12 @@ export default function ReportsPage() {
   );
   const authRole = window.sessionStorage.getItem('authRole');
 
+  /**
+   * Handles load reports for route-level dashboard orchestration.
+   *
+   * @param threshold Input consumed by load reports.
+   * @returns A promise that resolves when processing completes.
+   */
   const loadReports = async (threshold: number) => {
     setIsLoading(true);
     setLoadError(null);
@@ -64,6 +80,10 @@ export default function ReportsPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    /**
+     * Handles load initial reports for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadInitialReports = async () => {
       try {
         await loadReports(DEFAULT_INVENTORY_THRESHOLD);
@@ -92,6 +112,10 @@ export default function ReportsPage() {
     };
   }, []);
 
+  /**
+   * Handles handle refresh for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleRefresh = async () => {
     try {
       await loadReports(inventoryThreshold);

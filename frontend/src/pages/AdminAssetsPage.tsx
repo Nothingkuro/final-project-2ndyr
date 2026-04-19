@@ -25,6 +25,10 @@ const filterOptions: Array<{ label: string; value: EquipmentFilter }> = [
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 150;
 
+/**
+ * Renders the admin assets page view for route-level dashboard orchestration.
+ * @returns Rendered JSX content.
+ */
 export default function AdminAssetsPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +70,10 @@ export default function AdminAssetsPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    /**
+     * Handles load assets for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadAssets = async () => {
       try {
         setIsLoadingAssets(true);
@@ -110,6 +118,10 @@ export default function AdminAssetsPage() {
     };
   }, [debouncedSearchQuery, activeFilter, currentPage, refreshNonce]);
 
+  /**
+   * Handles handle open add asset for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleOpenAddAsset = () => {
     setAssetModalMode('add');
     setActiveAsset(null);
@@ -117,6 +129,12 @@ export default function AdminAssetsPage() {
     setIsAssetModalOpen(true);
   };
 
+  /**
+   * Handles handle open edit asset for route-level dashboard orchestration.
+   *
+   * @param equipment Input consumed by handle open edit asset.
+   * @returns Computed value for the caller.
+   */
   const handleOpenEditAsset = (equipment: Equipment) => {
     setAssetModalMode('edit');
     setActiveAsset(equipment);
@@ -124,6 +142,10 @@ export default function AdminAssetsPage() {
     setIsAssetModalOpen(true);
   };
 
+  /**
+   * Handles handle close asset modal for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCloseAssetModal = () => {
     if (isSubmittingAsset) {
       return;
@@ -133,6 +155,12 @@ export default function AdminAssetsPage() {
     setAssetModalError(null);
   };
 
+  /**
+   * Handles handle submit asset for route-level dashboard orchestration.
+   *
+   * @param data Input consumed by handle submit asset.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleSubmitAsset = async (data: AssetFormData) => {
     if (isSubmittingAsset) {
       return;
@@ -173,11 +201,21 @@ export default function AdminAssetsPage() {
     }
   };
 
+  /**
+   * Handles handle delete asset for route-level dashboard orchestration.
+   *
+   * @param equipment Input consumed by handle delete asset.
+   * @returns Computed value for the caller.
+   */
   const handleDeleteAsset = (equipment: Equipment) => {
     setAssetToDelete(equipment);
     setIsDeleteModalOpen(true);
   };
 
+  /**
+   * Handles confirm delete asset for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const confirmDeleteAsset = async () => {
     if (!assetToDelete) return;
 

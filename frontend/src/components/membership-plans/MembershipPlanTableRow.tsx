@@ -2,10 +2,25 @@ import { Edit, Trash2 } from 'lucide-react';
 import type { MembershipPlan } from '../../types/membershipPlan';
 import StatusBadge from './StatusBadge';
 
+/**
+ * Defines membership plan table row props used by feature UI behavior.
+ */
 interface MembershipPlanTableRowProps {
+  /**
+   * Data used for plan behavior.
+   */
   plan: MembershipPlan;
+  /**
+   * Data used for index behavior.
+   */
   index: number;
+  /**
+   * Callback fired when edit.
+   */
   onEdit: (plan: MembershipPlan) => void;
+  /**
+   * Callback fired when delete.
+   */
   onDelete: (plan: MembershipPlan) => void;
 }
 
@@ -30,6 +45,12 @@ function formatDuration(days: number): string {
   return `${days} Days`;
 }
 
+/**
+ * Renders the membership plan table row interface for feature UI behavior.
+ *
+ * @param params Input used by membership plan table row.
+ * @returns Rendered JSX output.
+ */
 export default function MembershipPlanTableRow({
   plan,
   index,

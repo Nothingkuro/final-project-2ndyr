@@ -1,4 +1,7 @@
 /** Membership plan interface based on the Prisma MembershipPlan model */
+/**
+ * Defines membership plan used by frontend domain models.
+ */
 export interface MembershipPlan {
   id: string;
   name: string;
@@ -11,6 +14,9 @@ export interface MembershipPlan {
 }
 
 /** Form data for creating / editing a membership plan */
+/**
+ * Defines membership plan form data used by frontend domain models.
+ */
 export interface MembershipPlanFormData {
   name: string;
   description: string;

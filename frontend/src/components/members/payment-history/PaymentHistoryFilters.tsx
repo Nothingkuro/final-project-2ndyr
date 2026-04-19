@@ -14,14 +14,38 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'December' },
 ];
 
+/**
+ * Defines payment history filters props used by feature UI behavior.
+ */
 interface PaymentHistoryFiltersProps {
+  /**
+   * Data used for selected month behavior.
+   */
   selectedMonth: string;
+  /**
+   * Data used for selected year behavior.
+   */
   selectedYear: string;
+  /**
+   * Data used for year options behavior.
+   */
   yearOptions: string[];
+  /**
+   * Callback fired when month change.
+   */
   onMonthChange: (month: string) => void;
+  /**
+   * Callback fired when year change.
+   */
   onYearChange: (year: string) => void;
 }
 
+/**
+ * Renders the payment history filters interface for feature UI behavior.
+ *
+ * @param params Input used by payment history filters.
+ * @returns Rendered JSX output.
+ */
 export default function PaymentHistoryFilters({
   selectedMonth,
   selectedYear,

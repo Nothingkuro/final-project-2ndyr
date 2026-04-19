@@ -1,10 +1,25 @@
 import { EquipmentCondition } from '../../types/equipment';
 
+/**
+ * Type alias for badge variant in feature UI behavior.
+ */
 type BadgeVariant = 'text' | 'pill';
 
+/**
+ * Defines condition badge props used by feature UI behavior.
+ */
 interface ConditionBadgeProps {
+  /**
+   * Data used for condition behavior.
+   */
   condition?: EquipmentCondition | string;
+  /**
+   * Data used for variant behavior.
+   */
   variant?: BadgeVariant;
+  /**
+   * Optional utility classes merged into the root element.
+   */
   className?: string;
 }
 
@@ -32,6 +47,12 @@ const fallbackStyle = {
   label: 'Unknown',
 };
 
+/**
+ * Renders the condition badge interface for feature UI behavior.
+ *
+ * @param params Input used by condition badge.
+ * @returns Rendered JSX output.
+ */
 export default function ConditionBadge({
   condition,
   variant = 'text',

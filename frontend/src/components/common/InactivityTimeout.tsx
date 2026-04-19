@@ -4,6 +4,12 @@ import { refreshSession, logoutUser } from '../../services/authApi';
 const INACTIVITY_LIMIT_MS = 5 * 60 * 10000; // 5 minutes
 const REFRESH_INTERVAL_MS = 60 * 1000; // 1 minute
 
+/**
+ * Renders the inactivity timeout view for shared UI behavior.
+ *
+ * @param params Input consumed by inactivity timeout.
+ * @returns Rendered JSX content.
+ */
 export default function InactivityTimeout({ children }: { children: React.ReactNode }) {
   const lastActivityRef = useRef<number>(Date.now());
   const lastRefreshRef = useRef<number>(Date.now());
@@ -33,6 +39,10 @@ export default function InactivityTimeout({ children }: { children: React.ReactN
   useEffect(() => {
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
 
+    /**
+     * Handles handle user activity for shared UI behavior.
+     * @returns Computed value for the caller.
+     */
     const handleUserActivity = () => {
       updateActivity();
     };

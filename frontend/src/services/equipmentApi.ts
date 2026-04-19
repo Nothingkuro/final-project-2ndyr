@@ -1,8 +1,14 @@
 import { EquipmentCondition, type Equipment } from '../types/equipment';
 import { API_BASE_URL } from './apiBaseUrl';
 
+/**
+ * Type alias for equipment filter in API integration behavior.
+ */
 export type EquipmentFilter = 'ALL' | EquipmentCondition;
 
+/**
+ * Defines equipment list response used by API integration behavior.
+ */
 export interface EquipmentListResponse {
   items: Equipment[];
   total: number;
@@ -11,17 +17,33 @@ export interface EquipmentListResponse {
   totalPages: number;
 }
 
+/**
+ * Defines equipment form data used by API integration behavior.
+ */
 export interface EquipmentFormData {
   itemName: string;
   quantity: number;
   condition: EquipmentCondition;
 }
 
+/**
+ * Handles get auth token logic for API integration behavior.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 async function getAuthToken(): Promise<string | null> {
   const token = window.sessionStorage.getItem('authToken');
   return token;
 }
 
+/**
+ * Handles make request logic for API integration behavior.
+ *
+ * @param endpoint Input used by make request.
+ * @param options Input used by make request.
+ * @returns A promise that resolves when processing is complete.
+ * @throws {Error} When the backend request fails or returns invalid data.
+ */
 async function makeRequest<T>(
   endpoint: string,
   options: RequestInit = {}

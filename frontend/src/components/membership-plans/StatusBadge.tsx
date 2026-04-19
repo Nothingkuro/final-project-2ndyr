@@ -1,11 +1,29 @@
+/**
+ * Defines status badge props used by feature UI behavior.
+ */
 interface StatusBadgeProps {
   /** Whether the item is active */
+  /**
+   * Data used for is active behavior.
+   */
   isActive: boolean;
   /** Optional custom labels; defaults to "Active" / "Archived" */
+  /**
+   * Data used for active label behavior.
+   */
   activeLabel?: string;
+  /**
+   * Data used for archived label behavior.
+   */
   archivedLabel?: string;
 }
 
+/**
+ * Renders the status badge interface for feature UI behavior.
+ *
+ * @param params Input used by status badge.
+ * @returns Rendered JSX output.
+ */
 export default function StatusBadge({
   isActive,
   activeLabel = 'Active',

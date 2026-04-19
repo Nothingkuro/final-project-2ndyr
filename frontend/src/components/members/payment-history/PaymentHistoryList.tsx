@@ -1,10 +1,22 @@
 import type { MemberPaymentHistoryRecord } from '../../../types/payment';
 import PaymentHistoryCard from './PaymentHistoryCard';
 
+/**
+ * Defines payment history list props used by feature UI behavior.
+ */
 interface PaymentHistoryListProps {
+  /**
+   * Data used for payments behavior.
+   */
   payments: MemberPaymentHistoryRecord[];
 }
 
+/**
+ * Renders the payment history list view for feature UI behavior.
+ *
+ * @param params Input consumed by payment history list.
+ * @returns Rendered JSX content.
+ */
 export default function PaymentHistoryList({ payments }: PaymentHistoryListProps) {
   if (payments.length === 0) {
     return (

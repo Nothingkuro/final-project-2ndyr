@@ -9,11 +9,26 @@ import {
 
 const USERNAME_UPDATED_EVENT = 'auth-username-updated';
 
+/**
+ * Defines user profile page props used by route-level dashboard orchestration.
+ */
 interface UserProfilePageProps {
+  /**
+   * Collection data rendered by users UI.
+   */
   users?: User[];
+  /**
+   * Marks whether asynchronous data is currently loading.
+   */
   initialLoading?: boolean;
 }
 
+/**
+ * Handles format account date logic for page-level dashboard orchestration.
+ *
+ * @param isoDate Input used by format account date.
+ * @returns Computed value for the caller.
+ */
 function formatAccountDate(isoDate: string): string {
   if (!isoDate) {
     return '--';
@@ -31,12 +46,26 @@ function formatAccountDate(isoDate: string): string {
   });
 }
 
+/**
+ * Handles role badge class logic for page-level dashboard orchestration.
+ *
+ * @param role Input used by role badge class.
+ * @returns Computed value for the caller.
+ */
 function roleBadgeClass(role: User['role']): string {
   return role === 'ADMIN'
     ? 'bg-primary/10 text-primary'
     : 'bg-neutral-200 text-secondary';
 }
 
+/**
+ * Handles apply local update logic for page-level dashboard orchestration.
+ *
+ * @param users Input used by apply local update.
+ * @param targetUserId Input used by apply local update.
+ * @param username Input used by apply local update.
+ * @returns Computed value for the caller.
+ */
 function applyLocalUpdate(users: User[], targetUserId: string, username?: string): User[] {
   if (!username) {
     return users;
@@ -55,6 +84,12 @@ function applyLocalUpdate(users: User[], targetUserId: string, username?: string
   ));
 }
 
+/**
+ * Renders the user profile page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by user profile page.
+ * @returns Rendered JSX output.
+ */
 export default function UserProfilePage({
   users: providedUsers,
   initialLoading = false,
@@ -114,6 +149,10 @@ export default function UserProfilePage({
 
     let cancelled = false;
 
+    /**
+     * Handles load users for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadUsers = async () => {
       try {
         setIsLoading(true);
@@ -142,6 +181,12 @@ export default function UserProfilePage({
     };
   }, [isLocalMode]);
 
+  /**
+   * Handles handle admin submit for route-level dashboard orchestration.
+   *
+   * @param event Input consumed by handle admin submit.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleAdminSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -191,6 +236,12 @@ export default function UserProfilePage({
     }
   };
 
+  /**
+   * Handles handle staff submit for route-level dashboard orchestration.
+   *
+   * @param event Input consumed by handle staff submit.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleStaffSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 

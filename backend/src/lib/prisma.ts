@@ -19,7 +19,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
- * Creates a PrismaClient instance with the PostgreSQL adapter
+ * Creates a Prisma client wired to PostgreSQL through Prisma's adapter API.
+ *
+ * @returns A configured PrismaClient instance.
+ * @throws {Error} When DATABASE_URL is missing or cannot be normalized.
  */
 function createPrismaClient(): PrismaClient {
   const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
@@ -55,6 +58,11 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+/**
+ * Closes Prisma and pooled PostgreSQL connections during graceful shutdown.
+ *
+ * @returns A promise that resolves after all active connections are closed.
+ */
 export async function disconnectPrisma(): Promise<void> {
   await prisma.$disconnect();
 

@@ -19,22 +19,52 @@ type AttendanceListItem = {
   checkInTime: string;
 };
 
+/**
+ * Normalizes full-name input for consistent member records.
+ *
+ * @param value Raw full name input.
+ * @returns Trimmed string with collapsed whitespace.
+ */
 function normalizeFullName(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
 
+/**
+ * Normalizes an individual first/last name segment.
+ *
+ * @param value Raw name segment.
+ * @returns Trimmed string with collapsed whitespace.
+ */
 function normalizeNamePart(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
 
+/**
+ * Keeps only digits from contact numbers for duplicate checking.
+ *
+ * @param value Raw contact number input.
+ * @returns Digits-only contact number.
+ */
 function normalizeContactNumber(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+/**
+ * Normalizes member notes before persistence.
+ *
+ * @param value Raw notes text.
+ * @returns Trimmed notes string.
+ */
 function normalizeNotes(value: string): string {
   return value.trim();
 }
 
+/**
+ * Maps a Prisma member record to the API list item shape.
+ *
+ * @param member Member record selected from Prisma.
+ * @returns JSON-safe member list item with ISO date strings.
+ */
 function toMemberListItem(member: {
   id: string;
   firstName: string;
@@ -57,6 +87,12 @@ function toMemberListItem(member: {
   };
 }
 
+/**
+ * Maps a Prisma attendance record to the API response shape.
+ *
+ * @param attendance Attendance record selected from Prisma.
+ * @returns JSON-safe attendance list item.
+ */
 function toAttendanceListItem(attendance: {
   id: string;
   memberId: string;
@@ -69,6 +105,16 @@ function toAttendanceListItem(attendance: {
   };
 }
 
+/**
+ * Lists members with search, status filtering, and pagination.
+ *
+ * The handler also marks expired active memberships before querying so dashboard
+ * status values stay accurate without a separate scheduler.
+ *
+ * @param req Express request with optional query filters.
+ * @param res Express response containing paginated members.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getMembers = async (req: Request, res: Response): Promise<void> => {
   try {
     const todayEnd = new Date();
@@ -153,6 +199,13 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+/**
+ * Creates a new member with normalized identity and contact data.
+ *
+ * @param req Express request containing member creation payload.
+ * @param res Express response containing created member data.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const createMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const rawFullName = req.body?.fullName;
@@ -223,6 +276,13 @@ export const createMember = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+/**
+ * Updates mutable profile fields for an existing member.
+ *
+ * @param req Express request containing member id and update payload.
+ * @param res Express response containing updated member data.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const updateMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const memberIdParam = req.params.memberId;
@@ -309,6 +369,13 @@ export const updateMember = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+/**
+ * Deactivates a member and clears membership expiry metadata.
+ *
+ * @param req Express request containing member id.
+ * @param res Express response containing updated member status.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const deactivateMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const memberIdParam = req.params.memberId;
@@ -354,6 +421,13 @@ export const deactivateMember = async (req: Request, res: Response): Promise<voi
   }
 };
 
+/**
+ * Returns attendance history for a specific member.
+ *
+ * @param req Express request containing member id.
+ * @param res Express response containing attendance entries.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const getMemberAttendances = async (req: Request, res: Response): Promise<void> => {
   try {
     const memberIdParam = req.params.memberId;
@@ -391,6 +465,13 @@ export const getMemberAttendances = async (req: Request, res: Response): Promise
   }
 };
 
+/**
+ * Records a check-in event for an active member.
+ *
+ * @param req Express request containing member id.
+ * @param res Express response containing created attendance record.
+ * @returns Promise that resolves when the response is sent.
+ */
 export const checkInMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const memberIdParam = req.params.memberId;

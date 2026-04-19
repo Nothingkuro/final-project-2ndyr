@@ -3,15 +3,42 @@ import { X } from 'lucide-react';
 import type { MembershipPlanFormData } from '../../types/membershipPlan';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 
+/**
+ * Defines membership plan modal props used by feature UI behavior.
+ */
 interface MembershipPlanModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Data used for mode behavior.
+   */
   mode: 'add' | 'edit';
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: MembershipPlanFormData) => void;
+  /**
+   * Initial state value for data.
+   */
   initialData?: Partial<MembershipPlanFormData>;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
 }
 
+/**
+ * Renders the membership plan modal interface for feature UI behavior.
+ *
+ * @param params Input used by membership plan modal.
+ * @returns Rendered JSX output.
+ */
 export default function MembershipPlanModal({
   isOpen,
   mode,
@@ -52,6 +79,12 @@ export default function MembershipPlanModal({
 
   /* Close on Escape */
   useEffect(() => {
+    /**
+     * Handles handle key for feature UI behavior.
+     *
+     * @param e Input consumed by handle key.
+     * @returns Computed value for the caller.
+     */
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -61,6 +94,11 @@ export default function MembershipPlanModal({
 
   if (!isOpen) return null;
 
+  /**
+   * Validates membership plan form values before submit.
+   *
+   * @returns True when all required fields are valid.
+   */
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -88,6 +126,12 @@ export default function MembershipPlanModal({
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param e Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -101,6 +145,12 @@ export default function MembershipPlanModal({
     });
   };
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param e Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
   };

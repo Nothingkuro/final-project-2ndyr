@@ -2,13 +2,34 @@ import type { PaymentMethod } from '../../types/payment';
 
 const DEFAULT_METHODS: PaymentMethod[] = ['CASH', 'GCASH'];
 
+/**
+ * Defines payment method dropdown props used by feature UI behavior.
+ */
 interface PaymentMethodDropdownProps {
+  /**
+   * Current selected value.
+   */
   value: PaymentMethod;
+  /**
+   * Callback fired when change.
+   */
   onChange: (method: PaymentMethod) => void;
+  /**
+   * Disables user interaction when true.
+   */
   disabled?: boolean;
+  /**
+   * Data used for methods behavior.
+   */
   methods?: PaymentMethod[];
 }
 
+/**
+ * Renders the payment method dropdown interface for feature UI behavior.
+ *
+ * @param params Input used by payment method dropdown.
+ * @returns Rendered JSX output.
+ */
 export default function PaymentMethodDropdown({
   value,
   onChange,

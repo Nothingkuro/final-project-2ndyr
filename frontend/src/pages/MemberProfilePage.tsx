@@ -12,6 +12,9 @@ import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { Member, MemberStatus } from '../types/member';
 import type { Attendance } from '../types/attendance';
 
+/**
+ * Type alias for api member in route-level dashboard orchestration.
+ */
 type ApiMember = {
   id: string;
   firstName: string;
@@ -23,20 +26,35 @@ type ApiMember = {
   notes?: string;
 };
 
+/**
+ * Type alias for api members response in route-level dashboard orchestration.
+ */
 type ApiMembersResponse = {
   items: ApiMember[];
 };
 
+/**
+ * Type alias for api attendance in route-level dashboard orchestration.
+ */
 type ApiAttendance = {
   id: string;
   memberId: string;
   checkInTime: string;
 };
 
+/**
+ * Type alias for api attendances response in route-level dashboard orchestration.
+ */
 type ApiAttendancesResponse = {
   items: ApiAttendance[];
 };
 
+/**
+ * Handles normalize member logic for page-level dashboard orchestration.
+ *
+ * @param apiMember Input used by normalize member.
+ * @returns Computed value for the caller.
+ */
 function normalizeMember(apiMember: ApiMember): Member {
   return {
     id: apiMember.id,
@@ -50,6 +68,12 @@ function normalizeMember(apiMember: ApiMember): Member {
   };
 }
 
+/**
+ * Handles normalize attendance record logic for page-level dashboard orchestration.
+ *
+ * @param apiAttendance Input used by normalize attendance record.
+ * @returns Computed value for the caller.
+ */
 function normalizeAttendanceRecord(apiAttendance: ApiAttendance): Attendance {
   return {
     id: apiAttendance.id,
@@ -58,6 +82,12 @@ function normalizeAttendanceRecord(apiAttendance: ApiAttendance): Attendance {
   };
 }
 
+/**
+ * Handles parse api response logic for page-level dashboard orchestration.
+ *
+ * @param response Input used by parse api response.
+ * @returns A promise that resolves when processing is complete.
+ */
 async function parseApiResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
 
@@ -78,14 +108,32 @@ async function parseApiResponse(response: Response): Promise<unknown> {
   );
 }
 
+/**
+ * Handles normalize name input logic for page-level dashboard orchestration.
+ *
+ * @param value Input used by normalize name input.
+ * @returns Computed value for the caller.
+ */
 function normalizeNameInput(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
 
+/**
+ * Handles normalize contact input logic for page-level dashboard orchestration.
+ *
+ * @param value Input used by normalize contact input.
+ * @returns Computed value for the caller.
+ */
 function normalizeContactInput(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+/**
+ * Handles create mock attendance records logic for page-level dashboard orchestration.
+ *
+ * @param memberRecordId Input used by create mock attendance records.
+ * @returns Computed value for the caller.
+ */
 function createMockAttendanceRecords(memberRecordId: string): Attendance[] {
   const now = Date.now();
 
@@ -103,10 +151,17 @@ function createMockAttendanceRecords(memberRecordId: string): Attendance[] {
   ];
 }
 
-/** Side tab options */
+/**
+ * Type alias for side tab in route-level dashboard orchestration.
+ */
 type SideTab = 'payment' | 'attendance';
 
-/** Format ISO date to readable format */
+/**
+ * Formats an ISO date string into a human-readable date.
+ *
+ * @param iso ISO timestamp string.
+ * @returns Formatted date text, or `--` when input is empty/invalid.
+ */
 function formatDate(iso: string): string {
   if (!iso) {
     return '--';
@@ -125,13 +180,34 @@ function formatDate(iso: string): string {
   });
 }
 
+/**
+ * Defines member profile page props used by route-level dashboard orchestration.
+ */
 interface MemberProfilePageProps {
+  /**
+   * Collection data rendered by members UI.
+   */
   members?: Member[];
+  /**
+   * Initial state value for side tab.
+   */
   initialSideTab?: SideTab;
+  /**
+   * Initial state value for status.
+   */
   initialStatus?: MemberStatus;
+  /**
+   * Data used for disable navigation behavior.
+   */
   disableNavigation?: boolean;
 }
 
+/**
+ * Renders the member profile page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by member profile page.
+ * @returns Rendered JSX output.
+ */
 export default function MemberProfilePage({
   members,
   initialSideTab,
@@ -179,6 +255,10 @@ export default function MemberProfilePage({
 
     const controller = new AbortController();
 
+    /**
+     * Handles load member for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadMember = async () => {
       try {
         setIsLoadingMember(true);
@@ -208,6 +288,7 @@ export default function MemberProfilePage({
           throw new Error(message);
         }
 
+        // Find the specific member requested by the route param.
         const matchingMember = (data as ApiMembersResponse).items.find((item) => item.id === memberId);
         setFetchedMember(matchingMember ? normalizeMember(matchingMember) : null);
       } catch (error: unknown) {
@@ -253,6 +334,10 @@ export default function MemberProfilePage({
 
     const controller = new AbortController();
 
+    /**
+     * Handles load attendance history for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadAttendanceHistory = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/members/${member.id}/attendance`, {
@@ -374,6 +459,10 @@ export default function MemberProfilePage({
   const fullName = `${member.firstName} ${member.lastName}`;
 
   /* ── Action handlers ── */
+  /**
+   * Handles handle check in for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleCheckIn = async () => {
     if (!canCheckIn || isCheckingIn) {
       return;
@@ -429,6 +518,10 @@ export default function MemberProfilePage({
     }
   };
 
+  /**
+   * Handles handle deactivate for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleDeactivate = async () => {
     if (!member || isDeactivating || memberStatus === 'INACTIVE') {
       return;
@@ -484,11 +577,21 @@ export default function MemberProfilePage({
     }
   };
 
+  /**
+   * Handles handle edit profile for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleEditProfile = () => {
     setEditError(null);
     setIsEditModalOpen(true);
   };
 
+  /**
+   * Handles handle profile save for route-level dashboard orchestration.
+   *
+   * @param data Input consumed by handle profile save.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleProfileSave = async (data: MemberFormData) => {
     if (!member) return;
 
@@ -582,6 +685,12 @@ export default function MemberProfilePage({
   /* ── Derived flags ── */
   const canCheckIn = memberStatus === 'ACTIVE';
   const canDeactivate = memberStatus !== 'INACTIVE' && !isDeactivating;
+  /**
+   * Handles handle side tab toggle for route-level dashboard orchestration.
+   *
+   * @param tab Input consumed by handle side tab toggle.
+   * @returns Computed value for the caller.
+   */
   const handleSideTabToggle = (tab: SideTab) => {
     setActiveSideTab((currentTab) => (currentTab === tab ? null : tab));
   };

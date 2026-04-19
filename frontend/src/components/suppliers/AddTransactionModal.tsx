@@ -3,20 +3,50 @@ import { X } from 'lucide-react';
 import arrowheadLogo from '../../assets/arrowhead-logo.png';
 import type { TransactionFormData } from '../../types/supplier';
 
+/**
+ * Defines add transaction modal props used by feature UI behavior.
+ */
 interface AddTransactionModalProps {
+  /**
+   * Controls visibility state of the related UI region.
+   */
   isOpen: boolean;
+  /**
+   * Data used for supplier name behavior.
+   */
   supplierName: string;
+  /**
+   * Callback fired when close.
+   */
   onClose: () => void;
+  /**
+   * Callback fired when submit.
+   */
   onSubmit: (data: Omit<TransactionFormData, 'supplierId'>) => void;
+  /**
+   * Data used for is submitting behavior.
+   */
   isSubmitting?: boolean;
+  /**
+   * Error message shown when an operation fails.
+   */
   errorMessage?: string | null;
 }
 
+/**
+ * Defines transaction form state used by feature UI behavior.
+ */
 interface TransactionFormState {
   itemsPurchased: string;
   totalCost: string;
 }
 
+/**
+ * Renders the add transaction modal interface for feature UI behavior.
+ *
+ * @param params Input used by add transaction modal.
+ * @returns Rendered JSX output.
+ */
 export default function AddTransactionModal({
   isOpen,
   supplierName,
@@ -50,6 +80,12 @@ export default function AddTransactionModal({
       return;
     }
 
+    /**
+     * Handles on escape for feature UI behavior.
+     *
+     * @param event Input consumed by on escape.
+     * @returns Computed value for the caller.
+     */
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isSubmitting) {
         onClose();
@@ -71,12 +107,24 @@ export default function AddTransactionModal({
     transition-all duration-200
   `;
 
+  /**
+   * Handles handle backdrop click for feature UI behavior.
+   *
+   * @param event Input consumed by handle backdrop click.
+   * @returns Computed value for the caller.
+   */
   const handleBackdropClick = (event: React.MouseEvent) => {
     if (event.target === backdropRef.current && !isSubmitting) {
       onClose();
     }
   };
 
+  /**
+   * Handles handle submit for feature UI behavior.
+   *
+   * @param event Input consumed by handle submit.
+   * @returns Computed value for the caller.
+   */
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
 

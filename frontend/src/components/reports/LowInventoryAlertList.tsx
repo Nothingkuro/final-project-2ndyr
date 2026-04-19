@@ -2,14 +2,38 @@ import { AlertTriangle } from 'lucide-react';
 import type { InventoryAlert } from '../../types/report';
 import ReportSectionCard from './ReportSectionCard';
 
+/**
+ * Defines low inventory alert list props used by feature UI behavior.
+ */
 interface LowInventoryAlertListProps {
+  /**
+   * Collection data rendered by alerts UI.
+   */
   alerts: InventoryAlert[];
+  /**
+   * Data used for threshold behavior.
+   */
   threshold?: number;
+  /**
+   * Callback fired when threshold change.
+   */
   onThresholdChange?: (threshold: number) => void;
+  /**
+   * Callback fired when refresh.
+   */
   onRefresh?: () => void;
+  /**
+   * Data used for is refreshing behavior.
+   */
   isRefreshing?: boolean;
 }
 
+/**
+ * Renders the low inventory alert list interface for feature UI behavior.
+ *
+ * @param params Input used by low inventory alert list.
+ * @returns Rendered JSX output.
+ */
 export default function LowInventoryAlertList({
   alerts,
   threshold = 5,

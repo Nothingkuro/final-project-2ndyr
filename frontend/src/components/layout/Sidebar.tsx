@@ -18,20 +18,34 @@ import arrowheadLogo from '../../assets/arrowhead-logo.png';
 const USERNAME_UPDATED_EVENT = 'auth-username-updated';
 
 /** Navigation item definition */
+/**
+ * Defines nav item used by dashboard shell behavior.
+ */
 interface NavItem {
   label: string;
   icon: React.ReactNode;
   to: string;
 }
 
+/**
+ * Defines sidebar props used by dashboard shell behavior.
+ */
 interface SidebarProps {
-  /** Whether the sidebar is open on mobile */
+  /**
+   * Controls whether the sidebar is visible on mobile screens.
+   */
   isOpen: boolean;
-  /** Callback to toggle sidebar open/closed on mobile */
+  /**
+   * Callback fired when the sidebar toggle action is triggered.
+   */
   onToggle: () => void;
-  /** Initial collapsed state for desktop */
+  /**
+   * Sets the initial collapsed state for desktop layout.
+   */
   defaultCollapsed?: boolean;
-  /** Role-based navigation variant */
+  /**
+   * Role used to determine which navigation items are visible.
+   */
   role?: 'staff' | 'owner' | 'STAFF' | 'ADMIN';
 }
 
@@ -49,6 +63,12 @@ const adminAdditionalNavItems: NavItem[] = [
   { label: 'Profiles', icon: <UserCog size={20} />, to: '/dashboard/profile' },
 ];
 
+/**
+ * Renders the sidebar interface for dashboard layout behavior.
+ *
+ * @param params Input used by sidebar.
+ * @returns Rendered JSX output.
+ */
 export default function Sidebar({
   isOpen,
   onToggle,
@@ -60,6 +80,10 @@ export default function Sidebar({
   const isAdmin = role === 'owner' || role === 'ADMIN';
   const navigationItems = isAdmin ? [...navItems, ...adminAdditionalNavItems] : navItems;
 
+  /**
+   * Handles handle logout for dashboard shell behavior.
+   * @returns Computed value for the caller.
+   */
   const handleLogout = () => {
     window.sessionStorage.removeItem('authUsername');
     window.dispatchEvent(new Event(USERNAME_UPDATED_EVENT));

@@ -29,6 +29,10 @@ const SEARCH_DEBOUNCE_MS = 150;
 const TRANSACTION_PAGE_SIZE = 10;
 const ALL_CATEGORY_FILTER = 'ALL';
 
+/**
+ * Renders the suppliers page view for route-level dashboard orchestration.
+ * @returns Rendered JSX content.
+ */
 export default function SuppliersPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +96,10 @@ export default function SuppliersPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    /**
+     * Handles load service categories for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadServiceCategories = async () => {
       try {
         const categories = await listSupplierServiceCategories();
@@ -120,6 +128,10 @@ export default function SuppliersPage() {
   useEffect(() => {
     let isCancelled = false;
 
+    /**
+     * Handles load suppliers for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadSuppliers = async () => {
       try {
         setIsLoadingSuppliers(true);
@@ -178,6 +190,10 @@ export default function SuppliersPage() {
 
     let isCancelled = false;
 
+    /**
+     * Handles load transactions for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadTransactions = async () => {
       try {
         setIsLoadingTransactions(true);
@@ -228,6 +244,10 @@ export default function SuppliersPage() {
     };
   }, [selectedSupplier, transactionsPage, transactionRefreshNonce]);
 
+  /**
+   * Handles handle open add supplier for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleOpenAddSupplier = () => {
     setSupplierModalMode('add');
     setActiveSupplier(null);
@@ -235,6 +255,12 @@ export default function SuppliersPage() {
     setIsSupplierModalOpen(true);
   };
 
+  /**
+   * Handles handle open edit supplier for route-level dashboard orchestration.
+   *
+   * @param supplier Input consumed by handle open edit supplier.
+   * @returns Computed value for the caller.
+   */
   const handleOpenEditSupplier = (supplier: Supplier) => {
     setSupplierModalMode('edit');
     setActiveSupplier(supplier);
@@ -242,6 +268,10 @@ export default function SuppliersPage() {
     setIsSupplierModalOpen(true);
   };
 
+  /**
+   * Handles handle close supplier modal for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCloseSupplierModal = () => {
     if (isSubmittingSupplier) {
       return;
@@ -251,6 +281,12 @@ export default function SuppliersPage() {
     setSupplierModalError(null);
   };
 
+  /**
+   * Handles handle submit supplier for route-level dashboard orchestration.
+   *
+   * @param data Input consumed by handle submit supplier.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleSubmitSupplier = async (data: SupplierFormData) => {
     if (isSubmittingSupplier) {
       return;
@@ -284,11 +320,21 @@ export default function SuppliersPage() {
     }
   };
 
+  /**
+   * Handles handle delete supplier for route-level dashboard orchestration.
+   *
+   * @param supplier Input consumed by handle delete supplier.
+   * @returns Computed value for the caller.
+   */
   const handleDeleteSupplier = (supplier: Supplier) => {
     setSupplierToDelete(supplier);
     setIsDeleteModalOpen(true);
   };
 
+  /**
+   * Handles confirm delete supplier for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const confirmDeleteSupplier = async () => {
     if (!supplierToDelete) return;
 
@@ -312,6 +358,12 @@ export default function SuppliersPage() {
     }
   };
 
+  /**
+   * Handles handle view transactions for route-level dashboard orchestration.
+   *
+   * @param supplier Input consumed by handle view transactions.
+   * @returns Computed value for the caller.
+   */
   const handleViewTransactions = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setTransactionsPage(1);
@@ -319,6 +371,10 @@ export default function SuppliersPage() {
     setTransactionRefreshNonce((prev) => prev + 1);
   };
 
+  /**
+   * Handles handle open transaction modal for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleOpenTransactionModal = () => {
     if (!selectedSupplier) {
       return;
@@ -328,6 +384,10 @@ export default function SuppliersPage() {
     setIsTransactionModalOpen(true);
   };
 
+  /**
+   * Handles handle close transaction modal for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCloseTransactionModal = () => {
     if (isSubmittingTransaction) {
       return;
@@ -337,6 +397,12 @@ export default function SuppliersPage() {
     setTransactionModalError(null);
   };
 
+  /**
+   * Submits a new supplier transaction for the currently selected supplier.
+   *
+   * @param data Transaction payload without supplier id.
+   * @returns A promise that resolves when processing is complete.
+   */
   const handleSubmitTransaction = async (
     data: Omit<TransactionFormData, 'supplierId'>,
   ) => {

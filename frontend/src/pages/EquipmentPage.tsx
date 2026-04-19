@@ -19,12 +19,30 @@ const filterOptions: Array<{ label: string; value: EquipmentFilter }> = [
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 150;
 
+/**
+ * Defines equipment page props used by route-level dashboard orchestration.
+ */
 interface EquipmentPageProps {
+  /**
+   * Initial state value for search query.
+   */
   initialSearchQuery?: string;
+  /**
+   * Initial state value for filter.
+   */
   initialFilter?: EquipmentFilter;
+  /**
+   * Initial state value for filter open.
+   */
   initialFilterOpen?: boolean;
 }
 
+/**
+ * Renders the equipment page interface for page-level dashboard orchestration.
+ *
+ * @param params Input used by equipment page.
+ * @returns Rendered JSX output.
+ */
 export default function EquipmentPage({
   initialSearchQuery = '',
   initialFilter = 'ALL',
@@ -57,6 +75,10 @@ export default function EquipmentPage({
   useEffect(() => {
     let isCancelled = false;
 
+    /**
+     * Handles load equipment for route-level dashboard orchestration.
+     * @returns A promise that resolves when processing completes.
+     */
     const loadEquipment = async () => {
       try {
         setIsLoadingEquipment(true);
@@ -102,16 +124,30 @@ export default function EquipmentPage({
     };
   }, [debouncedSearchQuery, activeFilter, currentPage, refreshNonce]);
 
+  /**
+   * Handles handle edit for route-level dashboard orchestration.
+   *
+   * @param equipmentItem Input consumed by handle edit.
+   * @returns Computed value for the caller.
+   */
   const handleEdit = (equipmentItem: Equipment) => {
     setEditingEquipmentId(equipmentItem.id);
     setEditingCondition(equipmentItem.condition);
   };
 
+  /**
+   * Handles handle cancel edit for route-level dashboard orchestration.
+   * @returns Computed value for the caller.
+   */
   const handleCancelEdit = () => {
     setEditingEquipmentId(null);
     setEditingCondition(null);
   };
 
+  /**
+   * Handles handle save condition for route-level dashboard orchestration.
+   * @returns A promise that resolves when processing completes.
+   */
   const handleSaveCondition = async () => {
     if (!editingEquipmentId || !editingCondition) {
       return;
