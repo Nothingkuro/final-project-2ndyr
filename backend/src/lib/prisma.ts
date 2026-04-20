@@ -10,7 +10,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { normalizeDatabaseUrl } from "../config/env";
+import ConfigManager from "../config/ConfigManager";
 
 // Extend globalThis to include prisma for development hot-reload handling
 const globalForPrisma = globalThis as unknown as {
@@ -25,7 +25,8 @@ const globalForPrisma = globalThis as unknown as {
  * @throws {Error} When DATABASE_URL is missing or cannot be normalized.
  */
 function createPrismaClient(): PrismaClient {
-  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
+  const config = ConfigManager.getInstance();
+  const connectionString = config.databaseUrl;
 
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
@@ -38,7 +39,7 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({
     adapter,
     log:
-      process.env.NODE_ENV === "development"
+      config.nodeEnv === "development"
         ? ["query", "info", "warn", "error"]
         : ["error"],
   });
