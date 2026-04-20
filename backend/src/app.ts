@@ -97,5 +97,3 @@ app.use('/api', membershipPlanRoutes);
 app.use('/api', profileRoutes);
 
 export default app;
-
-// Lemuel was here * commit #1
