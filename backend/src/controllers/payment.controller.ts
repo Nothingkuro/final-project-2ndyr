@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { PaymentFactory } from '../patterns/factory-method/payment.factory';
 import { notifyPaymentCreated } from '../patterns/observer-pattern/payment-created.observer';
-import { resolvePaymentMethodStrategy } from '../patterns/strategy-pattern/payment-method.strategy';
+import { getPaymentContext } from '../patterns/strategy-pattern/payment-method.strategy';
 
 const MEMBER_NOT_FOUND_DURING_PAYMENT_TX = 'MEMBER_NOT_FOUND_DURING_PAYMENT_TX';
 const MAX_PAYMENT_TX_ATTEMPTS = 3;
@@ -66,18 +66,20 @@ export const createPayment = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const paymentMethodStrategy = resolvePaymentMethodStrategy(paymentMethod);
+    const paymentContext = getPaymentContext(paymentMethod);
 
-    if (!paymentMethodStrategy) {
+    if (!paymentContext.strategy) {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
+
+    const paymentStrategy = paymentContext.strategy;
 
     const parsedAmountPaid =
       amountPaid === undefined || amountPaid === null ? null : Number(amountPaid);
 
     if (parsedAmountPaid !== null) {
       try {
-        paymentMethodStrategy.validate(parsedAmountPaid);
+        paymentContext.validate(parsedAmountPaid);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Amount paid must be a positive number';
         return res.status(400).json({ error: message });
@@ -167,7 +169,7 @@ export const createPayment = async (req: Request, res: Response) => {
               memberId,
               planId,
               amount: finalAmount,
-              paymentMethod: paymentMethodStrategy.method,
+              paymentMethod: paymentStrategy.method,
               processedById,
             });
 

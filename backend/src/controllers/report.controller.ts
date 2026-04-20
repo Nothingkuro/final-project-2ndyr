@@ -5,10 +5,7 @@ import {
   ExpiryAlertFactory,
   InventoryAlertFactory,
 } from '../patterns/factory-method/report.factory';
-import {
-  createEmptyPaymentMethodBreakdown,
-  resolvePaymentMethodStrategy,
-} from '../patterns/strategy-pattern/payment-method.strategy';
+import revenueContext from '../services/revenueStrategy';
 
 const expiryAlertFactory = new ExpiryAlertFactory();
 const inventoryAlertFactory = new InventoryAlertFactory();
@@ -60,15 +57,12 @@ export const getDailyRevenueSummary = async (_req: Request, res: Response): Prom
       },
     });
 
-    const summary = payments.reduce((acc, payment) => {
-      const strategy = resolvePaymentMethodStrategy(payment.paymentMethod);
-
-      if (!strategy) {
-        return acc;
-      }
-
-      return strategy.applyRevenue(toNumber(payment.amount), acc);
-    }, createEmptyPaymentMethodBreakdown());
+    const summary = revenueContext.aggregate(
+      payments.map((payment) => ({
+        amount: toNumber(payment.amount),
+        paymentMethod: payment.paymentMethod,
+      })),
+    );
 
     const total = summary.cash + summary.gcash;
 
@@ -277,15 +271,12 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
       }),
     ]);
 
-    const daily = dailyPayments.reduce((acc, payment) => {
-      const strategy = resolvePaymentMethodStrategy(payment.paymentMethod);
-
-      if (!strategy) {
-        return acc;
-      }
-
-      return strategy.applyRevenue(toNumber(payment.amount), acc);
-    }, createEmptyPaymentMethodBreakdown());
+    const daily = revenueContext.aggregate(
+      dailyPayments.map((payment) => ({
+        amount: toNumber(payment.amount),
+        paymentMethod: payment.paymentMethod,
+      })),
+    );
 
     const monthlyTotals = new Map<string, { month: number; year: number; total: number }>();
 

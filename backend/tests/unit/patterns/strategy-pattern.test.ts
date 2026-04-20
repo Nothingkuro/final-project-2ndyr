@@ -1,31 +1,32 @@
 import { PaymentMethod } from '@prisma/client';
 
 import {
-  createEmptyPaymentMethodBreakdown,
-  resolvePaymentMethodStrategy,
+  getPaymentContext,
 } from '../../../src/patterns/strategy-pattern/payment-method.strategy';
 
 describe('strategy pattern', () => {
-  it('resolves cash strategy and updates revenue breakdown', () => {
-    const strategy = resolvePaymentMethodStrategy(PaymentMethod.CASH);
+  it('resolves cash strategy and validates positive amounts', () => {
+    const context = getPaymentContext(PaymentMethod.CASH);
 
-    expect(strategy).not.toBeNull();
-    expect(strategy?.method).toBe(PaymentMethod.CASH);
-
-    const breakdown = strategy?.applyRevenue(500, createEmptyPaymentMethodBreakdown());
-
-    expect(breakdown).toEqual({ cash: 500, gcash: 0 });
+    expect(context.strategy).not.toBeNull();
+    expect(context.strategy?.method).toBe(PaymentMethod.CASH);
+    expect(() => context.validate(500)).not.toThrow();
+    expect(() => context.validate(0)).toThrow('Amount paid must be a positive number');
   });
 
   it('resolves gcash strategy and validates positive amounts', () => {
-    const strategy = resolvePaymentMethodStrategy(PaymentMethod.GCASH);
+    const context = getPaymentContext(PaymentMethod.GCASH);
 
-    expect(strategy).not.toBeNull();
-    expect(() => strategy!.validate(1)).not.toThrow();
-    expect(() => strategy!.validate(0)).toThrow('Amount paid must be a positive number');
+    expect(context.strategy).not.toBeNull();
+    expect(context.strategy?.method).toBe(PaymentMethod.GCASH);
+    expect(() => context.validate(1)).not.toThrow();
+    expect(() => context.validate(0)).toThrow('Amount paid must be a positive number');
   });
 
   it('returns null for unsupported payment methods', () => {
-    expect(resolvePaymentMethodStrategy('CARD')).toBeNull();
+    const context = getPaymentContext('CARD');
+
+    expect(context.strategy).toBeNull();
+    expect(() => context.validate(1)).toThrow('Invalid payment method');
   });
 });

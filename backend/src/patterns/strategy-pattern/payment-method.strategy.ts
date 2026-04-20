@@ -1,17 +1,11 @@
 import { PaymentMethod } from '@prisma/client';
 
-export type PaymentMethodBreakdown = {
-  cash: number;
-  gcash: number;
-};
-
-export interface PaymentMethodStrategy {
+export interface PaymentProcessingStrategy {
   readonly method: PaymentMethod;
   validate(amount: number): void;
-  applyRevenue(amount: number, current: PaymentMethodBreakdown): PaymentMethodBreakdown;
 }
 
-class CashPaymentStrategy implements PaymentMethodStrategy {
+class CashPaymentStrategy implements PaymentProcessingStrategy {
   readonly method = PaymentMethod.CASH;
 
   validate(amount: number): void {
@@ -19,16 +13,9 @@ class CashPaymentStrategy implements PaymentMethodStrategy {
       throw new Error('Amount paid must be a positive number');
     }
   }
-
-  applyRevenue(amount: number, current: PaymentMethodBreakdown): PaymentMethodBreakdown {
-    return {
-      ...current,
-      cash: current.cash + amount,
-    };
-  }
 }
 
-class GCashPaymentStrategy implements PaymentMethodStrategy {
+class GCashPaymentStrategy implements PaymentProcessingStrategy {
   readonly method = PaymentMethod.GCASH;
 
   validate(amount: number): void {
@@ -36,30 +23,39 @@ class GCashPaymentStrategy implements PaymentMethodStrategy {
       throw new Error('Amount paid must be a positive number');
     }
   }
-
-  applyRevenue(amount: number, current: PaymentMethodBreakdown): PaymentMethodBreakdown {
-    return {
-      ...current,
-      gcash: current.gcash + amount,
-    };
-  }
 }
 
-const strategies: PaymentMethodStrategy[] = [new CashPaymentStrategy(), new GCashPaymentStrategy()];
+const strategies: PaymentProcessingStrategy[] = [new CashPaymentStrategy(), new GCashPaymentStrategy()];
+
+export class PaymentProcessingContext {
+  readonly strategy: PaymentProcessingStrategy | null;
+
+  constructor(strategy: PaymentProcessingStrategy | null) {
+    this.strategy = strategy;
+  }
+
+  validate(amount: number): void {
+    if (!this.strategy) {
+      throw new Error('Invalid payment method');
+    }
+
+    this.strategy.validate(amount);
+  }
+}
 
 /**
- * Resolves behavior for a given payment method.
+ * Returns a payment processing context for the provided payment method.
  */
-export function resolvePaymentMethodStrategy(
+export function getPaymentContext(
   paymentMethod: unknown,
-): PaymentMethodStrategy | null {
+): PaymentProcessingContext {
   if (typeof paymentMethod !== 'string') {
-    return null;
+    return new PaymentProcessingContext(null);
   }
 
-  return strategies.find((strategy) => strategy.method === paymentMethod) ?? null;
+  return new PaymentProcessingContext(
+    strategies.find((strategy) => strategy.method === paymentMethod) ?? null,
+  );
 }
 
-export function createEmptyPaymentMethodBreakdown(): PaymentMethodBreakdown {
-  return { cash: 0, gcash: 0 };
-}
+export { CashPaymentStrategy, GCashPaymentStrategy };

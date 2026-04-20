@@ -6,7 +6,7 @@ export type RevenueTotals = {
 };
 
 export type RevenuePayment = {
-  amount: number | string;
+  amount: number | string | { toString(): string };
   paymentMethod: PaymentMethod | string;
 };
 
