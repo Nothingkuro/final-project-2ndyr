@@ -52,4 +52,5 @@ export interface MemberPaymentHistoryRecord {
   membershipPlan: string;
   processedBy: string;
   paymentMethod?: PaymentMethod;
+  referenceNumber?: string | null;
 }

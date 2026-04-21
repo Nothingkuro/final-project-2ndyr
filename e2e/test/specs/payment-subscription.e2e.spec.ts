@@ -62,7 +62,9 @@ test.describe('Payment and subscription tracking e2e', () => {
     await expect(page.getByText(SEEDED_ACTIVE_MEMBER.fullName, { exact: true })).toBeVisible();
     await page.getByText(SEEDED_ACTIVE_MEMBER.fullName, { exact: true }).click();
 
-    await page.getByRole('combobox', { name: /payment method/i }).selectOption({ label: 'CASH' });
+    await page.getByRole('combobox', { name: /payment method/i }).selectOption({ label: 'GCASH' });
+    await expect(page.getByLabel('GCash Reference Number')).toBeVisible();
+    await page.getByLabel('GCash Reference Number').fill('GCHIST99');
     await page.getByRole('row', { name: /Daily Pass/ }).click();
     await page.getByRole('button', { name: 'Submit' }).click();
     await expect(page.getByText('Payment recorded successfully. Undo is available for 5 seconds.')).toBeVisible();
@@ -91,5 +93,7 @@ test.describe('Payment and subscription tracking e2e', () => {
       await expect(paymentHistoryEntry).toContainText(currentMonth);
       await expect(paymentHistoryEntry).not.toContainText(previousMonth);
     }
+
+    await expect(page.getByText('GCash Ref: GCHIST99')).toBeVisible();
   });
 });

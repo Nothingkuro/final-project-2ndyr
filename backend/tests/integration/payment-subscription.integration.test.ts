@@ -216,6 +216,20 @@ describe('Payment and subscription API', () => {
 
     const gcashPaymentId = paymentResponse.body.payment.id as string;
 
+    const historyResponse = await request(app)
+      .get(`/api/members/${createdMemberId}/payments`)
+      .set('Cookie', authCookie);
+
+    expect(historyResponse.status).toBe(200);
+
+    const createdGcashPayment = historyResponse.body.find(
+      (item: { id: string }) => item.id === gcashPaymentId,
+    );
+
+    expect(createdGcashPayment).toBeDefined();
+    expect(createdGcashPayment.referenceNumber).toBe('GCASH123');
+    expect(createdGcashPayment.paymentMethod).toBe('GCASH');
+
     const undoResponse = await request(app)
       .post(`/api/payments/${gcashPaymentId}/undo`)
       .set('Cookie', authCookie)
