@@ -6,6 +6,7 @@ export type PaymentFactoryInput = {
   planId: string;
   amount: number;
   paymentMethod: PaymentMethod;
+  referenceNumber?: string;
   processedById: string;
 };
 
@@ -21,6 +22,7 @@ export class PaymentFactory
       planId: input.planId,
       amount: input.amount,
       paymentMethod: input.paymentMethod,
+      referenceNumber: input.referenceNumber,
       processedById: input.processedById,
     };
   }

@@ -17,6 +17,7 @@ type ProcessPaymentCommandParams = {
   planDurationDays?: number;
   amount?: number;
   paymentMethod?: PaymentMethod;
+  referenceNumber?: string;
   paymentId?: string;
 };
 
@@ -27,6 +28,7 @@ export type ProcessPaymentExecuteResult = {
     planId: string;
     amount: Prisma.Decimal;
     paymentMethod: PaymentMethod;
+    referenceNumber: string | null;
     transactionDate: Date;
     processedById: string;
   };
@@ -74,6 +76,7 @@ export class ProcessPaymentCommand implements ICommand {
       planDurationDays,
       amount,
       paymentMethod,
+      referenceNumber,
     } = this.params;
 
     if (!memberId || !planId || !processedById || !planDurationDays || !paymentMethod || amount === undefined) {
@@ -118,6 +121,7 @@ export class ProcessPaymentCommand implements ICommand {
               planId,
               amount,
               paymentMethod,
+              referenceNumber,
               processedById,
             });
 

@@ -102,6 +102,7 @@ model Payment {
   id              String        @id @default(cuid())
   amount          Decimal       @db.Decimal(10, 2)
   paymentMethod   PaymentMethod
+  referenceNumber String?
   transactionDate DateTime      @default(now())
   previousStatus  String?
   previousExpiryDate DateTime?
