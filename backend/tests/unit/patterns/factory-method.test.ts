@@ -61,6 +61,19 @@ describe('Report Factories Unit Tests', () => {
     expect(result.expiryDate).toBe(mockMember.expiryDate.toISOString());
   });
 
+  it('should return empty string for expiryDate when member expiry is null', () => {
+    const mockMember = {
+      id: 'm-2',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      contactNumber: '09876',
+      expiryDate: null,
+    } as any;
+    
+    const result = expiryFactory.create(mockMember);
+    expect(result.expiryDate).toBe('');
+  });
+
   it('should correctly format Equipment into an InventoryAlertDTO', () => {
     const mockEq = { id: 'e-1', itemName: 'Dumbbell', quantity: 2 } as any;
     const result = inventoryFactory.create({ equipment: mockEq, threshold: 5 });

@@ -4,7 +4,6 @@ import type { Request, Response } from 'express';
 jest.mock('../../../src/lib/prisma', () => ({
   __esModule: true,
   default: {
-    $transaction: jest.fn(),
     member: {
       count: jest.fn(),
       findMany: jest.fn(),
@@ -16,7 +15,10 @@ jest.mock('../../../src/lib/prisma', () => ({
     attendance: {
       create: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
     },
+    $transaction: jest.fn(),
   },
 }));
 
@@ -27,6 +29,7 @@ import {
   getMemberAttendances,
   getMembers,
   updateMember,
+  undoCheckIn,
 } from '../../../src/controllers/member.controller';
 import prisma from '../../../src/lib/prisma';
 import { globalNotificationSubject } from '../../../src/patterns/observer-pattern/notification.subject';
@@ -45,6 +48,14 @@ describe('member controller', () => {
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     jest.spyOn(globalNotificationSubject, 'notifyAll').mockResolvedValue(undefined);
+
+    // Default $transaction mock to handle both array and callback styles
+    mockedPrisma.$transaction.mockImplementation(async (arg: any) => {
+      if (typeof arg === 'function') {
+        return arg(mockedPrisma);
+      }
+      return Array.isArray(arg) ? Promise.all(arg) : arg;
+    });
   });
 
   afterEach(() => {
@@ -68,15 +79,20 @@ describe('member controller', () => {
         status: 'ACTIVE',
       },
     ]);
-    mockedPrisma.$transaction.mockImplementation(async (queries: Promise<unknown>[]) =>
-      Promise.all(queries)
-    );
 
     const req = { query: {} } as unknown as Request;
     const res = createResponse();
 
     await getMembers(req, res);
 
+    expect(mockedPrisma.member.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: MemberStatus.ACTIVE,
+        }),
+        data: { status: MemberStatus.EXPIRED },
+      })
+    );
     expect(mockedPrisma.member.count).toHaveBeenCalledWith({ where: {} });
     expect(mockedPrisma.member.findMany).toHaveBeenCalledWith({
       where: {},
@@ -119,9 +135,6 @@ describe('member controller', () => {
   it('applies search, status, and pagination rules in getMembers', async () => {
     mockedPrisma.member.count.mockResolvedValue(0);
     mockedPrisma.member.findMany.mockResolvedValue([]);
-    mockedPrisma.$transaction.mockImplementation(async (queries: Promise<unknown>[]) =>
-      Promise.all(queries)
-    );
 
     const req = {
       query: {
@@ -135,6 +148,7 @@ describe('member controller', () => {
 
     await getMembers(req, res);
 
+    expect(mockedPrisma.member.updateMany).toHaveBeenCalled();
     expect(mockedPrisma.member.count).toHaveBeenCalledWith({
       where: {
         status: MemberStatus.ACTIVE,
@@ -686,5 +700,60 @@ describe('member controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Failed to check in member' });
+  });
+
+  describe('undoCheckIn', () => {
+    it('returns 400 when attendance id is missing', async () => {
+      const req = { params: {} } as unknown as Request;
+      const res = createResponse();
+
+      await undoCheckIn(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Attendance id is required' });
+    });
+
+    it('returns 404 when attendance record is not found', async () => {
+      const req = { params: { id: 'missing-attendance' } } as unknown as Request;
+      const res = createResponse();
+
+      mockedPrisma.attendance.findUnique.mockResolvedValue(null);
+
+      await undoCheckIn(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Attendance record not found' });
+    });
+
+    it('successfully deletes attendance in undoCheckIn', async () => {
+      const req = { params: { id: 'attendance-1' } } as unknown as Request;
+      const res = createResponse();
+
+      mockedPrisma.attendance.findUnique.mockResolvedValue({ id: 'attendance-1' });
+      mockedPrisma.attendance.delete.mockResolvedValue({ id: 'attendance-1' });
+
+      await undoCheckIn(req, res);
+
+      expect(mockedPrisma.attendance.delete).toHaveBeenCalledWith({
+        where: { id: 'attendance-1' },
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Check-in undone successfully.',
+        attendanceId: 'attendance-1',
+      });
+    });
+
+    it('returns 500 on unexpected errors', async () => {
+      const req = { params: { id: 'attendance-1' } } as unknown as Request;
+      const res = createResponse();
+
+      mockedPrisma.attendance.findUnique.mockRejectedValue(new Error('db down'));
+
+      await undoCheckIn(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to undo check-in' });
+    });
   });
 });

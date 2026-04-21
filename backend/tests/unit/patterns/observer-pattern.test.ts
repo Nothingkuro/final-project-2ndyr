@@ -52,7 +52,7 @@ describe('observer pattern', () => {
 
   it('starts observer updates concurrently and isolates failures', async () => {
     const subject = new Subject<{ id: string }>();
-    let resolveSlowObserver: (() => void) | null = null;
+    let resolveSlowObserver: any = null;
 
     const slowObserver = {
       update: jest.fn().mockImplementation(
