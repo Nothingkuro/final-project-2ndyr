@@ -345,4 +345,31 @@ describe('Reporting and analysis API', () => {
     const hasPositive = response.body.some((record: { total: number }) => record.total > 0);
     expect(hasPositive).toBe(true);
   });
+
+  it('filters overview trends by requested month and year', async () => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const previousMonthDate = new Date(now);
+    previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+    const previousMonth = previousMonthDate.getMonth() + 1;
+    const previousYear = previousMonthDate.getFullYear();
+
+    const currentResponse = await request(app)
+      .get(`/api/reports/overview?threshold=5&days=3&month=${currentMonth}&year=${currentYear}`)
+      .set('Cookie', adminCookie);
+
+    const previousResponse = await request(app)
+      .get(`/api/reports/overview?threshold=5&days=3&month=${previousMonth}&year=${previousYear}`)
+      .set('Cookie', adminCookie);
+
+    expect(currentResponse.status).toBe(200);
+    expect(previousResponse.status).toBe(200);
+
+    const sumRevenue = (points: Array<{ revenue: number }>) =>
+      points.reduce((sum, point) => sum + point.revenue, 0);
+
+    expect(sumRevenue(currentResponse.body.revenueTrends)).toBe(1500);
+    expect(sumRevenue(previousResponse.body.revenueTrends)).toBe(900);
+  });
 });
