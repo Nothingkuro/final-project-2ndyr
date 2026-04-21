@@ -3,9 +3,15 @@ import MemberSearchSelect from '../components/payments/MemberSearchSelect';
 import MembershipPlanTable from '../components/payments/MembershipPlanTable';
 import PaymentMethodDropdown from '../components/payments/PaymentMethodDropdown';
 import SubmitPaymentButton from '../components/payments/SubmitPaymentButton';
+import useUndoTimer from '../hooks/useUndoTimer';
 import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
-import type { MembershipPlan, PaymentMember, PaymentMethod } from '../types/payment';
+import type {
+  CreatePaymentRequest,
+  MembershipPlan,
+  PaymentMember,
+  PaymentMethod,
+} from '../types/payment';
 
 const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'GCASH'];
 
@@ -31,6 +37,13 @@ type ApiPlan = {
   durationDays: number;
   description?: string | null;
   price: number | string;
+};
+
+type CreatePaymentResponse = {
+  payment: {
+    id: string;
+  };
+  error?: string;
 };
 
 /**
@@ -114,12 +127,19 @@ export default function PaymentsPage({
   const [plansList, setPlansList] = useState<MembershipPlan[]>(plans ?? []);
   const [selectedMemberId, setSelectedMemberId] = useState(initialSelectedMemberId);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(initialPaymentMethod);
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState(initialSelectedPlanId);
   const [isLoading, setIsLoading] = useState(initialLoading);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const {
+    isUndoAvailable,
+    activeId: undoPaymentId,
+    startUndoWindow,
+    clearUndoState,
+  } = useUndoTimer(5000);
 
   useEffect(() => {
     if (members) {
@@ -266,12 +286,55 @@ export default function PaymentsPage({
     setSelectedPaymentMethod(initialPaymentMethod);
   }, [initialPaymentMethod]);
 
+  useEffect(() => {
+    if (selectedPaymentMethod !== 'GCASH' && referenceNumber !== '') {
+      setReferenceNumber('');
+    }
+  }, [referenceNumber, selectedPaymentMethod]);
+
   /**
    * Handles handle submit payment for route-level dashboard orchestration.
    * @returns A promise that resolves when processing completes.
    */
   const handleSubmitPayment = async () => {
-    if (!selectedMemberId || !selectedPlanId || isSubmitting || isLoading) {
+    if (isSubmitting || isLoading) {
+      return;
+    }
+
+    if (isUndoAvailable && undoPaymentId) {
+      try {
+        setIsSubmitting(true);
+        setSubmitError(null);
+        setSubmitSuccess(null);
+
+        const undoResponse = await fetch(`${API_BASE_URL}/api/payments/${undoPaymentId}/undo`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
+
+        const undoData = (await parseApiResponse(undoResponse)) as { error?: string };
+
+        if (!undoResponse.ok) {
+          const message = typeof undoData.error === 'string' ? undoData.error : 'Failed to undo payment';
+          throw new Error(message);
+        }
+
+        clearUndoState();
+        setSubmitSuccess('Payment successfully undone.');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to undo payment';
+        setSubmitError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+
+      return;
+    }
+
+    if (!selectedMemberId || !selectedPlanId) {
       return;
     }
 
@@ -282,10 +345,23 @@ export default function PaymentsPage({
       return;
     }
 
+    if (selectedPaymentMethod === 'GCASH' && referenceNumber.trim().length < 8) {
+      setSubmitError('GCash reference number must be at least 8 characters.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setSubmitError(null);
       setSubmitSuccess(null);
+
+      const paymentPayload: CreatePaymentRequest = {
+        memberId: selectedMemberId,
+        planId: selectedPlanId,
+        paymentMethod: selectedPaymentMethod,
+        amountPaid: selectedPlan.price,
+        referenceNumber: selectedPaymentMethod === 'GCASH' ? referenceNumber.trim() : undefined,
+      };
 
       const response = await fetch(`${API_BASE_URL}/api/payments`, {
         method: 'POST',
@@ -294,22 +370,18 @@ export default function PaymentsPage({
           'Content-Type': 'application/json',
           ...getAuthHeaders(),
         },
-        body: JSON.stringify({
-          memberId: selectedMemberId,
-          planId: selectedPlanId,
-          paymentMethod: selectedPaymentMethod,
-          amountPaid: selectedPlan.price,
-        }),
+        body: JSON.stringify(paymentPayload),
       });
 
-      const data = (await parseApiResponse(response)) as { error?: string };
+      const data = (await parseApiResponse(response)) as CreatePaymentResponse;
 
       if (!response.ok) {
         const message = typeof data.error === 'string' ? data.error : 'Failed to submit payment';
         throw new Error(message);
       }
 
-      setSubmitSuccess('Payment recorded successfully.');
+      startUndoWindow(data.payment.id);
+      setSubmitSuccess('Payment recorded successfully. Undo is available for 5 seconds.');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to submit payment';
       setSubmitError(message);
@@ -321,10 +393,17 @@ export default function PaymentsPage({
   const isSubmitDisabled =
     isLoading
     || isSubmitting
-    || membersList.length === 0
-    || plansList.length === 0
-    || !selectedMemberId
-    || !selectedPlanId;
+    || (
+      !isUndoAvailable
+      && (
+        membersList.length === 0
+        || plansList.length === 0
+        || !selectedMemberId
+        || !selectedPlanId
+        || (selectedPaymentMethod === 'GCASH' && referenceNumber.trim().length < 8)
+      )
+    )
+    || (isUndoAvailable && !undoPaymentId);
 
   return (
     <div className="relative min-h-full">
@@ -348,6 +427,28 @@ export default function PaymentsPage({
             methods={PAYMENT_METHODS}
           />
 
+          {selectedPaymentMethod === 'GCASH' && (
+            <div className="space-y-2">
+              <label htmlFor="gcashReferenceNumber" className="block text-sm font-medium text-text-primary">
+                GCash Reference Number
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                  Required
+                </span>
+              </label>
+              <input
+                id="gcashReferenceNumber"
+                type="text"
+                value={referenceNumber}
+                onChange={(event) => {
+                  setReferenceNumber(event.target.value);
+                }}
+                placeholder="Enter GCash reference number"
+                className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-neutral-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                autoComplete="off"
+              />
+            </div>
+          )}
+
           <MembershipPlanTable
             plans={plansList}
             selectedPlanId={selectedPlanId}
@@ -370,7 +471,9 @@ export default function PaymentsPage({
           <SubmitPaymentButton
             onClick={handleSubmitPayment}
             disabled={isSubmitDisabled}
-            label={isSubmitting ? 'Submitting...' : 'Submit'}
+            label={isSubmitting ? 'Submitting...' : isUndoAvailable ? 'Undo Action' : 'Submit'}
+            isUndo={isUndoAvailable}
+            referenceNumber={referenceNumber}
           />
         </div>
       </section>

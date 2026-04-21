@@ -49,6 +49,18 @@ async function truncatePublicTables(): Promise<void> {
 	await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${qualifiedTables} RESTART IDENTITY CASCADE`);
 }
 
+async function ensurePaymentColumns(): Promise<void> {
+	await prisma.$executeRawUnsafe(
+		'ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "referenceNumber" TEXT',
+	);
+	await prisma.$executeRawUnsafe(
+		'ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "previousStatus" TEXT',
+	);
+	await prisma.$executeRawUnsafe(
+		'ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "previousExpiryDate" TIMESTAMP(3)',
+	);
+}
+
 async function sleep(ms: number): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -94,6 +106,7 @@ async function main(): Promise<void> {
 
 	try {
 		assertSafeDatabaseUrl();
+		await ensurePaymentColumns();
 		await truncatePublicTables();
 		await seedE2EDatabase();
 	} finally {

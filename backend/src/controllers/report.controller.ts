@@ -1,6 +1,14 @@
-import { MemberStatus, PaymentMethod } from '@prisma/client';
+import { Member, MemberStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import {
+  ExpiryAlertDTO,
+  InventoryAlertDTO,
+  InventoryAlertInput,
+} from '../patterns/factory-method/report.factory';
+import { ReportCreator } from '../patterns/factory-method/report-creator';
+import { ReportType } from '../patterns/factory-method/report.types';
+import revenueContext from '../services/revenueStrategy';
 
 /**
  * Computes the local start-of-day boundary for date-window reporting queries.
@@ -49,19 +57,11 @@ export const getDailyRevenueSummary = async (_req: Request, res: Response): Prom
       },
     });
 
-    const summary = payments.reduce(
-      (acc, payment) => {
-        const amount = toNumber(payment.amount);
-
-        if (payment.paymentMethod === PaymentMethod.CASH) {
-          acc.cash += amount;
-        } else if (payment.paymentMethod === PaymentMethod.GCASH) {
-          acc.gcash += amount;
-        }
-
-        return acc;
-      },
-      { cash: 0, gcash: 0 },
+    const summary = revenueContext.aggregate(
+      payments.map((payment) => ({
+        amount: toNumber(payment.amount),
+        paymentMethod: payment.paymentMethod,
+      })),
     );
 
     const total = summary.cash + summary.gcash;
@@ -150,27 +150,16 @@ export const getUpcomingExpirations = async (req: Request, res: Response): Promi
           lte: end,
         },
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        contactNumber: true,
-        expiryDate: true,
-      },
       orderBy: {
         expiryDate: 'asc',
       },
     });
 
     res.status(200).json(
-      members
-        .filter((member) => member.expiryDate)
-        .map((member) => ({
-          id: member.id,
-          name: `${member.firstName} ${member.lastName}`.trim(),
-          expiryDate: member.expiryDate!.toISOString(),
-          contactNumber: member.contactNumber,
-        })),
+      ReportCreator.createReportBatch<Member, ExpiryAlertDTO>(
+        ReportType.EXPIRY_ALERT,
+        members.filter((member) => member.expiryDate),
+      ),
     );
   } catch (error) {
     console.error('Error fetching upcoming expirations:', error);
@@ -198,24 +187,16 @@ export const getLowInventoryAlerts = async (req: Request, res: Response): Promis
           lt: threshold,
         },
       },
-      select: {
-        id: true,
-        itemName: true,
-        quantity: true,
-      },
       orderBy: {
         quantity: 'asc',
       },
     });
 
     res.status(200).json(
-      equipment.map((item) => ({
-        id: item.id,
-        itemName: item.itemName,
-        category: 'Equipment',
-        quantity: item.quantity,
-        threshold,
-      })),
+      ReportCreator.createReportBatch<InventoryAlertInput, InventoryAlertDTO>(
+        ReportType.INVENTORY_ALERT,
+        equipment.map((item) => ({ equipment: item, threshold })),
+      ),
     );
   } catch (error) {
     console.error('Error fetching low inventory alerts:', error);
@@ -278,13 +259,6 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
             lte: endOfExpiryWindow,
           },
         },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          contactNumber: true,
-          expiryDate: true,
-        },
         orderBy: {
           expiryDate: 'asc',
         },
@@ -295,30 +269,17 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
             lt: threshold,
           },
         },
-        select: {
-          id: true,
-          itemName: true,
-          quantity: true,
-        },
         orderBy: {
           quantity: 'asc',
         },
       }),
     ]);
 
-    const daily = dailyPayments.reduce(
-      (acc, payment) => {
-        const amount = toNumber(payment.amount);
-
-        if (payment.paymentMethod === PaymentMethod.CASH) {
-          acc.cash += amount;
-        } else if (payment.paymentMethod === PaymentMethod.GCASH) {
-          acc.gcash += amount;
-        }
-
-        return acc;
-      },
-      { cash: 0, gcash: 0 },
+    const daily = revenueContext.aggregate(
+      dailyPayments.map((payment) => ({
+        amount: toNumber(payment.amount),
+        paymentMethod: payment.paymentMethod,
+      })),
     );
 
     const monthlyTotals = new Map<string, { month: number; year: number; total: number }>();
@@ -347,21 +308,14 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
         }
         return a.month - b.month;
       }),
-      membershipExpiryAlerts: expiringMembers
-        .filter((member) => member.expiryDate)
-        .map((member) => ({
-          id: member.id,
-          name: `${member.firstName} ${member.lastName}`.trim(),
-          expiryDate: member.expiryDate!.toISOString(),
-          contactNumber: member.contactNumber,
-        })),
-      inventoryAlerts: inventory.map((item) => ({
-        id: item.id,
-        itemName: item.itemName,
-        category: 'Equipment',
-        quantity: item.quantity,
-        threshold,
-      })),
+      membershipExpiryAlerts: ReportCreator.createReportBatch<Member, ExpiryAlertDTO>(
+        ReportType.EXPIRY_ALERT,
+        expiringMembers.filter((member) => member.expiryDate),
+      ),
+      inventoryAlerts: ReportCreator.createReportBatch<InventoryAlertInput, InventoryAlertDTO>(
+        ReportType.INVENTORY_ALERT,
+        inventory.map((item) => ({ equipment: item, threshold })),
+      ),
     });
   } catch (error) {
     console.error('Error fetching reports overview:', error);

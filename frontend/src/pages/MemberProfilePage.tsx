@@ -7,6 +7,7 @@ import ProfileInfoRow from '../components/members/ProfileInfoRow';
 import StatusBadge from '../components/members/StatusBadge';
 import MemberAttendanceHistoryPanel from '../components/members/attendance/MemberAttendanceHistoryPanel';
 import MemberPaymentHistoryPanel from '../components/members/payment-history/MemberPaymentHistoryPanel';
+import useUndoTimer from '../hooks/useUndoTimer';
 import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { Member, MemberStatus } from '../types/member';
@@ -232,6 +233,12 @@ export default function MemberProfilePage({
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [checkInMessage, setCheckInMessage] = useState<string | null>(null);
   const [checkInMessageTone, setCheckInMessageTone] = useState<'success' | 'error' | null>(null);
+  const {
+    isUndoAvailable: isCheckInUndoAvailable,
+    activeId: activeAttendanceUndoId,
+    startUndoWindow: startCheckInUndoWindow,
+    clearUndoState: clearCheckInUndoState,
+  } = useUndoTimer(5000);
   const isLocalMode = Boolean(members);
 
   useEffect(() => {
@@ -322,6 +329,7 @@ export default function MemberProfilePage({
       setAttendanceHistory([]);
       setCheckInMessage(null);
       setCheckInMessageTone(null);
+      clearCheckInUndoState();
       return;
     }
 
@@ -329,6 +337,7 @@ export default function MemberProfilePage({
       setAttendanceHistory(createMockAttendanceRecords(member.id));
       setCheckInMessage(null);
       setCheckInMessageTone(null);
+      clearCheckInUndoState();
       return;
     }
 
@@ -378,7 +387,7 @@ export default function MemberProfilePage({
     return () => {
       controller.abort();
     };
-  }, [isLocalMode, member?.id]);
+  }, [clearCheckInUndoState, isLocalMode, member?.id]);
 
   useEffect(() => {
     if (!checkInMessage) {
@@ -464,7 +473,61 @@ export default function MemberProfilePage({
    * @returns A promise that resolves when processing completes.
    */
   const handleCheckIn = async () => {
-    if (!canCheckIn || isCheckingIn) {
+    if (isCheckingIn) {
+      return;
+    }
+
+    if (isCheckInUndoAvailable && activeAttendanceUndoId) {
+      if (isLocalMode) {
+        setAttendanceHistory((currentRecords) =>
+          currentRecords.filter((attendanceRecord) => attendanceRecord.id !== activeAttendanceUndoId)
+        );
+        clearCheckInUndoState();
+        setCheckInMessage('Check-in successfully undone.');
+        setCheckInMessageTone('success');
+        return;
+      }
+
+      try {
+        setIsCheckingIn(true);
+        setCheckInMessage(null);
+        setCheckInMessageTone(null);
+
+        const response = await fetch(`${API_BASE_URL}/api/members/attendance/${activeAttendanceUndoId}/undo`, {
+          method: 'POST',
+          headers: {
+            ...getAuthHeaders(),
+          },
+          credentials: 'include',
+        });
+
+        const responseBody = (await parseApiResponse(response)) as { error?: string };
+
+        if (!response.ok) {
+          const message = 'error' in responseBody && typeof responseBody.error === 'string'
+            ? responseBody.error
+            : 'Failed to undo check-in';
+          throw new Error(message);
+        }
+
+        setAttendanceHistory((currentRecords) =>
+          currentRecords.filter((attendanceRecord) => attendanceRecord.id !== activeAttendanceUndoId)
+        );
+        clearCheckInUndoState();
+        setCheckInMessage('Check-in successfully undone.');
+        setCheckInMessageTone('success');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to undo check-in';
+        setCheckInMessage(message);
+        setCheckInMessageTone('error');
+      } finally {
+        setIsCheckingIn(false);
+      }
+
+      return;
+    }
+
+    if (!canCheckIn) {
       return;
     }
 
@@ -476,9 +539,9 @@ export default function MemberProfilePage({
       };
 
       setAttendanceHistory((currentRecords) => [mockAttendance, ...currentRecords]);
-      setCheckInMessage('Mock check-in recorded locally.');
+      startCheckInUndoWindow(mockAttendance.id);
+      setCheckInMessage('Mock check-in recorded locally. Undo is available for 5 seconds.');
       setCheckInMessageTone('success');
-      setActiveSideTab('attendance');
       return;
     }
 
@@ -487,7 +550,7 @@ export default function MemberProfilePage({
       setCheckInMessage(null);
       setCheckInMessageTone(null);
 
-      const response = await fetch(`${API_BASE_URL}/api/members/${member.id}/check-in`, {
+      const response = await fetch(`${API_BASE_URL}/api/members/${member.id}/checkin`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -506,9 +569,9 @@ export default function MemberProfilePage({
 
       const createdAttendance = normalizeAttendanceRecord(responseBody as ApiAttendance);
       setAttendanceHistory((currentRecords) => [createdAttendance, ...currentRecords]);
-      setCheckInMessage('Check-in recorded successfully.');
+      startCheckInUndoWindow(createdAttendance.id);
+      setCheckInMessage('Check-in recorded successfully. Undo is available for 5 seconds.');
       setCheckInMessageTone('success');
-      setActiveSideTab('attendance');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to check in member';
       setCheckInMessage(message);
@@ -684,6 +747,9 @@ export default function MemberProfilePage({
 
   /* ── Derived flags ── */
   const canCheckIn = memberStatus === 'ACTIVE';
+  const isCheckInActionDisabled = isCheckingIn
+    || (isCheckInUndoAvailable && !activeAttendanceUndoId)
+    || (!isCheckInUndoAvailable && !canCheckIn);
   const canDeactivate = memberStatus !== 'INACTIVE' && !isDeactivating;
   /**
    * Handles handle side tab toggle for route-level dashboard orchestration.
@@ -774,10 +840,14 @@ export default function MemberProfilePage({
                     variant: 'secondary',
                   },
                   {
-                    label: isCheckingIn ? 'Checking In...' : 'Check-In',
+                    label: isCheckingIn
+                      ? 'Checking In...'
+                      : isCheckInUndoAvailable
+                        ? 'Undo Action'
+                        : 'Check-In',
                     onClick: handleCheckIn,
-                    disabled: !canCheckIn || isCheckingIn,
-                    variant: 'neutral',
+                    disabled: isCheckInActionDisabled,
+                    variant: isCheckInUndoAvailable ? 'danger' : 'neutral',
                   },
                   {
                     label: isDeactivating ? 'Deactivating...' : 'Deactivate',

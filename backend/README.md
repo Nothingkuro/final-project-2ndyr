@@ -1,72 +1,84 @@
-# Backend
+# Backend — Arrowhead Gym Management System
 
-This package contains the Express API, Prisma schema, database seed, and backend tests for Arrowhead Gym Management System.
+Express/TypeScript REST API with Prisma ORM. This package contains the API server, database schema, migrations, seed scripts, and test suites.
 
-## What Lives Here
-
-- `src/app.ts`: Express app wiring, middleware setup, and route registration.
-- `src/server.ts`: Server bootstrap and port selection.
-- `src/controllers/`: Request handlers for auth, members, payments, suppliers, equipment, plans, profiles, and reports.
-- `src/routes/`: API route maps and role guards.
-- `src/middleware/auth.middleware.ts`: Session verification and role enforcement.
-- `src/lib/prisma.ts`: Prisma client singleton configured for the PostgreSQL adapter.
-- `src/utils/auth.ts`: JWT signing, cookie settings, password hashing, and session verification.
-- `prisma/schema.prisma`: Database schema and model definitions.
-- `prisma/seed.ts`: Database seed data used for local development and tests.
-- `tests/`: Unit, integration, and E2E support scripts.
+---
 
 ## Local Setup
 
 ```bash
 cp .env.example .env
 npm install
+npm run db:generate
 npm run db:seed
 npm run dev
 ```
 
-The backend requires these values in `backend/.env`:
+---
 
-- `DATABASE_URL`: PostgreSQL connection string used by the running server.
-- `DIRECT_URL`: Direct PostgreSQL connection string used by Prisma migrations.
-- `FRONTEND_URL`: Frontend origin allowed by CORS.
-- `JWT_SECRET`: Secret used to sign session cookies.
+## Environment Variables
 
-## Useful Commands
+Copy `.env.example` to `.env` and provide values for the following keys. **Do not commit real secrets.**
 
-- `npm run dev`: Start the API in watch mode with nodemon.
-- `npm run build`: Generate Prisma Client and compile TypeScript.
-- `npm run start`: Run the compiled server from `dist/src/server.js`.
-- `npm run test`: Run the Jest suite.
-- `npm run test:unit`: Run unit tests.
-- `npm run test:integration`: Run integration tests with the integration DB setup.
-- `npm run db:seed`: Seed the local database.
-- `npm run db:reset:e2e`: Reset and reseed the E2E database.
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Pooled PostgreSQL connection string (NeonDB pooler endpoint) |
+| `DIRECT_URL` | Direct PostgreSQL connection string (NeonDB non-pooler, for migrations) |
+| `FRONTEND_URL` | Frontend origin allowed by the CORS policy |
+| `JWT_SECRET` | Secret used to sign session JWTs |
+| `SESSION_TTL` | Session duration (default: `7d`) |
+| `AUTH_COOKIE_NAME` | Cookie name (default: `arrowhead_session`) |
+| `BCRYPT_ROUNDS` | bcrypt hashing cost (default: `10`) |
+| `SEED_OWNER_USERNAME` | Username for the seeded admin account |
+| `SEED_OWNER_PASSWORD` | Password for the seeded admin account |
+| `SEED_STAFF_USERNAME` | Username for the seeded staff account |
+| `SEED_STAFF_PASSWORD` | Password for the seeded staff account |
+| `PORT` | HTTP server port (default: `5001`) |
+| `NODE_ENV` | Runtime environment (`development`, `test`, `production`) |
 
-## Core Modules
+---
 
-- `src/controllers/auth.controller.ts`: Login, logout, user lookup, and session refresh.
-- `src/controllers/member.controller.ts`: Member listing, creation, updates, check-ins, and deactivation.
-- `src/controllers/payment.controller.ts`: Payment creation and member payment history.
-- `src/controllers/report.controller.ts`: Revenue, inventory, and expiration reporting.
-- `src/controllers/supplier.controller.ts`: Supplier management and transaction tracking.
-- `src/controllers/equipment.controller.ts`: Equipment management and condition updates.
-- `src/controllers/profile.controller.ts`: Profile viewing and user updates.
+## Available Scripts
 
-## API Surface
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the API in watch mode (nodemon) |
+| `npm run build` | Generate Prisma Client and compile TypeScript |
+| `npm run start` | Run the compiled server from `dist/src/server.js` |
+| `npm run test` | Run all Jest tests |
+| `npm run test:unit` | Run unit tests only (no database required) |
+| `npm run test:integration` | Run integration tests (requires `DATABASE_URL_TEST`) |
+| `npm run db:generate` | Generate the Prisma Client from the schema |
+| `npm run db:seed` | Seed the local development database |
+| `npm run db:migrate` | Apply pending Prisma migrations (development) |
+| `npm run db:reset:e2e` | Reset and reseed the E2E test database |
 
-- `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/refresh`, `GET /api/auth/me`
-- `GET /api/members`, `POST /api/members`, `PATCH /api/members/:memberId`, `PATCH /api/members/:memberId/deactivate`, `GET /api/members/:memberId/attendance`, `POST /api/members/:memberId/check-in`
-- `GET /api/plans`, `POST /api/payments`, `GET /api/members/:memberId/payments`
-- `GET /api/reports/upcoming-expirations`, `GET /api/reports/daily-revenue`, `GET /api/reports/monthly-revenue`, `GET /api/reports/low-inventory`, `GET /api/reports/overview`
-- `GET /api/users`, `GET /api/profile`, `PUT /api/profile`, `PUT /api/users/:userId`
+---
 
-## Environment Notes
+## Folder Conventions
 
-- Copy `.env.example` to `.env` before running the backend locally.
-- Use a test database for E2E so reset scripts do not touch development data.
-- Prisma uses the adapter-based client in `src/lib/prisma.ts`, so seed scripts should reuse the shared client pattern already in the repo.
+| Directory | Contents |
+|---|---|
+| `src/app.ts` | Express app composition (middleware, CORS, routes) |
+| `src/server.ts` | HTTP server bootstrap |
+| `src/controllers/` | Request handlers for each API domain |
+| `src/routes/` | Route declarations and role guard wiring |
+| `src/middleware/` | Auth verification and role enforcement |
+| `src/lib/` | Prisma client singleton |
+| `src/utils/` | JWT helpers, cookie options, password hashing |
+| `src/config/` | `ConfigManager` singleton for environment variables |
+| `src/patterns/` | GoF design pattern implementations |
+| `prisma/schema.prisma` | Database model definitions |
+| `prisma/seed.ts` | Development and test seed data |
+| `tests/unit/` | Controller and utility unit tests (Prisma mocked) |
+| `tests/integration/` | API-level tests against a real database |
 
-## Documentation Links
+---
 
-- Root project guide: [../README.md](../README.md)
-- Architecture diagram and module overview: [../docs/architecture.md](../docs/architecture.md)
+## Documentation
+
+- [Architecture Reference](../docs/technical/01-architecture.md)
+- [Database Schema](../docs/technical/02-database.md)
+- [API Reference](../docs/technical/03-api-reference.md)
+- [Testing Strategy](../docs/guides/testing.md)
+- [Root Project Guide](../README.md)

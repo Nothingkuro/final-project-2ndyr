@@ -10,7 +10,9 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { normalizeDatabaseUrl } from "../config/env";
+import ConfigManager from "../config/ConfigManager";
+
+const config = ConfigManager.getInstance();
 
 // Extend globalThis to include prisma for development hot-reload handling
 const globalForPrisma = globalThis as unknown as {
@@ -25,7 +27,7 @@ const globalForPrisma = globalThis as unknown as {
  * @throws {Error} When DATABASE_URL is missing or cannot be normalized.
  */
 function createPrismaClient(): PrismaClient {
-  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
+  const connectionString = config.databaseUrl;
 
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
@@ -38,7 +40,7 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({
     adapter,
     log:
-      process.env.NODE_ENV === "development"
+      config.nodeEnv === "development"
         ? ["query", "info", "warn", "error"]
         : ["error"],
   });
@@ -54,7 +56,7 @@ function createPrismaClient(): PrismaClient {
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 // Store the instance in globalThis for development hot-reload
-if (process.env.NODE_ENV !== "production") {
+if (config.nodeEnv !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
@@ -71,7 +73,7 @@ export async function disconnectPrisma(): Promise<void> {
     globalForPrisma.prismaPool = undefined;
   }
 
-  if (process.env.NODE_ENV !== "production") {
+  if (config.nodeEnv !== "production") {
     globalForPrisma.prisma = undefined;
   }
 }

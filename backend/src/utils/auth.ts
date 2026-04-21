@@ -1,32 +1,8 @@
 import type { CookieOptions } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import ConfigManager from '../config/ConfigManager';
 import type { AuthUser, SessionTokenPayload } from '../types/auth';
-
-const DEFAULT_SESSION_TTL = '5m';
-const DEFAULT_COOKIE_NAME = 'arrowhead_session';
-const DEV_JWT_SECRET = 'dev-only-change-this-secret';
-const DEFAULT_PROD_COOKIE_SAME_SITE = 'none';
-const DEFAULT_NON_PROD_COOKIE_SAME_SITE = 'lax';
-
-/**
- * Resolves the JWT secret used to sign and verify session tokens.
- *
- * Development falls back to a local-only default to reduce setup friction,
- * while production strictly requires an explicit secret.
- *
- * @returns Secret string used by jsonwebtoken.
- * @throws {Error} When running in production without JWT_SECRET configured.
- */
-function getJwtSecret(): string {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-
-  if (process.env.NODE_ENV !== 'production') {
-    return DEV_JWT_SECRET;
-  }
-
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
 
 /**
  * Returns the cookie key used for session token storage.
@@ -34,57 +10,7 @@ function getJwtSecret(): string {
  * @returns Session cookie name for request/response cookie operations.
  */
 export function getSessionCookieName(): string {
-  return process.env.AUTH_COOKIE_NAME ?? DEFAULT_COOKIE_NAME;
-}
-
-/**
- * Returns the JWT lifetime for session tokens.
- *
- * @returns jsonwebtoken expiresIn value.
- */
-function getSessionTtl(): jwt.SignOptions['expiresIn'] {
-  return (process.env.SESSION_TTL ?? DEFAULT_SESSION_TTL) as jwt.SignOptions['expiresIn'];
-}
-
-/**
- * Resolves SameSite behavior for auth cookies.
- *
- * @returns Cookie SameSite mode compatible with Express CookieOptions.
- */
-function getSessionCookieSameSite(): NonNullable<CookieOptions['sameSite']> {
-  const configuredValue = process.env.AUTH_COOKIE_SAME_SITE?.trim().toLowerCase();
-
-  if (configuredValue === 'lax' || configuredValue === 'strict' || configuredValue === 'none') {
-    return configuredValue;
-  }
-
-  return process.env.NODE_ENV === 'production'
-    ? DEFAULT_PROD_COOKIE_SAME_SITE
-    : DEFAULT_NON_PROD_COOKIE_SAME_SITE;
-}
-
-/**
- * Resolves whether the auth cookie must be Secure.
- *
- * Browsers reject SameSite=None cookies unless Secure is true, so this helper
- * enforces that rule even when env overrides are provided.
- *
- * @param sameSite Effective SameSite value selected for the cookie.
- * @returns True when the cookie should only be sent over HTTPS.
- */
-function getSessionCookieSecure(sameSite: NonNullable<CookieOptions['sameSite']>): boolean {
-  const configuredValue = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
-
-  if (configuredValue === 'true') {
-    return true;
-  }
-
-  if (configuredValue === 'false') {
-    // Browsers reject SameSite=None cookies without Secure, so force a safe value.
-    return sameSite === 'none';
-  }
-
-  return process.env.NODE_ENV === 'production' || sameSite === 'none';
+  return ConfigManager.getInstance().authCookieName;
 }
 
 /**
@@ -93,12 +19,12 @@ function getSessionCookieSecure(sameSite: NonNullable<CookieOptions['sameSite']>
  * @returns Cookie configuration aligned with current environment settings.
  */
 export function getSessionCookieOptions(): CookieOptions {
-  const sameSite = getSessionCookieSameSite();
+  const config = ConfigManager.getInstance();
 
   return {
     httpOnly: true,
-    secure: getSessionCookieSecure(sameSite),
-    sameSite,
+    secure: config.authCookieSecure,
+    sameSite: config.authCookieSameSite,
     path: '/',
     maxAge: 5 * 60 * 1000, // 5 minutes
   };
@@ -112,14 +38,16 @@ export function getSessionCookieOptions(): CookieOptions {
  * @throws {Error} When signing configuration is invalid.
  */
 export function signSessionToken(user: AuthUser): string {
+  const config = ConfigManager.getInstance();
+
   const payload: SessionTokenPayload = {
     sub: user.id,
     username: user.username,
     role: user.role,
   };
 
-  return jwt.sign(payload, getJwtSecret(), {
-    expiresIn: getSessionTtl(),
+  return jwt.sign(payload, config.jwtSecret, {
+    expiresIn: config.sessionTtl as jwt.SignOptions['expiresIn'],
   });
 }
 
@@ -131,7 +59,7 @@ export function signSessionToken(user: AuthUser): string {
  * @throws {Error} When token is invalid, expired, or signed with the wrong key.
  */
 export function verifySessionToken(token: string): SessionTokenPayload {
-  return jwt.verify(token, getJwtSecret()) as SessionTokenPayload;
+  return jwt.verify(token, ConfigManager.getInstance().jwtSecret) as SessionTokenPayload;
 }
 
 /**
@@ -151,8 +79,7 @@ export function isBcryptHash(value: string): boolean {
  * @returns Promise that resolves to a bcrypt hash.
  */
 export async function hashPassword(password: string): Promise<string> {
-  const rounds = Number(process.env.BCRYPT_ROUNDS) || 10;
-  return bcrypt.hash(password, rounds);
+  return bcrypt.hash(password, ConfigManager.getInstance().bcryptRounds);
 }
 
 /**

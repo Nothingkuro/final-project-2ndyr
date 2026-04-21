@@ -7,6 +7,7 @@ import {
   verifyPassword,
   verifySessionToken,
 } from '../../../src/utils/auth';
+import ConfigManager from '../../../src/config/ConfigManager';
 
 describe('auth utils', () => {
   const originalEnv = process.env;
@@ -18,6 +19,7 @@ describe('auth utils', () => {
     delete process.env.SESSION_TTL;
     delete process.env.BCRYPT_ROUNDS;
     process.env.NODE_ENV = 'test';
+    ConfigManager._resetForTesting();
   });
 
   afterAll(() => {
@@ -36,6 +38,8 @@ describe('auth utils', () => {
 
   it('returns secure cookie options in production', () => {
     process.env.NODE_ENV = 'production';
+    process.env.JWT_SECRET = 'test-secret-for-production';
+    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 
     const options = getSessionCookieOptions();
 
