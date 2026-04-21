@@ -1,6 +1,12 @@
 import { MemberStatus, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import {
+  ATTENDANCE_NOT_FOUND_FOR_UNDO,
+  CheckInCommand,
+  MEMBER_NOT_ACTIVE_FOR_CHECKIN,
+  MEMBER_NOT_FOUND_FOR_CHECKIN,
+} from '../patterns/command/check-in.command';
 import { MemberFactory } from '../patterns/factory-method/member.factory';
 import { globalNotificationSubject } from '../patterns/observer-pattern/notification.subject';
 
@@ -487,38 +493,57 @@ export const checkInMember = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
+    const checkInCommand = new CheckInCommand({ memberId });
+    const attendance = await checkInCommand.execute();
 
-    if (!member) {
+    res.status(201).json(toAttendanceListItem(attendance));
+  } catch (error) {
+    if (error instanceof Error && error.message === MEMBER_NOT_FOUND_FOR_CHECKIN) {
       res.status(404).json({ error: 'Member not found' });
       return;
     }
 
-    if (member.status !== MemberStatus.ACTIVE) {
+    if (error instanceof Error && error.message === MEMBER_NOT_ACTIVE_FOR_CHECKIN) {
       res.status(400).json({ error: 'Only active members can check in' });
       return;
     }
 
-    const attendance = await prisma.attendance.create({
-      data: {
-        memberId,
-      },
-      select: {
-        id: true,
-        memberId: true,
-        checkInTime: true,
-      },
-    });
-
-    res.status(201).json(toAttendanceListItem(attendance));
-  } catch (error) {
     console.error('Error checking in member:', error);
     res.status(500).json({ error: 'Failed to check in member' });
+  }
+};
+
+/**
+ * Reverts a previously created attendance record.
+ *
+ * @param req Express request containing attendance id.
+ * @param res Express response confirming undo result.
+ * @returns Promise that resolves when the response is sent.
+ */
+export const undoCheckIn = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const attendanceIdParam = req.params.id;
+    const attendanceId = Array.isArray(attendanceIdParam) ? attendanceIdParam[0] : attendanceIdParam;
+
+    if (!attendanceId) {
+      res.status(400).json({ error: 'Attendance id is required' });
+      return;
+    }
+
+    const checkInCommand = new CheckInCommand({ attendanceId });
+    await checkInCommand.undo();
+
+    res.status(200).json({
+      message: 'Check-in undone successfully.',
+      attendanceId,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === ATTENDANCE_NOT_FOUND_FOR_UNDO) {
+      res.status(404).json({ error: 'Attendance record not found' });
+      return;
+    }
+
+    console.error('Error undoing check-in:', error);
+    res.status(500).json({ error: 'Failed to undo check-in' });
   }
 };

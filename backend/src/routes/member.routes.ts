@@ -5,6 +5,7 @@ import {
 	deactivateMember,
 	getMemberAttendances,
 	getMembers,
+	undoCheckIn,
 	updateMember,
 } from '../controllers/member.controller';
 import { requireAuth } from '../middleware/auth.middleware';
@@ -23,7 +24,10 @@ router.patch('/members/:memberId', updateMember);
 router.patch('/members/:memberId/deactivate', deactivateMember);
 // Authenticated endpoint returning attendance history for one member.
 router.get('/members/:memberId/attendance', getMemberAttendances);
-// Authenticated action endpoint to record member check-in.
+// Authenticated action endpoints to record member check-in.
+router.post('/members/:memberId/checkin', checkInMember);
 router.post('/members/:memberId/check-in', checkInMember);
+// Authenticated endpoint to undo a specific attendance check-in.
+router.post('/members/attendance/:id/undo', undoCheckIn);
 
 export default router;

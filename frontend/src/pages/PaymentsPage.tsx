@@ -3,6 +3,7 @@ import MemberSearchSelect from '../components/payments/MemberSearchSelect';
 import MembershipPlanTable from '../components/payments/MembershipPlanTable';
 import PaymentMethodDropdown from '../components/payments/PaymentMethodDropdown';
 import SubmitPaymentButton from '../components/payments/SubmitPaymentButton';
+import useUndoTimer from '../hooks/useUndoTimer';
 import { getAuthHeaders } from '../services/authHeaders';
 import { API_BASE_URL } from '../services/apiBaseUrl';
 import type { MembershipPlan, PaymentMember, PaymentMethod } from '../types/payment';
@@ -31,6 +32,13 @@ type ApiPlan = {
   durationDays: number;
   description?: string | null;
   price: number | string;
+};
+
+type CreatePaymentResponse = {
+  payment: {
+    id: string;
+  };
+  error?: string;
 };
 
 /**
@@ -120,6 +128,12 @@ export default function PaymentsPage({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const {
+    isUndoAvailable,
+    activeId: undoPaymentId,
+    startUndoWindow,
+    clearUndoState,
+  } = useUndoTimer(5000);
 
   useEffect(() => {
     if (members) {
@@ -271,7 +285,44 @@ export default function PaymentsPage({
    * @returns A promise that resolves when processing completes.
    */
   const handleSubmitPayment = async () => {
-    if (!selectedMemberId || !selectedPlanId || isSubmitting || isLoading) {
+    if (isSubmitting || isLoading) {
+      return;
+    }
+
+    if (isUndoAvailable && undoPaymentId) {
+      try {
+        setIsSubmitting(true);
+        setSubmitError(null);
+        setSubmitSuccess(null);
+
+        const undoResponse = await fetch(`${API_BASE_URL}/api/payments/${undoPaymentId}/undo`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
+
+        const undoData = (await parseApiResponse(undoResponse)) as { error?: string };
+
+        if (!undoResponse.ok) {
+          const message = typeof undoData.error === 'string' ? undoData.error : 'Failed to undo payment';
+          throw new Error(message);
+        }
+
+        clearUndoState();
+        setSubmitSuccess('Payment successfully undone.');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to undo payment';
+        setSubmitError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+
+      return;
+    }
+
+    if (!selectedMemberId || !selectedPlanId) {
       return;
     }
 
@@ -302,14 +353,15 @@ export default function PaymentsPage({
         }),
       });
 
-      const data = (await parseApiResponse(response)) as { error?: string };
+      const data = (await parseApiResponse(response)) as CreatePaymentResponse;
 
       if (!response.ok) {
         const message = typeof data.error === 'string' ? data.error : 'Failed to submit payment';
         throw new Error(message);
       }
 
-      setSubmitSuccess('Payment recorded successfully.');
+      startUndoWindow(data.payment.id);
+      setSubmitSuccess('Payment recorded successfully. Undo is available for 5 seconds.');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to submit payment';
       setSubmitError(message);
@@ -321,10 +373,16 @@ export default function PaymentsPage({
   const isSubmitDisabled =
     isLoading
     || isSubmitting
-    || membersList.length === 0
-    || plansList.length === 0
-    || !selectedMemberId
-    || !selectedPlanId;
+    || (
+      !isUndoAvailable
+      && (
+        membersList.length === 0
+        || plansList.length === 0
+        || !selectedMemberId
+        || !selectedPlanId
+      )
+    )
+    || (isUndoAvailable && !undoPaymentId);
 
   return (
     <div className="relative min-h-full">
@@ -370,7 +428,8 @@ export default function PaymentsPage({
           <SubmitPaymentButton
             onClick={handleSubmitPayment}
             disabled={isSubmitDisabled}
-            label={isSubmitting ? 'Submitting...' : 'Submit'}
+            label={isSubmitting ? 'Submitting...' : isUndoAvailable ? 'Undo Action' : 'Submit'}
+            isUndo={isUndoAvailable}
           />
         </div>
       </section>

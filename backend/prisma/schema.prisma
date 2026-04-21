@@ -103,6 +103,8 @@ model Payment {
   amount          Decimal       @db.Decimal(10, 2)
   paymentMethod   PaymentMethod
   transactionDate DateTime      @default(now())
+  previousStatus  String?
+  previousExpiryDate DateTime?
 
   // Foreign Keys
   memberId      String

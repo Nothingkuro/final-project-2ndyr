@@ -1,27 +1,14 @@
-import { MemberStatus, PaymentMethod, Prisma } from '@prisma/client';
+import { PaymentMethod } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { PaymentFactory } from '../patterns/factory-method/payment.factory';
+import {
+  MEMBER_NOT_FOUND_DURING_PAYMENT_TX,
+  PAYMENT_NOT_FOUND_FOR_UNDO,
+  PAYMENT_UNDO_STATE_UNAVAILABLE,
+  ProcessPaymentCommand,
+} from '../patterns/command/process-payment.command';
 import { notifyPaymentCreated } from '../patterns/observer-pattern/payment-created.observer';
 import { getPaymentContext } from '../patterns/strategy-pattern/payment-method.strategy';
-
-const MEMBER_NOT_FOUND_DURING_PAYMENT_TX = 'MEMBER_NOT_FOUND_DURING_PAYMENT_TX';
-const MAX_PAYMENT_TX_ATTEMPTS = 3;
-const paymentFactory = new PaymentFactory();
-
-/**
- * Detects Prisma transaction conflicts that are safe to retry.
- *
- * @param error Unknown error thrown by Prisma transaction calls.
- * @returns True when the error indicates a serializable transaction conflict.
- */
-function isRetryableTransactionError(error: unknown): boolean {
-  if (!error || typeof error !== 'object' || !('code' in error)) {
-    return false;
-  }
-
-  return (error as { code?: string }).code === 'P2034';
-}
 
 /**
  * Lists active membership plans for payment selection screens.
@@ -107,118 +94,16 @@ export const createPayment = async (req: Request, res: Response) => {
 
     const finalAmount = parsedAmountPaid ?? Number(plan.price);
 
-    let result:
-      | {
-          payment: {
-            id: string;
-            memberId: string;
-            planId: string;
-            amount: Prisma.Decimal;
-            paymentMethod: PaymentMethod;
-            transactionDate: Date;
-            processedById: string;
-          };
-          updatedMember: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            contactNumber: string;
-            joinDate: Date;
-            expiryDate: Date | null;
-            status: MemberStatus;
-          };
-        }
-      | null = null;
+    const processPaymentCommand = new ProcessPaymentCommand({
+      memberId,
+      planId,
+      processedById,
+      planDurationDays: plan.durationDays,
+      amount: finalAmount,
+      paymentMethod: paymentContext.getMethod(),
+    });
 
-    for (let attempt = 1; attempt <= MAX_PAYMENT_TX_ATTEMPTS; attempt += 1) {
-      try {
-        result = await prisma.$transaction(
-          async (tx) => {
-            const lockedMembers = await tx.$queryRaw<
-              Array<{
-                id: string;
-                status: MemberStatus;
-                expiryDate: Date | null;
-              }>
-            >`SELECT id, status, "expiryDate" FROM "members" WHERE id = ${memberId} FOR UPDATE`;
-
-            const lockedMember = lockedMembers[0];
-
-            if (!lockedMember) {
-              throw new Error(MEMBER_NOT_FOUND_DURING_PAYMENT_TX);
-            }
-
-            const now = new Date();
-            let newExpiryDate: Date;
-
-            if (
-              lockedMember.status === MemberStatus.INACTIVE ||
-              !lockedMember.expiryDate ||
-              lockedMember.expiryDate < now
-            ) {
-              newExpiryDate = new Date(now);
-              newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
-            } else {
-              newExpiryDate = new Date(lockedMember.expiryDate);
-              newExpiryDate.setDate(newExpiryDate.getDate() + plan.durationDays);
-            }
-
-            const paymentCreatePayload = paymentFactory.create({
-              memberId,
-              planId,
-              amount: finalAmount,
-              paymentMethod: paymentContext.getMethod(),
-              processedById,
-            });
-
-            const payment = await tx.payment.create({
-              data: paymentCreatePayload,
-            });
-
-            const updatedMember = await tx.member.update({
-              where: { id: memberId },
-              data: {
-                expiryDate: newExpiryDate,
-                status: MemberStatus.ACTIVE,
-              },
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                contactNumber: true,
-                joinDate: true,
-                expiryDate: true,
-                status: true,
-              },
-            });
-
-            return { payment, updatedMember };
-          },
-          {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          },
-        );
-
-        break;
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === MEMBER_NOT_FOUND_DURING_PAYMENT_TX
-        ) {
-          return res.status(404).json({ error: 'Member or Plan not found' });
-        }
-
-        if (isRetryableTransactionError(error) && attempt < MAX_PAYMENT_TX_ATTEMPTS) {
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    if (!result) {
-      throw new Error('Failed to process payment transaction');
-    }
+    const result = await processPaymentCommand.execute();
 
     await notifyPaymentCreated({
       paymentId: result.payment.id,
@@ -251,8 +136,58 @@ export const createPayment = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    if (
+      error instanceof Error
+      && error.message === MEMBER_NOT_FOUND_DURING_PAYMENT_TX
+    ) {
+      return res.status(404).json({ error: 'Member or Plan not found' });
+    }
+
     console.error('Error creating payment:', error);
     res.status(500).json({ error: 'Failed to process payment' });
+  }
+};
+
+/**
+ * Reverts a previously created payment and restores the member subscription state.
+ *
+ * @param req Express request containing payment id.
+ * @param res Express response confirming the undo operation.
+ * @returns Promise that resolves when the response is sent.
+ */
+export const undoPayment = async (req: Request, res: Response) => {
+  try {
+    const paymentIdParam = req.params.id;
+    const paymentId = Array.isArray(paymentIdParam) ? paymentIdParam[0] : paymentIdParam;
+
+    if (!paymentId) {
+      return res.status(400).json({ error: 'Payment id is required' });
+    }
+
+    const processPaymentCommand = new ProcessPaymentCommand({ paymentId });
+    await processPaymentCommand.undo();
+
+    res.status(200).json({
+      message: 'Payment undone successfully.',
+      paymentId,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error
+      && (
+        error.message === PAYMENT_NOT_FOUND_FOR_UNDO
+        || error.message === MEMBER_NOT_FOUND_DURING_PAYMENT_TX
+      )
+    ) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    if (error instanceof Error && error.message === PAYMENT_UNDO_STATE_UNAVAILABLE) {
+      return res.status(409).json({ error: 'Payment cannot be undone' });
+    }
+
+    console.error('Error undoing payment:', error);
+    res.status(500).json({ error: 'Failed to undo payment' });
   }
 };
 
