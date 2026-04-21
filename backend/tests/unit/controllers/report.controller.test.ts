@@ -66,6 +66,28 @@ describe('report controller (mocked)', () => {
     );
   });
 
+  it('ignores unsupported payment methods in daily revenue summary', async () => {
+    mockedPrisma.payment.findMany.mockResolvedValue([
+      { amount: 1000, paymentMethod: 'CASH' },
+      { amount: 700, paymentMethod: 'CARD' },
+      { amount: 250, paymentMethod: 'GCASH' },
+    ]);
+
+    const req = {} as Request;
+    const res = createResponse();
+
+    await getDailyRevenueSummary(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cash: 1000,
+        gcash: 250,
+        total: 1250,
+      }),
+    );
+  });
+
   it('returns monthly revenue records grouped by month/year', async () => {
     mockedPrisma.payment.findMany.mockResolvedValue([
       { amount: 1000, transactionDate: new Date('2026-03-01T00:00:00.000Z') },

@@ -92,7 +92,7 @@ test.describe('Membership management e2e', () => {
     await expect(page.getByText(buildMemberNamePattern(firstName, lastName))).toBeVisible();
   });
 
-  test('staff checks in active member, edits profile, then deactivates member', async ({ page }) => {
+  test('staff checks in active member, undoes check-in, edits profile, then deactivates member', async ({ page }) => {
     const token = uniqueToken();
     const firstName = `ManageFirst${token.slice(0, 3)}`;
     const lastName = `ManageLast${token.slice(3)}`;
@@ -140,18 +140,40 @@ test.describe('Membership management e2e', () => {
 
     const checkInResponsePromise = page.waitForResponse((response) => (
       response.request().method() === 'POST'
-      && /\/api\/members\/[^/]+\/check-in$/.test(response.url())
+      && /\/api\/members\/[^/]+\/checkin$/.test(response.url())
       && response.ok()
     ));
 
     await page.getByRole('button', { name: 'Check-In' }).click();
     await checkInResponsePromise;
 
+    await expect(page.getByText('Check-in recorded successfully. Undo is available for 5 seconds.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Undo Action' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Attendance History' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Deactivate' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Attendance' }).click();
     await expect(page.getByRole('heading', { name: 'Attendance History' })).toBeVisible();
     await expect(page.locator('tbody tr').first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Attendance' }).click();
     await expect(page.getByRole('button', { name: 'Deactivate' })).toBeVisible();
+
+    const undoCheckInResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'POST'
+      && /\/api\/members\/attendance\/[^/]+\/undo$/.test(response.url())
+      && response.ok()
+    ));
+
+    await page.getByRole('button', { name: 'Undo Action' }).click();
+    await undoCheckInResponsePromise;
+
+    await expect(page.getByText('Check-in successfully undone.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Check-In' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Attendance' }).click();
+    await expect(page.getByText('No attendance records yet. Use Check-In to add a new entry.')).toBeVisible();
+    await page.getByRole('button', { name: 'Attendance' }).click();
 
     const deactivateButton = page.getByRole('button', { name: 'Deactivate' });
     const checkInButton = page.getByRole('button', { name: 'Check-In' });

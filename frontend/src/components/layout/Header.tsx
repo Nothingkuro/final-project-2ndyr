@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SearchBar from '../common/SearchBar';
 import { getUpcomingExpirations } from '../../services/reportsApi';
+import { API_BASE_URL } from '../../services/apiBaseUrl';
 import type { MembershipExpiryAlert } from '../../types/report';
 
 const ALERT_WINDOW_DAYS = 3;
-const ALERT_REFRESH_INTERVAL_MS = 30_000;
 const USERNAME_UPDATED_EVENT = 'auth-username-updated';
 
 /**
@@ -130,15 +130,21 @@ export default function Header({
     };
 
     void refreshExpiringMembershipAlerts();
-    const intervalId = window.setInterval(() => {
+
+    const notificationStream = new EventSource(
+      `${API_BASE_URL}/api/notifications/stream`,
+      { withCredentials: true },
+    );
+
+    notificationStream.onmessage = () => {
       void refreshExpiringMembershipAlerts();
-    }, ALERT_REFRESH_INTERVAL_MS);
+    };
 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.clearInterval(intervalId);
+      notificationStream.close();
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

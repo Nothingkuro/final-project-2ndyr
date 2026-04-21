@@ -11,8 +11,12 @@ import reportRoutes from './routes/report.routes';
 import membershipPlanRoutes from './routes/membershipPlan.routes';
 import profileRoutes from './routes/profile.routes';
 import healthRoutes from './routes/health.routes';
+import notificationRoutes from './routes/notification.routes';
+import { bootstrapObserverPattern } from './patterns/observer-pattern/observer.bootstrap';
 
 const app = express();
+
+bootstrapObserverPattern();
 
 /**
  * Builds the frontend allowlist used by CORS checks.
@@ -95,7 +99,6 @@ app.use('/api', supplierRoutes);
 app.use('/api', reportRoutes);
 app.use('/api', membershipPlanRoutes);
 app.use('/api', profileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 export default app;
-
-// Lemuel was here * commit #1

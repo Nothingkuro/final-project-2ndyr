@@ -16,6 +16,7 @@ describe('Payment and subscription API', () => {
   let createdMemberId: string | null = null;
   let createdPlanId: string | null = null;
   let createdPaymentId: string | null = null;
+  let createdAttendanceId: string | null = null;
 
   it('rejects unauthenticated access to POST /api/payments', async () => {
     const response = await request(app)
@@ -166,6 +167,84 @@ describe('Payment and subscription API', () => {
     expect(createdPayment.amountPhp).toBe(1200);
   });
 
+  it('should successfully undo a payment within the grace period and revert member state', async () => {
+    expect(createdMemberId).toBeTruthy();
+    expect(createdPaymentId).toBeTruthy();
+
+    const memberBeforeUndo = await prisma.member.findUnique({
+      where: { id: createdMemberId as string },
+      select: {
+        status: true,
+        expiryDate: true,
+      },
+    });
+
+    expect(memberBeforeUndo?.status).toBe('ACTIVE');
+    expect(memberBeforeUndo?.expiryDate).not.toBeNull();
+
+    const undoResponse = await request(app)
+      .post(`/api/payments/${createdPaymentId}/undo`)
+      .set('Cookie', authCookie)
+      .send();
+
+    expect(undoResponse.status).toBe(200);
+    expect(undoResponse.body).toEqual({
+      message: 'Payment undone successfully.',
+      paymentId: createdPaymentId,
+    });
+
+    const paymentAfterUndo = await prisma.payment.findUnique({
+      where: { id: createdPaymentId as string },
+      select: { id: true },
+    });
+
+    expect(paymentAfterUndo).toBeNull();
+
+    const memberAfterUndo = await prisma.member.findUnique({
+      where: { id: createdMemberId as string },
+      select: {
+        status: true,
+        expiryDate: true,
+      },
+    });
+
+    expect(memberAfterUndo?.status).toBe('ACTIVE');
+    expect(memberAfterUndo?.expiryDate).toBeNull();
+
+    createdPaymentId = null;
+  });
+
+  it('should successfully undo a check-in', async () => {
+    expect(createdMemberId).toBeTruthy();
+
+    const createCheckInResponse = await request(app)
+      .post(`/api/members/${createdMemberId}/checkin`)
+      .set('Cookie', authCookie)
+      .send();
+
+    expect(createCheckInResponse.status).toBe(201);
+    createdAttendanceId = createCheckInResponse.body.id;
+    expect(typeof createdAttendanceId).toBe('string');
+
+    const undoCheckInResponse = await request(app)
+      .post(`/api/members/attendance/${createdAttendanceId}/undo`)
+      .set('Cookie', authCookie)
+      .send();
+
+    expect(undoCheckInResponse.status).toBe(200);
+    expect(undoCheckInResponse.body).toEqual({
+      message: 'Check-in undone successfully.',
+      attendanceId: createdAttendanceId,
+    });
+
+    const attendanceAfterUndo = await prisma.attendance.findUnique({
+      where: { id: createdAttendanceId as string },
+      select: { id: true },
+    });
+
+    expect(attendanceAfterUndo).toBeNull();
+  });
+
   it('rolls back payment creation when member expiry update fails', async () => {
     expect(createdMemberId).toBeTruthy();
 
@@ -191,6 +270,7 @@ describe('Payment and subscription API', () => {
     try {
       const paymentsBefore = await prisma.payment.count({ where: { memberId } });
 
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const paymentResponse = await request(app)
         .post('/api/payments')
         .set('Cookie', authCookie)
@@ -199,6 +279,7 @@ describe('Payment and subscription API', () => {
           planId: overflowPlan.id,
           paymentMethod: 'CASH',
         });
+      consoleSpy.mockRestore();
 
       expect(paymentResponse.status).toBe(500);
       expect(paymentResponse.body).toEqual({ error: 'Failed to process payment' });

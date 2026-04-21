@@ -22,6 +22,8 @@ jest.mock('../../../src/lib/prisma', () => ({
 
 import { createPayment, getMemberPayments, getPlans } from '../../../src/controllers/payment.controller';
 import prisma from '../../../src/lib/prisma';
+import { globalNotificationSubject } from '../../../src/patterns/observer-pattern/notification.subject';
+import { bootstrapObserverPattern } from '../../../src/patterns/observer-pattern/observer.bootstrap';
 
 function createMockResponse(): Response {
   const res = {
@@ -37,8 +39,10 @@ describe('payment controller (mocked)', () => {
   const mockPrisma = prisma as any;
 
   beforeEach(() => {
+    bootstrapObserverPattern();
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    jest.spyOn(globalNotificationSubject, 'notifyAll').mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -163,6 +167,7 @@ describe('payment controller (mocked)', () => {
       },
     });
     expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({ where: { id: 'user-1' } });
+    expect(globalNotificationSubject.notifyAll).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -222,6 +227,25 @@ describe('payment controller (mocked)', () => {
         memberId: 'member-1',
         planId: 'plan-1',
         paymentMethod: 'CARD',
+      },
+      authUser: {
+        id: 'user-1',
+      },
+    } as unknown as Request;
+    const res = createMockResponse();
+
+    await createPayment(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid payment method' });
+  });
+
+  it('returns 400 in POST /api/payments when payment method is not a string', async () => {
+    const req = {
+      body: {
+        memberId: 'member-1',
+        planId: 'plan-1',
+        paymentMethod: 123,
       },
       authUser: {
         id: 'user-1',

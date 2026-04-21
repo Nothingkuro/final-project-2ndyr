@@ -16,7 +16,7 @@ test.describe('Payment and subscription tracking e2e', () => {
     await loginAsStaff(page);
   });
 
-  test('staff processes payment on the payments page', async ({ page }) => {
+  test('staff processes payment on the payments page and can undo it within grace period', async ({ page }) => {
     await page.getByRole('link', { name: 'Payments' }).click();
     await expect(page).toHaveURL(/\/dashboard\/payments/);
     await expect(page.getByPlaceholder('Search member...')).toBeEnabled();
@@ -30,7 +30,20 @@ test.describe('Payment and subscription tracking e2e', () => {
     await page.getByRole('row', { name: /Quarterly Plus/ }).click();
     await page.getByRole('button', { name: 'Submit' }).click();
 
-    await expect(page.getByText('Payment recorded successfully.')).toBeVisible();
+    await expect(page.getByText('Payment recorded successfully. Undo is available for 5 seconds.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Undo Action' })).toBeVisible();
+
+    const undoPaymentResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'POST'
+      && /\/api\/payments\/[^/]+\/undo$/.test(response.url())
+      && response.ok()
+    ));
+
+    await page.getByRole('button', { name: 'Undo Action' }).click();
+    await undoPaymentResponsePromise;
+
+    await expect(page.getByText('Payment successfully undone.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
   });
 
   test('staff views member payment history and filters by current month', async ({ page }) => {
@@ -50,7 +63,7 @@ test.describe('Payment and subscription tracking e2e', () => {
     await page.getByRole('combobox', { name: /payment method/i }).selectOption({ label: 'CASH' });
     await page.getByRole('row', { name: /Daily Pass/ }).click();
     await page.getByRole('button', { name: 'Submit' }).click();
-    await expect(page.getByText('Payment recorded successfully.')).toBeVisible();
+    await expect(page.getByText('Payment recorded successfully. Undo is available for 5 seconds.')).toBeVisible();
 
     await page.getByRole('link', { name: 'Members' }).click();
     await expect(page).toHaveURL(/\/dashboard\/members/);
