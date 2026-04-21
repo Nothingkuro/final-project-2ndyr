@@ -32,8 +32,10 @@ class GCashPaymentStrategy implements PaymentProcessingStrategy {
       throw new Error('Amount paid must be a positive number');
     }
 
-    if (!referenceNumber || referenceNumber.trim().length < 8) {
-      throw new Error('GCash reference number must be at least 8 characters');
+    const normalizedReferenceNumber = referenceNumber?.trim() ?? '';
+
+    if (!/^\d{13}$/.test(normalizedReferenceNumber)) {
+      throw new Error('GCash Reference Number must be exactly 13 digits and contain only numbers.');
     }
   }
 }

@@ -19,7 +19,25 @@ describe('strategy pattern', () => {
 
     expect(context.isSupportedMethod()).toBe(true);
     expect(context.getMethod()).toBe(PaymentMethod.GCASH);
-    expect(() => context.validate({ amount: 1 })).toThrow('GCash reference number must be at least 8 characters');
+    expect(() => context.validate({ amount: 1 })).toThrow('GCash Reference Number must be exactly 13 digits and contain only numbers.');
+  });
+
+  it('should throw error if GCash reference number contains non-numeric characters', () => {
+    const context = getPaymentContext(PaymentMethod.GCASH);
+
+    expect(context.isSupportedMethod()).toBe(true);
+    expect(() => context.validate({ amount: 1, referenceNumber: '10293847AB123' })).toThrow(
+      'GCash Reference Number must be exactly 13 digits and contain only numbers.',
+    );
+  });
+
+  it('should throw error if GCash reference number is not exactly 13 digits', () => {
+    const context = getPaymentContext(PaymentMethod.GCASH);
+
+    expect(context.isSupportedMethod()).toBe(true);
+    expect(() => context.validate({ amount: 1, referenceNumber: '102938475612' })).toThrow(
+      'GCash Reference Number must be exactly 13 digits and contain only numbers.',
+    );
   });
 
   it('passes gcash validation with a valid reference number', () => {
@@ -27,8 +45,8 @@ describe('strategy pattern', () => {
 
     expect(context.isSupportedMethod()).toBe(true);
     expect(context.getMethod()).toBe(PaymentMethod.GCASH);
-    expect(() => context.validate({ amount: 1, referenceNumber: 'GCASH123' })).not.toThrow();
-    expect(() => context.validate({ amount: 0, referenceNumber: 'GCASH123' })).toThrow('Amount paid must be a positive number');
+    expect(() => context.validate({ amount: 1, referenceNumber: '1029384756123' })).not.toThrow();
+    expect(() => context.validate({ amount: 0, referenceNumber: '1029384756123' })).toThrow('Amount paid must be a positive number');
   });
 
   it('returns null for unsupported payment methods', () => {
