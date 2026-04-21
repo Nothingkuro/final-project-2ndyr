@@ -192,7 +192,7 @@ describe('Payment and subscription API', () => {
 
     expect(paymentResponse.status).toBe(400);
     expect(paymentResponse.body).toEqual({
-      error: 'GCash reference number must be at least 8 characters',
+      error: 'GCash Reference Number must be exactly 13 digits and contain only numbers.',
     });
   });
 
@@ -207,14 +207,28 @@ describe('Payment and subscription API', () => {
         memberId: createdMemberId,
         planId: createdPlanId,
         paymentMethod: 'GCASH',
-        referenceNumber: 'GCASH123',
+        referenceNumber: '1029384756123',
       });
 
     expect(paymentResponse.status).toBe(201);
     expect(paymentResponse.body.payment.paymentMethod).toBe('GCASH');
-    expect(paymentResponse.body.payment.referenceNumber).toBe('GCASH123');
+    expect(paymentResponse.body.payment.referenceNumber).toBe('1029384756123');
 
     const gcashPaymentId = paymentResponse.body.payment.id as string;
+
+    const historyResponse = await request(app)
+      .get(`/api/members/${createdMemberId}/payments`)
+      .set('Cookie', authCookie);
+
+    expect(historyResponse.status).toBe(200);
+
+    const createdGcashPayment = historyResponse.body.find(
+      (item: { id: string }) => item.id === gcashPaymentId,
+    );
+
+    expect(createdGcashPayment).toBeDefined();
+    expect(createdGcashPayment.referenceNumber).toBe('1029384756123');
+    expect(createdGcashPayment.paymentMethod).toBe('GCASH');
 
     const undoResponse = await request(app)
       .post(`/api/payments/${gcashPaymentId}/undo`)

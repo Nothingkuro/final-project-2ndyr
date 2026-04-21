@@ -250,6 +250,7 @@ export const getMemberPayments = async (req: Request, res: Response) => {
       memberId: string;
       amount: { toString(): string };
       paymentMethod: PaymentMethod;
+      referenceNumber: string | null;
       transactionDate: Date;
       plan: { name: string };
       processedBy: { username: string };
@@ -262,6 +263,7 @@ export const getMemberPayments = async (req: Request, res: Response) => {
         paidAt: payment.transactionDate.toISOString(),
         amountPhp: Number(payment.amount),
         paymentMethod: payment.paymentMethod,
+        referenceNumber: payment.referenceNumber,
         membershipPlan: payment.plan.name,
         processedBy: payment.processedBy.username,
       })),
