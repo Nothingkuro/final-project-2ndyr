@@ -1,39 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
+  DashboardChartsSection,
   DailyRevenueSummaryCard,
   LowInventoryAlertList,
   MembershipExpiryAlertList,
   MonthlyRevenueReportCard,
 } from '../components/reports';
 import { getReportsOverview } from '../services/reportsApi';
-import type { MonthlyRevenueRecord, ReportData } from '../types/report';
+import type { ReportData } from '../types/report';
 
 const DEFAULT_INVENTORY_THRESHOLD = 5;
-
-/**
- * Handles get latest record logic for page-level dashboard orchestration.
- *
- * @param records Input used by get latest record.
- * @returns Computed value for the caller.
- */
-function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord | null {
-  if (records.length === 0) {
-    return null;
-  }
-
-  return records.reduce((latest, record) => {
-    if (record.year > latest.year) {
-      return record;
-    }
-
-    if (record.year === latest.year && record.month > latest.month) {
-      return record;
-    }
-
-    return latest;
-  });
-}
 
 /**
  * Renders the reports page view for route-level dashboard orchestration.
@@ -46,14 +23,13 @@ export default function ReportsPage() {
   const [inventoryThreshold, setInventoryThreshold] = useState(DEFAULT_INVENTORY_THRESHOLD);
   const isInitialLoading = isLoading && !reportData && !loadError;
 
-  const latestMonthlyRecord = getLatestRecord(reportData?.monthlyRevenue ?? []);
   const currentDate = new Date();
 
   const [selectedMonth, setSelectedMonth] = useState(
-    latestMonthlyRecord?.month ?? currentDate.getMonth() + 1,
+    currentDate.getMonth() + 1,
   );
   const [selectedYear, setSelectedYear] = useState(
-    latestMonthlyRecord?.year ?? currentDate.getFullYear(),
+    currentDate.getFullYear(),
   );
   const authRole = window.sessionStorage.getItem('authRole');
 
@@ -63,18 +39,12 @@ export default function ReportsPage() {
    * @param threshold Input consumed by load reports.
    * @returns A promise that resolves when processing completes.
    */
-  const loadReports = async (threshold: number) => {
+  const loadReports = async (threshold: number, month: number, year: number) => {
     setIsLoading(true);
     setLoadError(null);
 
-    const data = await getReportsOverview({ threshold, days: 3 });
+    const data = await getReportsOverview({ threshold, days: 3, month, year });
     setReportData(data);
-
-    const latestRecord = getLatestRecord(data.monthlyRevenue);
-    if (latestRecord) {
-      setSelectedMonth(latestRecord.month);
-      setSelectedYear(latestRecord.year);
-    }
   };
 
   useEffect(() => {
@@ -86,7 +56,7 @@ export default function ReportsPage() {
      */
     const loadInitialReports = async () => {
       try {
-        await loadReports(DEFAULT_INVENTORY_THRESHOLD);
+        await loadReports(DEFAULT_INVENTORY_THRESHOLD, selectedMonth, selectedYear);
 
         if (isCancelled) {
           return;
@@ -113,12 +83,50 @@ export default function ReportsPage() {
   }, []);
 
   /**
+   * Handles handle month change for route-level dashboard orchestration.
+   *
+   * @param month Input consumed by handle month change.
+   * @returns A promise that resolves when processing completes.
+   */
+  const handleMonthChange = async (month: number) => {
+    setSelectedMonth(month);
+
+    try {
+      await loadReports(inventoryThreshold, month, selectedYear);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load reports';
+      setLoadError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Handles handle year change for route-level dashboard orchestration.
+   *
+   * @param year Input consumed by handle year change.
+   * @returns A promise that resolves when processing completes.
+   */
+  const handleYearChange = async (year: number) => {
+    setSelectedYear(year);
+
+    try {
+      await loadReports(inventoryThreshold, selectedMonth, year);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load reports';
+      setLoadError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
    * Handles handle refresh for route-level dashboard orchestration.
    * @returns A promise that resolves when processing completes.
    */
   const handleRefresh = async () => {
     try {
-      await loadReports(inventoryThreshold);
+      await loadReports(inventoryThreshold, selectedMonth, selectedYear);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load reports';
       setLoadError(message);
@@ -160,10 +168,15 @@ export default function ReportsPage() {
                 records={reportData.monthlyRevenue}
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
-                onMonthChange={setSelectedMonth}
-                onYearChange={setSelectedYear}
+                onMonthChange={(month) => void handleMonthChange(month)}
+                onYearChange={(year) => void handleYearChange(year)}
               />
             </section>
+
+            <DashboardChartsSection
+              revenueTrends={reportData.revenueTrends}
+              membershipDistribution={reportData.membershipDistribution}
+            />
 
             <section className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
               <MembershipExpiryAlertList alerts={reportData.membershipExpiryAlerts} />

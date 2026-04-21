@@ -1,11 +1,13 @@
 import { API_BASE_URL } from './apiBaseUrl';
 import { getAuthHeaders } from './authHeaders';
 import type {
+  MembershipDistributionPoint,
   InventoryAlert,
   MembershipExpiryAlert,
   MonthlyRevenueRecord,
   ReportData,
   RevenueBreakdown,
+  RevenueTrendPoint,
 } from '../types/report';
 
 /**
@@ -13,6 +15,8 @@ import type {
  */
 type ReportsOverviewResponse = {
   dailyRevenue: RevenueBreakdown;
+  revenueTrends: RevenueTrendPoint[];
+  membershipDistribution: MembershipDistributionPoint[];
   monthlyRevenue: MonthlyRevenueRecord[];
   membershipExpiryAlerts: MembershipExpiryAlert[];
   inventoryAlerts: InventoryAlert[];
@@ -67,6 +71,8 @@ async function makeRequest<T extends object>(endpoint: string): Promise<T> {
 export async function getReportsOverview(params?: {
   threshold?: number;
   days?: number;
+  month?: number;
+  year?: number;
 }): Promise<ReportData> {
   const search = new URLSearchParams();
 
@@ -78,12 +84,22 @@ export async function getReportsOverview(params?: {
     search.set('days', String(params.days));
   }
 
+  if (params?.month !== undefined) {
+    search.set('month', String(params.month));
+  }
+
+  if (params?.year !== undefined) {
+    search.set('year', String(params.year));
+  }
+
   const query = search.toString();
   const endpoint = query ? `/reports/overview?${query}` : '/reports/overview';
   const data = await makeRequest<ReportsOverviewResponse>(endpoint);
 
   return {
     dailyRevenue: data.dailyRevenue,
+    revenueTrends: data.revenueTrends,
+    membershipDistribution: data.membershipDistribution,
     monthlyRevenue: data.monthlyRevenue,
     membershipExpiryAlerts: data.membershipExpiryAlerts,
     inventoryAlerts: data.inventoryAlerts,

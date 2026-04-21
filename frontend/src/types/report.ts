@@ -9,6 +9,23 @@ export interface RevenueBreakdown {
 }
 
 /**
+ * Defines weekday revenue trend point used by frontend domain models.
+ */
+export interface RevenueTrendPoint {
+  day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  revenue: number;
+}
+
+/**
+ * Defines membership distribution point used by frontend domain models.
+ */
+export interface MembershipDistributionPoint {
+  plan: 'Daily Pass' | 'Monthly Basic' | 'Quarterly Plus';
+  memberCount: number;
+  percentage: number;
+}
+
+/**
  * Defines monthly revenue record used by frontend domain models.
  */
 export interface MonthlyRevenueRecord {
@@ -42,6 +59,8 @@ export interface InventoryAlert {
  */
 export interface ReportData {
   dailyRevenue: RevenueBreakdown;
+  revenueTrends: RevenueTrendPoint[];
+  membershipDistribution: MembershipDistributionPoint[];
   monthlyRevenue: MonthlyRevenueRecord[];
   membershipExpiryAlerts: MembershipExpiryAlert[];
   inventoryAlerts: InventoryAlert[];

@@ -31,6 +31,93 @@ function toNumber(value: { toString(): string } | number | string): number {
   return Number(value);
 }
 
+const WEEKDAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+const MEMBERSHIP_PLAN_LABELS = ['Daily Pass', 'Monthly Basic', 'Quarterly Plus'] as const;
+
+type RevenueTrendPoint = {
+  day: (typeof WEEKDAY_LABELS)[number];
+  revenue: number;
+};
+
+type MembershipDistributionPoint = {
+  plan: (typeof MEMBERSHIP_PLAN_LABELS)[number];
+  memberCount: number;
+  percentage: number;
+};
+
+/**
+ * Aggregates payments into Monday-Sunday revenue totals for a selected month.
+ *
+ * @param payments List of payment entries with amount and transaction date.
+ * @returns Ordered Monday-Sunday trend data with zero-filled missing days.
+ */
+function buildRevenueTrends(
+  payments: Array<{ amount: { toString(): string } | number | string; transactionDate: Date }>,
+): RevenueTrendPoint[] {
+  const totalsByDay = new Map<number, number>();
+
+  for (const payment of payments) {
+    const dayIndex = payment.transactionDate.getDay();
+
+    totalsByDay.set(dayIndex, (totalsByDay.get(dayIndex) ?? 0) + toNumber(payment.amount));
+  }
+
+  return [
+    { day: 'Monday' as const, revenue: totalsByDay.get(1) ?? 0 },
+    { day: 'Tuesday' as const, revenue: totalsByDay.get(2) ?? 0 },
+    { day: 'Wednesday' as const, revenue: totalsByDay.get(3) ?? 0 },
+    { day: 'Thursday' as const, revenue: totalsByDay.get(4) ?? 0 },
+    { day: 'Friday' as const, revenue: totalsByDay.get(5) ?? 0 },
+    { day: 'Saturday' as const, revenue: totalsByDay.get(6) ?? 0 },
+    { day: 'Sunday' as const, revenue: totalsByDay.get(0) ?? 0 },
+  ];
+}
+
+/**
+ * Builds percentage distribution for supported membership plans based on each
+ * member's latest payment plan.
+ *
+ * @param payments Payment records sorted newest-first with member and plan names.
+ * @returns Distribution data for Daily Pass, Monthly Basic, and Quarterly Plus.
+ */
+function buildMembershipDistribution(
+  payments: Array<{ memberId: string; plan: { name: string }; transactionDate: Date }>,
+): MembershipDistributionPoint[] {
+  const latestPlanByMember = new Map<string, string>();
+
+  for (const payment of payments) {
+    if (!latestPlanByMember.has(payment.memberId)) {
+      latestPlanByMember.set(payment.memberId, payment.plan.name);
+    }
+  }
+
+  const planCounts = new Map<string, number>();
+  for (const label of MEMBERSHIP_PLAN_LABELS) {
+    planCounts.set(label, 0);
+  }
+
+  for (const planName of latestPlanByMember.values()) {
+    if (planCounts.has(planName)) {
+      planCounts.set(planName, (planCounts.get(planName) ?? 0) + 1);
+    }
+  }
+
+  const totalMembers = Array.from(planCounts.values()).reduce((sum, count) => sum + count, 0);
+
+  return MEMBERSHIP_PLAN_LABELS.map((plan) => {
+    const memberCount = planCounts.get(plan) ?? 0;
+    const percentage = totalMembers > 0
+      ? Number(((memberCount / totalMembers) * 100).toFixed(1))
+      : 0;
+
+    return {
+      plan,
+      memberCount,
+      percentage,
+    };
+  });
+}
+
 /**
  * Returns today's revenue split by payment method.
  *
@@ -224,12 +311,22 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
       : 3;
 
     const start = startOfTodayLocal();
+    const monthRaw = typeof req.query?.month === 'string' ? Number(req.query.month) : start.getMonth() + 1;
+    const selectedMonth = Number.isFinite(monthRaw) && monthRaw >= 1 && monthRaw <= 12
+      ? Math.floor(monthRaw)
+      : start.getMonth() + 1;
+    const yearRaw = typeof req.query?.year === 'string' ? Number(req.query.year) : start.getFullYear();
+    const selectedYear = Number.isFinite(yearRaw) && yearRaw >= 1970 && yearRaw <= 9999
+      ? Math.floor(yearRaw)
+      : start.getFullYear();
+    const selectedMonthStart = new Date(selectedYear, selectedMonth - 1, 1);
+    const selectedMonthEnd = new Date(selectedYear, selectedMonth, 1);
     const endOfToday = new Date(start);
     endOfToday.setDate(endOfToday.getDate() + 1);
     const endOfExpiryWindow = new Date(start);
     endOfExpiryWindow.setDate(endOfExpiryWindow.getDate() + days);
 
-    const [dailyPayments, allPayments, expiringMembers, inventory] = await Promise.all([
+    const [dailyPayments, allPayments, weeklyPayments, latestPlanPayments, expiringMembers, inventory] = await Promise.all([
       prisma.payment.findMany({
         where: {
           transactionDate: {
@@ -249,6 +346,38 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
         },
         orderBy: {
           transactionDate: 'asc',
+        },
+      }),
+      prisma.payment.findMany({
+        where: {
+          transactionDate: {
+            gte: selectedMonthStart,
+            lt: selectedMonthEnd,
+          },
+        },
+        select: {
+          amount: true,
+          transactionDate: true,
+        },
+      }),
+      prisma.payment.findMany({
+        where: {
+          transactionDate: {
+            gte: selectedMonthStart,
+            lt: selectedMonthEnd,
+          },
+        },
+        select: {
+          memberId: true,
+          transactionDate: true,
+          plan: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          transactionDate: 'desc',
         },
       }),
       prisma.member.findMany({
@@ -295,6 +424,9 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
       monthlyTotals.set(key, current);
     }
 
+    const revenueTrends = buildRevenueTrends(weeklyPayments);
+    const membershipDistribution = buildMembershipDistribution(latestPlanPayments);
+
     res.status(200).json({
       dailyRevenue: {
         cash: daily.cash,
@@ -302,6 +434,8 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
         total: daily.cash + daily.gcash,
         date: start.toISOString(),
       },
+      revenueTrends,
+      membershipDistribution,
       monthlyRevenue: Array.from(monthlyTotals.values()).sort((a, b) => {
         if (a.year !== b.year) {
           return a.year - b.year;
