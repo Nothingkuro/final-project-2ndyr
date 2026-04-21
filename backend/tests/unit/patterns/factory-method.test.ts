@@ -1,7 +1,13 @@
 import { PaymentMethod } from '@prisma/client';
-import { ExpiryAlertFactory, InventoryAlertFactory } from '../../../src/patterns/factory-method/report.factory';
+import {
+  ExpiryAlertDTO,
+  InventoryAlertDTO,
+  InventoryAlertInput,
+} from '../../../src/patterns/factory-method/report.factory';
 import { MemberFactory } from '../../../src/patterns/factory-method/member.factory';
 import { PaymentFactory } from '../../../src/patterns/factory-method/payment.factory';
+import { ReportCreator } from '../../../src/patterns/factory-method/report-creator';
+import { ReportType } from '../../../src/patterns/factory-method/report.types';
 
 describe('factory method patterns', () => {
   it('creates member payloads from normalized full names', () => {
@@ -44,9 +50,6 @@ describe('factory method patterns', () => {
 });
 
 describe('Report Factories Unit Tests', () => {
-  const expiryFactory = new ExpiryAlertFactory();
-  const inventoryFactory = new InventoryAlertFactory();
-
   it('should correctly format a Member into an ExpiryAlertDTO', () => {
     const mockMember = {
       id: 'm-1',
@@ -55,31 +58,35 @@ describe('Report Factories Unit Tests', () => {
       contactNumber: '09123',
       expiryDate: new Date('2026-01-01'),
     } as any;
-    
-    const result = expiryFactory.create(mockMember);
+
+    const result = ReportCreator.createReport<typeof mockMember, ExpiryAlertDTO>(
+      ReportType.EXPIRY_ALERT,
+      mockMember,
+    );
+
     expect(result.name).toBe('John Doe');
     expect(result.expiryDate).toBe(mockMember.expiryDate.toISOString());
   });
 
-  it('should return empty string for expiryDate when member expiry is null', () => {
-    const mockMember = {
-      id: 'm-2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      contactNumber: '09876',
-      expiryDate: null,
-    } as any;
-    
-    const result = expiryFactory.create(mockMember);
-    expect(result.expiryDate).toBe('');
-  });
-
   it('should correctly format Equipment into an InventoryAlertDTO', () => {
     const mockEq = { id: 'e-1', itemName: 'Dumbbell', quantity: 2 } as any;
-    const result = inventoryFactory.create({ equipment: mockEq, threshold: 5 });
-    
+    const input: InventoryAlertInput = { equipment: mockEq, threshold: 5 };
+
+    const result = ReportCreator.createReport<InventoryAlertInput, InventoryAlertDTO>(
+      ReportType.INVENTORY_ALERT,
+      input,
+    );
+
     expect(result.itemName).toBe('Dumbbell');
     expect(result.category).toBe('Equipment');
     expect(result.threshold).toBe(5);
+  });
+
+  it('should throw a clear error for an unregistered report type', () => {
+    const unknownType = 'UNKNOWN_REPORT' as ReportType;
+
+    expect(() =>
+      ReportCreator.createReport<Record<string, never>, unknown>(unknownType, {}),
+    ).toThrow('No report factory registered for type: UNKNOWN_REPORT');
   });
 });

@@ -1,14 +1,14 @@
-import { MemberStatus } from '@prisma/client';
+import { Member, MemberStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import {
-  ExpiryAlertFactory,
-  InventoryAlertFactory,
+  ExpiryAlertDTO,
+  InventoryAlertDTO,
+  InventoryAlertInput,
 } from '../patterns/factory-method/report.factory';
+import { ReportCreator } from '../patterns/factory-method/report-creator';
+import { ReportType } from '../patterns/factory-method/report.types';
 import revenueContext from '../services/revenueStrategy';
-
-const expiryAlertFactory = new ExpiryAlertFactory();
-const inventoryAlertFactory = new InventoryAlertFactory();
 
 /**
  * Computes the local start-of-day boundary for date-window reporting queries.
@@ -156,9 +156,10 @@ export const getUpcomingExpirations = async (req: Request, res: Response): Promi
     });
 
     res.status(200).json(
-      members
-        .filter((member) => member.expiryDate)
-        .map((member) => expiryAlertFactory.create(member)),
+      ReportCreator.createReportBatch<Member, ExpiryAlertDTO>(
+        ReportType.EXPIRY_ALERT,
+        members.filter((member) => member.expiryDate),
+      ),
     );
   } catch (error) {
     console.error('Error fetching upcoming expirations:', error);
@@ -192,7 +193,10 @@ export const getLowInventoryAlerts = async (req: Request, res: Response): Promis
     });
 
     res.status(200).json(
-      equipment.map((item) => inventoryAlertFactory.create({ equipment: item, threshold })),
+      ReportCreator.createReportBatch<InventoryAlertInput, InventoryAlertDTO>(
+        ReportType.INVENTORY_ALERT,
+        equipment.map((item) => ({ equipment: item, threshold })),
+      ),
     );
   } catch (error) {
     console.error('Error fetching low inventory alerts:', error);
@@ -304,11 +308,13 @@ export const getReportsOverview = async (req: Request, res: Response): Promise<v
         }
         return a.month - b.month;
       }),
-      membershipExpiryAlerts: expiringMembers
-        .filter((member) => member.expiryDate)
-        .map((member) => expiryAlertFactory.create(member)),
-      inventoryAlerts: inventory.map((item) =>
-        inventoryAlertFactory.create({ equipment: item, threshold }),
+      membershipExpiryAlerts: ReportCreator.createReportBatch<Member, ExpiryAlertDTO>(
+        ReportType.EXPIRY_ALERT,
+        expiringMembers.filter((member) => member.expiryDate),
+      ),
+      inventoryAlerts: ReportCreator.createReportBatch<InventoryAlertInput, InventoryAlertDTO>(
+        ReportType.INVENTORY_ALERT,
+        inventory.map((item) => ({ equipment: item, threshold })),
       ),
     });
   } catch (error) {
