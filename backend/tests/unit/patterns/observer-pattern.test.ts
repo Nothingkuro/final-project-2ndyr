@@ -6,6 +6,10 @@ import {
   type PaymentCreatedEvent,
 } from '../../../src/patterns/observer-pattern/payment-created.observer';
 
+jest.mock('../../../src/patterns/observer-pattern/attendance-logged.observer', () => ({
+  registerAttendanceLoggedObservers: jest.fn(),
+}));
+
 const PAYMENT_CREATED_EVENT: PaymentCreatedEvent = {
   paymentId: 'payment-1',
   memberId: 'member-1',
