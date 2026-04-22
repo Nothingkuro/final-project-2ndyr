@@ -2,6 +2,8 @@ export interface Observer<TEvent> {
   update(event: TEvent): Promise<void> | void;
 }
 
+export interface IBaseObserver<TEvent> extends Observer<TEvent> {}
+
 export class Subject<TEvent> {
   private observers = new Set<Observer<TEvent>>();
 

@@ -1,3 +1,4 @@
+import { registerAttendanceLoggedObservers } from './attendance-logged.observer';
 import { registerMemberChangedObservers } from './member-changed.observer';
 import { registerPaymentCreatedObservers } from './payment-created.observer';
 
@@ -10,6 +11,7 @@ export function bootstrapObserverPattern(): void {
 
   registerPaymentCreatedObservers();
   registerMemberChangedObservers();
+  registerAttendanceLoggedObservers();
 
   isObserverBootstrapComplete = true;
 }
