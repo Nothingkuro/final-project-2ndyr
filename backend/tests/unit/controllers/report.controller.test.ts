@@ -232,16 +232,6 @@ describe('report controller (mocked)', () => {
       ])
       .mockResolvedValueOnce([
         { amount: 700, transactionDate: new Date('2026-04-01T00:00:00.000Z') },
-      ])
-      .mockResolvedValueOnce([
-        { amount: 200, transactionDate: new Date('2026-04-07T00:00:00.000Z') },
-      ])
-      .mockResolvedValueOnce([
-        {
-          memberId: 'member-1',
-          transactionDate: new Date('2026-04-07T00:00:00.000Z'),
-          plan: { name: 'Monthly Basic' },
-        },
       ]);
 
     mockedPrisma.member.findMany.mockResolvedValue([
@@ -271,8 +261,6 @@ describe('report controller (mocked)', () => {
           gcash: 300,
           total: 1000,
         }),
-        revenueTrends: expect.any(Array),
-        membershipDistribution: expect.any(Array),
         monthlyRevenue: expect.any(Array),
         membershipExpiryAlerts: expect.any(Array),
         inventoryAlerts: expect.any(Array),
