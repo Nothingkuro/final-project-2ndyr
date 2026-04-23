@@ -26,10 +26,13 @@ import type {
 const DEFAULT_INVENTORY_THRESHOLD = 5;
 
 /**
- * Handles get latest record logic for page-level dashboard orchestration.
+ * Finds the most recent month/year revenue record for default dashboard focus.
  *
- * @param records Input used by get latest record.
- * @returns Computed value for the caller.
+ * The reports page uses this to preselect the freshest month in summary widgets,
+ * so managers immediately see current business performance after load.
+ *
+ * @param records Monthly revenue records returned by reporting endpoints.
+ * @returns Latest record by chronological order, or `null` when no data exists.
  */
 function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord | null {
   if (records.length === 0) {
@@ -50,8 +53,11 @@ function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord 
 }
 
 /**
- * Renders the reports page view for route-level dashboard orchestration.
- * @returns Rendered JSX content.
+ * Reports and analytics dashboard for finance, inventory, and retention monitoring.
+ *
+ * This route composes multiple report sources so admin users can review revenue,
+ * low-stock inventory alerts, upcoming expirations, churn-risk members, and
+ * utilization trends in one operational view.
  */
 export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -79,11 +85,12 @@ export default function ReportsPage() {
   const authRole = window.sessionStorage.getItem('authRole');
 
   /**
-   * Handles load reports for route-level dashboard orchestration.
+   * Loads the report modules needed by the page and keeps the UI state synchronized.
    *
-   * @param threshold Input consumed by load reports.
-   * @param mode Input consumed by load reports.
-   * @returns A promise that resolves when processing completes.
+   * @param threshold Minimum stock level before equipment is treated as low inventory.
+   * @param mode Forecasting strategy used for next-month projection (conservative vs optimistic).
+   *
+   * @returns Promise that resolves after all dashboard sections have been refreshed.
    */
   const loadReports = async (threshold: number, mode: ForecastMode = forecastMode) => {
     setIsLoading(true);
@@ -127,8 +134,10 @@ export default function ReportsPage() {
     let isCancelled = false;
 
     /**
-     * Handles load initial reports for route-level dashboard orchestration.
-     * @returns A promise that resolves when processing completes.
+     * Performs first-load dashboard fetch with the default inventory threshold.
+     *
+     * This ensures low-inventory cards initially reflect items below the baseline
+     * operational minimum before user customization.
      */
     const loadInitialReports = async () => {
       try {
@@ -155,8 +164,7 @@ export default function ReportsPage() {
   }, []);
 
   /**
-   * Handles handle refresh for route-level dashboard orchestration.
-   * @returns A promise that resolves when processing completes.
+   * Re-runs all dashboard queries using the currently selected page filters.
    */
   const handleRefresh = async () => {
     try {
@@ -168,10 +176,11 @@ export default function ReportsPage() {
   };
 
   /**
-   * Handles handle forecast mode change for route-level dashboard orchestration.
+   * Refreshes only the forecast module when strategy mode changes.
    *
-   * @param mode Input consumed by handle forecast mode change.
-   * @returns A promise that resolves when processing completes.
+   * This allows quick scenario comparison without reloading unrelated report cards.
+   *
+   * @param mode Forecasting algorithm to apply (`CONSERVATIVE` or `OPTIMISTIC`).
    */
   const handleForecastModeChange = async (mode: ForecastMode) => {
     setForecastMode(mode);

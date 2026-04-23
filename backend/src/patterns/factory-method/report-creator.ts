@@ -17,6 +17,13 @@ import {
 } from './report.factory';
 import { ReportType } from './report.types';
 
+/**
+ * Central Factory Method entry point for building report DTOs from domain data.
+ *
+ * The `ReportType` value acts as a contract selector: it determines which factory
+ * is used and which input shape is valid at both compile-time (overloads) and
+ * runtime (type guards).
+ */
 export class ReportCreator {
   private static expiryAlertFactory = new ExpiryAlertFactory();
   private static inventoryAlertFactory = new InventoryAlertFactory();
@@ -24,27 +31,60 @@ export class ReportCreator {
   private static revenueForecastFactory = new RevenueForecastFactory();
   private static peakUtilizationFactory = new PeakUtilizationFactory();
 
+  /**
+   * Creates one report DTO for an expiry alert using member profile data.
+   */
   public static createReport(
     type: ReportType.EXPIRY_ALERT,
     data: Member,
   ): ExpiryAlertDTO;
+
+  /**
+   * Creates one report DTO for low inventory alerts.
+   */
   public static createReport(
     type: ReportType.INVENTORY_ALERT,
     data: InventoryAlertInput,
   ): InventoryAlertDTO;
+
+  /**
+   * Creates one report DTO for churn-risk monitoring.
+   */
   public static createReport(
     type: ReportType.AT_RISK_MEMBER,
     data: AtRiskMemberInput,
   ): AtRiskMemberDTO;
+
+  /**
+   * Creates one revenue-forecast DTO from model output values.
+   */
   public static createReport(
     type: ReportType.REVENUE_FORECAST,
     data: RevenueForecastInput,
   ): RevenueForecastDTO;
+
+  /**
+   * Creates one utilization DTO from hourly attendance aggregation rows.
+   */
   public static createReport(
     type: ReportType.PEAK_UTILIZATION,
     data: PeakUtilizationInput,
   ): PeakUtilizationDTO;
+
+  /**
+   * Generic overload for callers that already provide explicit input/output typing.
+   *
+   * The `type` argument still controls the expected data shape and chosen concrete
+   * factory at runtime.
+   */
   public static createReport<TInput, TOutput>(type: ReportType, data: TInput): TOutput;
+
+  /**
+   * Runtime dispatcher for the Factory Method pattern.
+   *
+   * Each `ReportType` branch validates the incoming payload before invoking the
+   * corresponding concrete factory, preventing invalid cross-type payload usage.
+   */
   public static createReport(type: ReportType, data: unknown): unknown {
     switch (type) {
       case ReportType.EXPIRY_ALERT:
@@ -77,26 +117,52 @@ export class ReportCreator {
     }
   }
 
+  /**
+   * Batch variant for expiry-alert transformation.
+   */
   public static createReportBatch(
     type: ReportType.EXPIRY_ALERT,
     data: Member[],
   ): ExpiryAlertDTO[];
+
+  /**
+   * Batch variant for low-inventory transformation.
+   */
   public static createReportBatch(
     type: ReportType.INVENTORY_ALERT,
     data: InventoryAlertInput[],
   ): InventoryAlertDTO[];
+
+  /**
+   * Batch variant for at-risk member transformation.
+   */
   public static createReportBatch(
     type: ReportType.AT_RISK_MEMBER,
     data: AtRiskMemberInput[],
   ): AtRiskMemberDTO[];
+
+  /**
+   * Batch variant for peak-utilization transformation.
+   */
   public static createReportBatch(
     type: ReportType.PEAK_UTILIZATION,
     data: PeakUtilizationInput[],
   ): PeakUtilizationDTO[];
+
+  /**
+   * Generic batch overload for callers that specify explicit list typing.
+   */
   public static createReportBatch<TInput, TOutput>(
     type: ReportType,
     data: TInput[],
   ): TOutput[];
+
+  /**
+   * Runtime-safe batch dispatcher.
+   *
+   * Guards every item to ensure one malformed row cannot silently produce partial
+   * or corrupted report output.
+   */
   public static createReportBatch(
     type: ReportType,
     data: unknown[],
@@ -127,10 +193,19 @@ export class ReportCreator {
     }
   }
 
+  /**
+   * Shared helper to verify an unknown value is a non-null object map.
+   */
   private static isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }
 
+  /**
+   * Runtime safety check for member-shaped input before expiry/risk transformations.
+   *
+   * This defends the factory pipeline from invalid payloads when data crosses
+   * module or serialization boundaries.
+   */
   private static isMember(value: unknown): value is Member {
     if (!this.isRecord(value)) {
       return false;
@@ -144,6 +219,9 @@ export class ReportCreator {
     );
   }
 
+  /**
+   * Runtime safety check for low-inventory payload shape.
+   */
   private static isInventoryAlertInput(value: unknown): value is InventoryAlertInput {
     if (!this.isRecord(value)) {
       return false;
@@ -160,6 +238,9 @@ export class ReportCreator {
     );
   }
 
+  /**
+   * Runtime safety check for at-risk member payload shape.
+   */
   private static isAtRiskMemberInput(value: unknown): value is AtRiskMemberInput {
     if (!this.isRecord(value)) {
       return false;
@@ -172,6 +253,9 @@ export class ReportCreator {
     );
   }
 
+  /**
+   * Runtime safety check for revenue-forecast payload shape.
+   */
   private static isRevenueForecastInput(value: unknown): value is RevenueForecastInput {
     if (!this.isRecord(value)) {
       return false;
@@ -185,6 +269,9 @@ export class ReportCreator {
     );
   }
 
+  /**
+   * Runtime safety check for hourly utilization payload shape.
+   */
   private static isPeakUtilizationInput(value: unknown): value is PeakUtilizationInput {
     if (!this.isRecord(value)) {
       return false;

@@ -13,7 +13,10 @@ import type {
 } from '../types/report';
 
 /**
- * Type alias for reports overview response in API integration behavior.
+ * Backend response for the reports overview endpoint.
+ *
+ * This is the transport shape returned by the API before the page-level model is
+ * completed with separately fetched modules (for example forecast and at-risk cache).
  */
 type ReportsOverviewResponse = {
   dailyRevenue: RevenueBreakdown;
@@ -26,10 +29,13 @@ type RevenueForecastResponse = RevenueForecast;
 type PeakUtilizationResponse = PeakUtilization[];
 
 /**
- * Handles make request logic for API integration behavior.
+ * Executes authenticated GET requests for reports endpoints with uniform error handling.
  *
- * @param endpoint Input used by make request.
- * @returns A promise that resolves when processing is complete.
+ * Standardizing parsing and error translation here keeps report widgets consistent
+ * when the backend is unavailable or misconfigured.
+ *
+ * @param endpoint Relative reports endpoint path (including query string when needed).
+ * @returns Parsed JSON payload typed to the expected response model.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 async function makeRequest<T extends object>(endpoint: string): Promise<T> {
@@ -65,10 +71,13 @@ async function makeRequest<T extends object>(endpoint: string): Promise<T> {
 }
 
 /**
- * Handles get reports overview logic for API integration behavior.
+ * Fetches the consolidated overview cards for the reports dashboard.
  *
- * @param params Input used by get reports overview.
- * @returns A promise that resolves when processing is complete.
+ * @param params Optional report filters.
+ * @param params.threshold Minimum stock level before an item is considered low inventory.
+ * @param params.days Number of days ahead to include in membership-expiry alerts.
+ *
+ * @returns Overview payload used by daily revenue, monthly revenue, inventory, and expiry sections.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 export async function getReportsOverview(params?: {
@@ -98,10 +107,10 @@ export async function getReportsOverview(params?: {
 }
 
 /**
- * Handles get upcoming expirations logic for API integration behavior.
+ * Fetches active members expiring soon for renewal outreach workflows.
  *
- * @param days Input used by get upcoming expirations.
- * @returns A promise that resolves when processing is complete.
+ * @param days Forward-looking expiry window in days.
+ * @returns Membership expiry alerts sorted by nearest expiry first.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 export async function getUpcomingExpirations(days = 3): Promise<MembershipExpiryAlert[]> {
@@ -110,9 +119,9 @@ export async function getUpcomingExpirations(days = 3): Promise<MembershipExpiry
 }
 
 /**
- * Handles get at-risk members logic for API integration behavior.
+ * Fetches members flagged as retention risk due to inactivity near expiry.
  *
- * @returns A promise that resolves when processing is complete.
+ * @returns Cached at-risk list with server-side refresh timestamp.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 export async function getAtRiskMembers(): Promise<AtRiskMembersResponse> {
@@ -120,10 +129,12 @@ export async function getAtRiskMembers(): Promise<AtRiskMembersResponse> {
 }
 
 /**
- * Handles get revenue forecast logic for API integration behavior.
+ * Fetches next-month revenue projection for the selected business scenario.
  *
- * @param mode Input used by get revenue forecast.
- * @returns A promise that resolves when processing is complete.
+ * @param mode Forecasting algorithm profile used by backend strategy logic
+ * (`OPTIMISTIC` for stronger retention assumptions, `CONSERVATIVE` for higher churn allowance).
+ *
+ * @returns Forecast payload including baseline, churn adjustment, and projected revenue.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 export async function getRevenueForecast(mode: ForecastMode = 'CONSERVATIVE'): Promise<RevenueForecastResponse> {
@@ -132,9 +143,9 @@ export async function getRevenueForecast(mode: ForecastMode = 'CONSERVATIVE'): P
 }
 
 /**
- * Handles get peak utilization logic for API integration behavior.
+ * Fetches hourly attendance distribution grouped by membership plan.
  *
- * @returns A promise that resolves when processing is complete.
+ * @returns Flat utilization rows consumed by frontend pivot logic.
  * @throws {Error} When the backend request fails or returns invalid data.
  */
 export async function getPeakUtilization(): Promise<PeakUtilizationResponse> {

@@ -16,7 +16,20 @@ import { ReportType } from '../patterns/factory-method/report.types';
 import revenueContext from './revenueStrategy';
 import revenueForecastContext, { ForecastMode } from './revenueForecast.strategy';
 
+/**
+ * Business-defined lead time to alert staff before a membership expires.
+ *
+ * Members inside this window are treated as needing proactive retention outreach,
+ * such as reminders, renewal calls, or in-person follow-ups at check-in.
+ */
 const DAYS_UNTIL_RISK_EXPIRY = 14;
+
+/**
+ * Threshold for identifying inactive members at risk of churn.
+ *
+ * A member with no check-in activity in this many days is treated as disengaged
+ * and included in retention-focused monitoring.
+ */
 const DAYS_WITHOUT_ATTENDANCE = 10;
 const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -31,23 +44,54 @@ type PeakUtilizationRow = {
   count: number;
 };
 
+/**
+ * Provides analytics data used by reports and dashboards for gym operations.
+ *
+ * This service centralizes read-heavy reporting logic so controllers stay thin,
+ * and ensures business metrics (retention risk, revenue outlook, utilization)
+ * are calculated consistently across endpoints.
+ */
 export class AnalyticsService {
   private atRiskCache: AtRiskCache | null = null;
 
+  /**
+   * Anchors date-range queries to the local start of day.
+   *
+   * Daily dashboard cards and expiry windows are business-day metrics, so this
+   * avoids partial-day drift when queries run at different times.
+   */
   private startOfTodayLocal(): Date {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return now;
   }
 
+  /**
+   * Normalizes numeric-like database values into plain numbers for math operations.
+   *
+   * Some Prisma numeric fields can surface as Decimal-like objects; converting here
+   * keeps financial calculations predictable and explicit.
+   */
   private toNumber(value: { toString(): string } | number | string): number {
     return Number(value);
   }
 
+  /**
+   * Converts an expiry timestamp into whole-day urgency from "today".
+   *
+   * The value is clamped to zero so expired memberships do not produce negative
+   * urgency counts in retention-oriented reports.
+   */
   private calculateDaysUntilExpiry(expiryDate: Date): number {
     return Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / MILLIS_PER_DAY));
   }
 
+  /**
+   * Calculates same-day revenue totals split by payment channel.
+   *
+   * Operations staff use this to reconcile cash drawer vs e-wallet activity before
+   * end-of-day closeout and to monitor intra-day performance.
+   */
   async getDailyRevenueSummary(): Promise<{
     cash: number;
     gcash: number;
@@ -86,6 +130,12 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Aggregates historical payments into month-level revenue records.
+   *
+   * This creates trend-ready data for management reporting where each month is a
+   * single point, regardless of the number of underlying transactions.
+   */
   async getMonthlyRevenueRecords(): Promise<Array<{ month: number; year: number; total: number }>> {
     const payments = await prisma.payment.findMany({
       select: {
@@ -119,6 +169,14 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Lists active members whose memberships will expire within a configurable window.
+   *
+   * The result supports renewal campaigns by surfacing near-term expirations in
+   * chronological order.
+   *
+   * @param days Number of days ahead to scan for active memberships nearing expiry.
+   */
   async getUpcomingExpirations(days: number): Promise<ExpiryAlertDTO[]> {
     const start = this.startOfTodayLocal();
     const end = new Date(start);
@@ -143,6 +201,14 @@ export class AnalyticsService {
     );
   }
 
+  /**
+   * Finds equipment items that fall below a business-defined stock threshold.
+   *
+   * This allows staff to prioritize restocking before low quantities interrupt
+   * training operations or class schedules.
+   *
+   * @param threshold Minimum acceptable quantity before an item is considered low inventory.
+   */
   async getLowInventoryAlerts(threshold: number): Promise<InventoryAlertDTO[]> {
     const equipment = await prisma.equipment.findMany({
       where: {
@@ -161,6 +227,13 @@ export class AnalyticsService {
     );
   }
 
+  /**
+   * Identifies members at elevated churn risk by combining two business signals:
+   * near-term membership expiry and recent attendance inactivity.
+   *
+   * A member is included only when both conditions are true, which helps staff
+   * focus outreach efforts on members most likely to lapse.
+   */
   async calculateAtRiskMembers(): Promise<AtRiskMemberDTO[]> {
     const start = this.startOfTodayLocal();
     const expiryCutoff = new Date(start);
@@ -214,6 +287,12 @@ export class AnalyticsService {
     );
   }
 
+  /**
+   * Rebuilds and stores the at-risk member snapshot used by dashboard polling.
+   *
+   * Caching avoids repeated heavy joins for frequent UI refreshes while preserving
+   * traceability through an explicit cache timestamp.
+   */
   async refreshAtRiskMembersCache(): Promise<void> {
     const data = await this.calculateAtRiskMembers();
     this.atRiskCache = {
@@ -222,6 +301,11 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Returns at-risk members from cache when allowed, otherwise forces recomputation.
+   *
+   * @param useCache When true, reuses the latest computed snapshot to reduce query load.
+   */
   async getAtRiskMembers(useCache = true): Promise<{ items: AtRiskMemberDTO[]; updatedAt: string }> {
     if (!useCache || !this.atRiskCache) {
       await this.refreshAtRiskMembersCache();
@@ -237,6 +321,18 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Projects next-month revenue using active recurring plan value as baseline and
+   * adjusting for likely churn among disengaged members nearing renewal.
+   *
+   * Forecast math:
+   * - Baseline: sum of prices from active membership plans (steady-state recurring value).
+   * - Churn adjustment: sum of latest plan prices for active members expiring next month
+   *   who show no attendance in the last 30 days.
+   * - Final projection: strategy-dependent transformation of baseline and churn adjustment.
+   *
+   * @param mode Forecast strategy profile (for example conservative vs optimistic).
+   */
   async getMonthlyRevenueForecast(mode: ForecastMode): Promise<RevenueForecastDTO> {
     const [{ _sum }, expiringMembers] = await Promise.all([
       prisma.membershipPlan.aggregate({
@@ -307,6 +403,12 @@ export class AnalyticsService {
     );
   }
 
+  /**
+   * Builds hourly attendance utilization grouped by the member's latest plan.
+   *
+   * This is used to reveal crowding patterns and plan-specific traffic peaks that
+   * inform staffing and facility allocation decisions.
+   */
   async getPeakUtilizationByPlan(): Promise<PeakUtilizationDTO[]> {
     const rows = await prisma.$queryRaw<PeakUtilizationRow[]>(Prisma.sql`
       SELECT
@@ -340,6 +442,15 @@ export class AnalyticsService {
     );
   }
 
+  /**
+   * Loads the cross-module overview payload used by the reports dashboard.
+   *
+   * This bundles financial, retention, inventory, forecast, and utilization metrics
+   * in one call to keep frontend refresh flows coherent.
+   *
+   * @param threshold Minimum stock level before an item appears in low inventory alerts.
+   * @param days Days-ahead window for membership expiry alerts.
+   */
   async getReportsOverview(threshold: number, days: number): Promise<{
     dailyRevenue: {
       cash: number;

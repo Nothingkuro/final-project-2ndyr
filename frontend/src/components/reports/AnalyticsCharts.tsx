@@ -38,10 +38,21 @@ type ForecastChartPoint = {
 
 const CHART_COLORS = ['#BE0000', '#F97316', '#22C55E', '#0EA5E9', '#A855F7', '#EAB308'];
 
+/**
+ * Formats numeric month values into compact labels for dashboard chart axes.
+ */
 function getMonthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en-PH', { month: 'short' });
 }
 
+/**
+ * Converts historical monthly revenue plus optional forecast output into the shape
+ * expected by the Recharts area chart.
+ *
+ * The transformer keeps historical values on existing months and appends the next
+ * month as a projection point when forecast data is available, allowing the UI to
+ * visually bridge past performance and projected revenue.
+ */
 function buildForecastChartData(
   monthlyRevenue: MonthlyRevenueRecord[],
   revenueForecast: RevenueForecast | null,
@@ -80,6 +91,15 @@ function buildForecastChartData(
   return chartData;
 }
 
+/**
+ * Pivots flat check-in utilization rows into a 24-hour time-series matrix for the
+ * stacked bar chart component.
+ *
+ * Backend data arrives as individual `{hour, planName, count}` records. The chart
+ * needs one row per hour with dynamic keys per plan, so this function prebuilds all
+ * 24 hours, initializes missing plan/hour combinations to zero, then accumulates
+ * counts into the corresponding hour bucket.
+ */
 function buildPeakUtilizationData(peakUtilization: PeakUtilization[]): {
   data: Array<Record<string, number | string>>;
   planKeys: string[];
@@ -110,6 +130,9 @@ function buildPeakUtilizationData(peakUtilization: PeakUtilization[]): {
   return { data: byHour, planKeys };
 }
 
+/**
+ * Renders forecast and utilization analytics cards for the reports dashboard.
+ */
 export default function AnalyticsCharts({
   monthlyRevenue,
   revenueForecast,
