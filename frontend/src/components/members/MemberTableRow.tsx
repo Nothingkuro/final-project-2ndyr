@@ -51,7 +51,7 @@ export default function MemberTableRow({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={`
-        flex items-center px-4 sm:px-6 py-3 border-b border-neutral-200
+        flex items-center min-h-[44px] px-4 sm:px-6 py-3 border-b border-neutral-200
         last:border-b-0 transition-all duration-200 cursor-pointer
         ${
           isHovered
@@ -75,7 +75,7 @@ export default function MemberTableRow({
       <span
         title={`${member.firstName} ${member.lastName}`}
         className={`
-          flex-1 min-w-0 text-sm text-right sm:text-center truncate
+          flex-1 min-w-0 text-sm text-right sm:text-center break-words sm:truncate
           ${isHovered ? 'text-secondary font-medium' : 'text-secondary'}
         `}
       >

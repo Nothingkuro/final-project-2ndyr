@@ -433,6 +433,12 @@ export const deactivateMember = async (req: Request, res: Response): Promise<voi
       },
     });
 
+    await notifyMemberChanged({
+      memberId: updatedMember.id,
+      action: 'UPDATED',
+      happenedAt: new Date().toISOString(),
+    });
+
     res.status(200).json(toMemberListItem(updatedMember));
   } catch (error) {
     console.error('Error deactivating member:', error);

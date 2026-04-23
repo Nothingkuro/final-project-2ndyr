@@ -1,7 +1,6 @@
 import { Bell, Menu } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import SearchBar from '../common/SearchBar';
 import { getUpcomingExpirations } from '../../services/reportsApi';
 import { API_BASE_URL } from '../../services/apiBaseUrl';
 import type { MembershipExpiryAlert } from '../../types/report';
@@ -47,7 +46,6 @@ export default function Header({
   showNotificationDot = true,
   notificationWidget,
 }: HeaderProps) {
-  const [mobileSearch, setMobileSearch] = useState('');
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string>(() => readStoredUsername());
   const [expiringMembershipAlerts, setExpiringMembershipAlerts] = useState<
@@ -215,7 +213,7 @@ export default function Header({
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-0 mt-2 w-72 rounded-xl border border-neutral-200 bg-surface p-4 shadow-card">
+              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-neutral-200 bg-surface p-4 shadow-card">
                 {resolvedNotificationWidget}
               </div>
             )}
@@ -233,15 +231,6 @@ export default function Header({
         </div>
       </div>
 
-      {/* ── Mobile Search (shown below header on small screens) ── */}
-      <div className="sm:hidden pb-3">
-        <SearchBar
-          value={mobileSearch}
-          onChange={setMobileSearch}
-          placeholder="Search..."
-          inputClassName="border-neutral-200 bg-surface-alt text-secondary placeholder:text-neutral-400 py-2"
-        />
-      </div>
     </header>
   );
 }
