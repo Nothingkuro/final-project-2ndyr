@@ -56,6 +56,28 @@ model User {
   @@map("users")
 }
 
+/// Immutable audit trail for sensitive domain actions
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  actorUserId String?
+  requestId  String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+
+  // Timestamps
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
 /// Gym members
 model Member {
   id            String       @id @default(cuid())

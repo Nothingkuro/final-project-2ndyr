@@ -155,6 +155,9 @@ describe('payment controller (mocked)', () => {
         member: {
           update: jest.fn().mockResolvedValue(updatedMember),
         },
+        auditLog: {
+          createMany: jest.fn().mockResolvedValue({ count: 2 }),
+        },
       }),
     );
 
@@ -432,6 +435,9 @@ describe('payment controller (mocked)', () => {
         member: {
           update: txMemberUpdate,
         },
+        auditLog: {
+          createMany: jest.fn().mockResolvedValue({ count: 2 }),
+        },
       }),
     );
 
@@ -574,6 +580,9 @@ describe('payment controller (mocked)', () => {
             update: jest.fn().mockResolvedValue({ id: 'member-1' }),
           },
           $queryRaw: jest.fn().mockResolvedValue([{ id: 'member-1' }]),
+          auditLog: {
+            createMany: jest.fn().mockResolvedValue({ count: 2 }),
+          },
         }),
       );
 

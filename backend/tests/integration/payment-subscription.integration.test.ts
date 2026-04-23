@@ -50,6 +50,21 @@ describe('Payment and subscription API', () => {
     await prisma.$executeRawUnsafe(
       'ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "previousExpiryDate" TIMESTAMP(3)',
     );
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "audit_logs" (
+        "id" TEXT NOT NULL,
+        "action" TEXT NOT NULL,
+        "entityType" TEXT NOT NULL,
+        "entityId" TEXT NOT NULL,
+        "actorUserId" TEXT,
+        "requestId" TEXT,
+        "ipAddress" TEXT,
+        "userAgent" TEXT,
+        "metadata" JSONB,
+        "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+      )
+    `);
 
     const passwordHash = await hashPassword(password);
 
@@ -157,6 +172,18 @@ describe('Payment and subscription API', () => {
     expect(paymentResponse.body.updatedMember.expiryDate).not.toBe('');
 
     createdPaymentId = paymentResponse.body.payment.id;
+    expect(createdPaymentId).toBeTruthy();
+
+    const latestPaymentId = createdPaymentId as string;
+
+    const paymentCreatedAuditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityType: 'PAYMENT',
+        entityId: latestPaymentId,
+        action: 'PAYMENT_CREATED',
+      },
+    });
+    expect(paymentCreatedAuditLogs.length).toBeGreaterThan(0);
 
     const historyResponse = await request(app)
       .get(`/api/members/${createdMemberId}/payments`)
@@ -270,6 +297,15 @@ describe('Payment and subscription API', () => {
     });
 
     expect(paymentAfterUndo).toBeNull();
+
+    const paymentUndoneAuditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityType: 'PAYMENT',
+        entityId: createdPaymentId as string,
+        action: 'PAYMENT_UNDONE',
+      },
+    });
+    expect(paymentUndoneAuditLogs.length).toBeGreaterThan(0);
 
     const memberAfterUndo = await prisma.member.findUnique({
       where: { id: createdMemberId as string },
