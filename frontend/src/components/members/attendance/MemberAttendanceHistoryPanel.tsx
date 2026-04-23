@@ -33,7 +33,7 @@ function formatCheckInTime(iso: string): string {
     return '--';
   }
 
-  return dateValue.toLocaleString('en-US', {
+  return dateValue.toLocaleString('en-PH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

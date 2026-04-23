@@ -47,8 +47,8 @@ model User {
   role         Role
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   processedPayments Payment[] @relation("ProcessedByUser")
@@ -63,13 +63,13 @@ model Member {
   lastName      String
   contactNumber String       @unique
   notes         String       @default("")
-  joinDate      DateTime     @default(now())
-  expiryDate    DateTime?
+  joinDate      DateTime     @default(now()) @db.Timestamptz(3)
+  expiryDate    DateTime?    @db.Timestamptz(3)
   status        MemberStatus @default(ACTIVE)
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   attendances Attendance[]
@@ -88,8 +88,8 @@ model MembershipPlan {
   isActive     Boolean @default(true)
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   payments Payment[]
@@ -103,9 +103,9 @@ model Payment {
   amount          Decimal       @db.Decimal(10, 2)
   paymentMethod   PaymentMethod
   referenceNumber String?
-  transactionDate DateTime      @default(now())
+  transactionDate DateTime      @default(now()) @db.Timestamptz(3)
   previousStatus  String?
-  previousExpiryDate DateTime?
+  previousExpiryDate DateTime?  @db.Timestamptz(3)
 
   // Foreign Keys
   memberId      String
@@ -113,8 +113,8 @@ model Payment {
   processedById String
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   member      Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -130,14 +130,14 @@ model Payment {
 /// Attendance records for gym check-ins
 model Attendance {
   id          String   @id @default(cuid())
-  checkInTime DateTime @default(now())
+  checkInTime DateTime @default(now()) @db.Timestamptz(3)
 
   // Foreign Keys
   memberId String
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -153,11 +153,11 @@ model Equipment {
   itemName    String
   quantity    Int
   condition   EquipmentCondition @default(GOOD)
-  lastChecked DateTime?
+  lastChecked DateTime? @db.Timestamptz(3)
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("equipment")
 }
@@ -172,8 +172,8 @@ model Supplier {
   address       String?
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   transactions SupplierTransaction[]
@@ -186,14 +186,14 @@ model SupplierTransaction {
   id              String   @id @default(cuid())
   itemsPurchased  String
   totalCost       Decimal  @db.Decimal(10, 2)
-  transactionDate DateTime @default(now())
+  transactionDate DateTime @default(now()) @db.Timestamptz(3)
 
   // Foreign Keys
   supplierId String
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)

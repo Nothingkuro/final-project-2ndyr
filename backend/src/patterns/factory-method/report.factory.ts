@@ -23,6 +23,39 @@ export type InventoryAlertInput = {
     threshold: number;
 };
 
+export type AtRiskMemberDTO = {
+    id: string;
+    name: string;
+    contactNumber: string;
+    expiryDate: string;
+    daysUntilExpiry: number;
+    lastCheckInTime: string | null;
+    riskLevel: 'AT_RISK';
+};
+
+export type AtRiskMemberInput = {
+    member: Member;
+    daysUntilExpiry: number;
+    lastCheckInTime: Date | null;
+};
+
+export type RevenueForecastDTO = {
+    projection: 'CONSERVATIVE' | 'OPTIMISTIC';
+    baselineActivePlanRevenue: number;
+    projectedChurnAdjustment: number;
+    forecastedRevenue: number;
+};
+
+export type RevenueForecastInput = RevenueForecastDTO;
+
+export type PeakUtilizationDTO = {
+    hour: number;
+    planName: string;
+    count: number;
+};
+
+export type PeakUtilizationInput = PeakUtilizationDTO;
+
 export class ExpiryAlertFactory implements IFactory<Member, ExpiryAlertDTO> {
     create(member: Member): ExpiryAlertDTO {
         return {
@@ -42,6 +75,41 @@ export class InventoryAlertFactory implements IFactory<InventoryAlertInput, Inve
             category: 'Equipment', 
             quantity: input.equipment.quantity,
             threshold: input.threshold,
+        };
+    }
+}
+
+export class AtRiskMemberFactory implements IFactory<AtRiskMemberInput, AtRiskMemberDTO> {
+    create(input: AtRiskMemberInput): AtRiskMemberDTO {
+        return {
+            id: input.member.id,
+            name: `${input.member.firstName} ${input.member.lastName}`.trim(),
+            contactNumber: input.member.contactNumber,
+            expiryDate: input.member.expiryDate ? input.member.expiryDate.toISOString() : '',
+            daysUntilExpiry: input.daysUntilExpiry,
+            lastCheckInTime: input.lastCheckInTime ? input.lastCheckInTime.toISOString() : null,
+            riskLevel: 'AT_RISK',
+        };
+    }
+}
+
+export class RevenueForecastFactory implements IFactory<RevenueForecastInput, RevenueForecastDTO> {
+    create(input: RevenueForecastInput): RevenueForecastDTO {
+        return {
+            projection: input.projection,
+            baselineActivePlanRevenue: input.baselineActivePlanRevenue,
+            projectedChurnAdjustment: input.projectedChurnAdjustment,
+            forecastedRevenue: input.forecastedRevenue,
+        };
+    }
+}
+
+export class PeakUtilizationFactory implements IFactory<PeakUtilizationInput, PeakUtilizationDTO> {
+    create(input: PeakUtilizationInput): PeakUtilizationDTO {
+        return {
+            hour: input.hour,
+            planName: input.planName,
+            count: input.count,
         };
     }
 }

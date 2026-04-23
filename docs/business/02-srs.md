@@ -89,6 +89,9 @@ The system is a simple, internal, web-based application designed for rapid data 
 - **FR-5.2 — Expiry Alert List:** The system shall provide a dashboard list of all active members whose subscriptions expire within the next 3 calendar days.
 - **FR-5.3 — Monthly Revenue Report:** The system shall generate a summary of total revenue collected for a specified calendar month.
 - **FR-5.4 — Low Inventory Alert:** The system shall provide a list of equipment items where the quantity is below a fixed threshold of 5 (configurable minimum).
+- **FR-5.5 — At-Risk Retention Alert:** The system shall identify active members at churn risk using combined expiry and attendance inactivity criteria.
+- **FR-5.6 — Revenue Forecasting Modes:** The system shall provide next-month revenue projection using selectable forecast modes (`CONSERVATIVE`, `OPTIMISTIC`).
+- **FR-5.7 — Peak Utilization Analytics:** The system shall provide hourly attendance utilization grouped by membership plan.
 
 ### FR-6: Membership Plan Management (Admin Only)
 
@@ -289,6 +292,42 @@ The system is a simple, internal, web-based application designed for rapid data 
 |---|---|
 | AC-5.4-1 | A "Low Inventory Alert" list is visible on the reports page. |
 | AC-5.4-2 | The system displays items where quantity is below the configurable minimum (default: 5). |
+
+---
+
+#### US-5.5 — At-Risk Membership Retention Alerts
+
+**As a** Staff member, **I want to** see members who are both nearing expiry and not checking in regularly, **so that** I can proactively remind them before they churn.
+
+| Acceptance Criterion | Condition |
+|---|---|
+| AC-5.5-1 | The system lists only active members with expiry dates within the next 14 days. |
+| AC-5.5-2 | Members are included only when they have no attendance records in the last 10 days. |
+| AC-5.5-3 | Each record includes name, contact number, expiry date, and days-until-expiry for outreach prioritization. |
+
+---
+
+#### US-5.6 — Revenue Forecast Scenario Comparison
+
+**As an** Owner, **I want to** switch between forecast modes, **so that** I can compare conservative and optimistic projections for next month revenue planning.
+
+| Acceptance Criterion | Condition |
+|---|---|
+| AC-5.6-1 | The reports dashboard provides selectable projection modes: `CONSERVATIVE` and `OPTIMISTIC`. |
+| AC-5.6-2 | Forecast output includes baseline active-plan revenue, projected churn adjustment, and final forecasted revenue. |
+| AC-5.6-3 | Invalid or missing mode input defaults to `CONSERVATIVE`. |
+
+---
+
+#### US-5.7 — Peak Utilization by Plan
+
+**As an** Owner, **I want to** view hourly attendance intensity by membership plan, **so that** I can make better staffing and facility allocation decisions.
+
+| Acceptance Criterion | Condition |
+|---|---|
+| AC-5.7-1 | The dashboard displays utilization across all 24 hourly buckets in a day. |
+| AC-5.7-2 | Attendance counts are grouped by the member's latest associated plan. |
+| AC-5.7-3 | Hours with no activity remain visible as zero values to preserve trend continuity. |
 
 ---
 

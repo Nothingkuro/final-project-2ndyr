@@ -1,21 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
+  AnalyticsCharts,
   DailyRevenueSummaryCard,
   LowInventoryAlertList,
   MembershipExpiryAlertList,
   MonthlyRevenueReportCard,
+  RiskAlertList,
 } from '../components/reports';
-import { getReportsOverview } from '../services/reportsApi';
-import type { MonthlyRevenueRecord, ReportData } from '../types/report';
+import {
+  getAtRiskMembers,
+  getPeakUtilization,
+  getReportsOverview,
+  getRevenueForecast,
+} from '../services/reportsApi';
+import type {
+  AtRiskMembersResponse,
+  ForecastMode,
+  MonthlyRevenueRecord,
+  PeakUtilization,
+  ReportData,
+  RevenueForecast,
+} from '../types/report';
 
 const DEFAULT_INVENTORY_THRESHOLD = 5;
 
 /**
- * Handles get latest record logic for page-level dashboard orchestration.
+ * Finds the most recent month/year revenue record for default dashboard focus.
  *
- * @param records Input used by get latest record.
- * @returns Computed value for the caller.
+ * The reports page uses this to preselect the freshest month in summary widgets,
+ * so managers immediately see current business performance after load.
+ *
+ * @param records Monthly revenue records returned by reporting endpoints.
+ * @returns Latest record by chronological order, or `null` when no data exists.
  */
 function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord | null {
   if (records.length === 0) {
@@ -36,12 +53,22 @@ function getLatestRecord(records: MonthlyRevenueRecord[]): MonthlyRevenueRecord 
 }
 
 /**
- * Renders the reports page view for route-level dashboard orchestration.
- * @returns Rendered JSX content.
+ * Reports and analytics dashboard for finance, inventory, and retention monitoring.
+ *
+ * This route composes multiple report sources so admin users can review revenue,
+ * low-stock inventory alerts, upcoming expirations, churn-risk members, and
+ * utilization trends in one operational view.
  */
 export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [atRiskData, setAtRiskData] = useState<AtRiskMembersResponse | null>(null);
+  const [forecastMode, setForecastMode] = useState<ForecastMode>('CONSERVATIVE');
+  const [revenueForecast, setRevenueForecast] = useState<RevenueForecast | null>(null);
+  const [peakUtilization, setPeakUtilization] = useState<PeakUtilization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRiskLoading, setIsRiskLoading] = useState(true);
+  const [isForecastLoading, setIsForecastLoading] = useState(true);
+  const [isUtilizationLoading, setIsUtilizationLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [inventoryThreshold, setInventoryThreshold] = useState(DEFAULT_INVENTORY_THRESHOLD);
   const isInitialLoading = isLoading && !reportData && !loadError;
@@ -58,22 +85,48 @@ export default function ReportsPage() {
   const authRole = window.sessionStorage.getItem('authRole');
 
   /**
-   * Handles load reports for route-level dashboard orchestration.
+   * Loads the report modules needed by the page and keeps the UI state synchronized.
    *
-   * @param threshold Input consumed by load reports.
-   * @returns A promise that resolves when processing completes.
+   * @param threshold Minimum stock level before equipment is treated as low inventory.
+   * @param mode Forecasting strategy used for next-month projection (conservative vs optimistic).
+   *
+   * @returns Promise that resolves after all dashboard sections have been refreshed.
    */
-  const loadReports = async (threshold: number) => {
+  const loadReports = async (threshold: number, mode: ForecastMode = forecastMode) => {
     setIsLoading(true);
+    setIsRiskLoading(true);
+    setIsForecastLoading(true);
+    setIsUtilizationLoading(true);
     setLoadError(null);
 
-    const data = await getReportsOverview({ threshold, days: 3 });
-    setReportData(data);
+    try {
+      const [overviewData, riskData, forecastData, utilizationData] = await Promise.all([
+        getReportsOverview({ threshold, days: 3 }),
+        getAtRiskMembers(),
+        getRevenueForecast(mode),
+        getPeakUtilization(),
+      ]);
 
-    const latestRecord = getLatestRecord(data.monthlyRevenue);
-    if (latestRecord) {
-      setSelectedMonth(latestRecord.month);
-      setSelectedYear(latestRecord.year);
+      setReportData({
+        ...overviewData,
+        atRiskMembers: riskData.items,
+        revenueForecast: forecastData,
+        peakUtilization: utilizationData,
+      });
+      setAtRiskData(riskData);
+      setRevenueForecast(forecastData);
+      setPeakUtilization(utilizationData);
+
+      const latestRecord = getLatestRecord(overviewData.monthlyRevenue);
+      if (latestRecord) {
+        setSelectedMonth(latestRecord.month);
+        setSelectedYear(latestRecord.year);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsRiskLoading(false);
+      setIsForecastLoading(false);
+      setIsUtilizationLoading(false);
     }
   };
 
@@ -81,8 +134,10 @@ export default function ReportsPage() {
     let isCancelled = false;
 
     /**
-     * Handles load initial reports for route-level dashboard orchestration.
-     * @returns A promise that resolves when processing completes.
+     * Performs first-load dashboard fetch with the default inventory threshold.
+     *
+     * This ensures low-inventory cards initially reflect items below the baseline
+     * operational minimum before user customization.
      */
     const loadInitialReports = async () => {
       try {
@@ -98,10 +153,6 @@ export default function ReportsPage() {
 
         const message = error instanceof Error ? error.message : 'Failed to load reports';
         setLoadError(message);
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
       }
     };
 
@@ -113,17 +164,48 @@ export default function ReportsPage() {
   }, []);
 
   /**
-   * Handles handle refresh for route-level dashboard orchestration.
-   * @returns A promise that resolves when processing completes.
+   * Re-runs all dashboard queries using the currently selected page filters.
    */
   const handleRefresh = async () => {
     try {
-      await loadReports(inventoryThreshold);
+      await loadReports(inventoryThreshold, forecastMode);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load reports';
       setLoadError(message);
+    }
+  };
+
+  /**
+   * Refreshes only the forecast module when strategy mode changes.
+   *
+   * This allows quick scenario comparison without reloading unrelated report cards.
+   *
+   * @param mode Forecasting algorithm to apply (`CONSERVATIVE` or `OPTIMISTIC`).
+   */
+  const handleForecastModeChange = async (mode: ForecastMode) => {
+    setForecastMode(mode);
+    setIsForecastLoading(true);
+    setLoadError(null);
+
+    try {
+      const forecastData = await getRevenueForecast(mode);
+      setRevenueForecast(forecastData);
+
+      setReportData((previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          revenueForecast: forecastData,
+        };
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to load forecast';
+      setLoadError(message);
     } finally {
-      setIsLoading(false);
+      setIsForecastLoading(false);
     }
   };
 
@@ -173,6 +255,25 @@ export default function ReportsPage() {
                 onThresholdChange={setInventoryThreshold}
                 onRefresh={handleRefresh}
                 isRefreshing={isLoading}
+              />
+            </section>
+
+            <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <RiskAlertList
+                members={atRiskData?.items ?? []}
+                updatedAt={atRiskData?.updatedAt}
+                isLoading={isRiskLoading}
+              />
+              <AnalyticsCharts
+                monthlyRevenue={reportData.monthlyRevenue}
+                revenueForecast={revenueForecast}
+                peakUtilization={peakUtilization}
+                forecastMode={forecastMode}
+                onForecastModeChange={(mode) => {
+                  void handleForecastModeChange(mode);
+                }}
+                isForecastLoading={isForecastLoading}
+                isUtilizationLoading={isUtilizationLoading}
               />
             </section>
           </>

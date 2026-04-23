@@ -527,6 +527,7 @@ describe('member controller', () => {
     });
 
     expect(res.status).toHaveBeenCalledWith(200);
+    expect(globalNotificationSubject.notifyAll).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith({
       id: 'member-4',
       firstName: 'Carl',

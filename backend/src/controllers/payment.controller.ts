@@ -7,6 +7,7 @@ import {
   PAYMENT_UNDO_STATE_UNAVAILABLE,
   ProcessPaymentCommand,
 } from '../patterns/command/process-payment.command';
+import { notifyMemberChanged } from '../patterns/observer-pattern/member-changed.observer';
 import { notifyPaymentCreated } from '../patterns/observer-pattern/payment-created.observer';
 import { getPaymentContext } from '../patterns/strategy-pattern/payment-method.strategy';
 
@@ -180,6 +181,12 @@ export const undoPayment = async (req: Request, res: Response) => {
 
     const processPaymentCommand = new ProcessPaymentCommand({ paymentId });
     await processPaymentCommand.undo();
+
+    await notifyMemberChanged({
+      memberId: paymentId,
+      action: 'UPDATED',
+      happenedAt: new Date().toISOString(),
+    });
 
     res.status(200).json({
       message: 'Payment undone successfully.',

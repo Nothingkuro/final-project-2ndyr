@@ -79,7 +79,7 @@ function formatDateTime(value: string | null): string {
     return 'N/A';
   }
 
-  return new Date(value).toLocaleString('en-US', {
+  return new Date(value).toLocaleString('en-PH', {
     month: 'short',
     day: '2-digit',
     year: 'numeric',

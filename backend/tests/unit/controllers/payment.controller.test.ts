@@ -9,18 +9,21 @@ jest.mock('../../../src/lib/prisma', () => ({
     },
     member: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
     },
     payment: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
     },
     $transaction: jest.fn(),
   },
 }));
 
-import { createPayment, getMemberPayments, getPlans } from '../../../src/controllers/payment.controller';
+import { createPayment, getMemberPayments, getPlans, undoPayment } from '../../../src/controllers/payment.controller';
 import prisma from '../../../src/lib/prisma';
 import { globalNotificationSubject } from '../../../src/patterns/observer-pattern/notification.subject';
 import { bootstrapObserverPattern } from '../../../src/patterns/observer-pattern/observer.bootstrap';
@@ -547,5 +550,112 @@ describe('payment controller (mocked)', () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch payment history' });
+  });
+
+  describe('undoPayment', () => {
+    it('undoes payment and fires SSE notification via observer in POST /api/payments/:id/undo', async () => {
+      const req = {
+        params: { id: 'payment-1' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+        callback({
+          payment: {
+            findUnique: jest.fn().mockResolvedValue({
+              id: 'payment-1',
+              memberId: 'member-1',
+              previousStatus: 'INACTIVE',
+              previousExpiryDate: null,
+            }),
+            delete: jest.fn().mockResolvedValue({ id: 'payment-1' }),
+          },
+          member: {
+            update: jest.fn().mockResolvedValue({ id: 'member-1' }),
+          },
+          $queryRaw: jest.fn().mockResolvedValue([{ id: 'member-1' }]),
+        }),
+      );
+
+      await undoPayment(req, res);
+
+      expect(globalNotificationSubject.notifyAll).toHaveBeenCalledTimes(1);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Payment undone successfully.',
+        paymentId: 'payment-1',
+      });
+    });
+
+    it('returns 400 when payment id is missing', async () => {
+      const req = {
+        params: {},
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      await undoPayment(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Payment id is required' });
+    });
+
+    it('returns 404 when payment is not found', async () => {
+      const req = {
+        params: { id: 'missing-payment' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+        callback({
+          payment: {
+            findUnique: jest.fn().mockResolvedValue(null),
+          },
+        }),
+      );
+
+      await undoPayment(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Payment not found' });
+    });
+
+    it('returns 409 when payment has no previous state to restore', async () => {
+      const req = {
+        params: { id: 'payment-no-state' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+        callback({
+          payment: {
+            findUnique: jest.fn().mockResolvedValue({
+              id: 'payment-no-state',
+              memberId: 'member-1',
+              previousStatus: null,
+              previousExpiryDate: null,
+            }),
+          },
+        }),
+      );
+
+      await undoPayment(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Payment cannot be undone' });
+    });
+
+    it('returns 500 on unexpected errors', async () => {
+      const req = {
+        params: { id: 'payment-1' },
+      } as unknown as Request;
+      const res = createMockResponse();
+
+      mockPrisma.$transaction.mockRejectedValue(new Error('unexpected failure'));
+
+      await undoPayment(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to undo payment' });
+    });
   });
 });

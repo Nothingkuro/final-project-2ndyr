@@ -107,6 +107,17 @@ See [Testing Strategy](../guides/testing.md) for full CI/CD details.
 | `backend/prisma/` | Data model schema, migration history, and seed scripts. |
 | `backend/tests/` | Unit and integration test suites plus database reset helpers. |
 
+#### 5.1.1 Reports and Analytics Pipeline
+
+The reporting module uses a layered analytics pipeline to keep business logic explicit and reusable:
+
+- **Controller normalization layer (`src/controllers/report.controller.ts`):** Query parameters such as `days`, `threshold`, and `mode` are normalized and clamped before any database operation is executed.
+- **Analytics service layer (`src/services/analytics.service.ts`):** Business metrics are computed here, including retention risk scoring windows, monthly revenue forecasting inputs, and peak-utilization aggregation.
+- **Factory Method output layer (`src/patterns/factory-method/report-creator.ts`):** Report payloads are transformed into stable DTO contracts through `ReportType`-driven factories with runtime guards.
+- **Strategy layer (`src/services/revenueForecast.strategy.ts`):** Forecast mode (`CONSERVATIVE` or `OPTIMISTIC`) is applied as a pluggable strategy to baseline and churn-adjusted revenue inputs.
+
+This separation allows each concern (input safety, metric computation, output contract, and forecast policy) to evolve independently while preserving consistent API behavior.
+
 ### 5.2 Frontend (`frontend/`)
 
 | Module / Directory | Responsibility |

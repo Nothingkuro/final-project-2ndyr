@@ -39,44 +39,39 @@ export default function MembershipPlanTable({
   }
 
   return (
-    <div className="max-h-100 border border-neutral-300 rounded-lg overflow-hidden bg-surface h-full flex flex-col">
-      <div className="w-full flex-1 overflow-auto">
-        <table className="w-full min-w-160 border-collapse relative">
-          <thead className="bg-surface-alt border-b border-neutral-300 sticky top-0 z-10">
-            <tr>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold tracking-wide text-neutral-600 uppercase">
-                Plan Name
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold tracking-wide text-neutral-600 uppercase hidden sm:table-cell">
-                Description
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold tracking-wide text-neutral-600 uppercase">
-                Price
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold tracking-wide text-neutral-600 uppercase">
-                Duration
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-center text-xs font-semibold tracking-wide text-neutral-600 uppercase">
-                Status
-              </th>
-              <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold tracking-wide text-neutral-600 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
+    <div className="border border-neutral-300 rounded-lg overflow-hidden bg-surface flex flex-col max-h-100">
+      {/* Desktop-only header row */}
+      <div className="hidden md:grid md:grid-cols-[2fr_3fr_1fr_1fr_auto_auto] gap-4 bg-surface-alt border-b border-neutral-300 px-6 py-3 sticky top-0 z-10 shrink-0">
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase">
+          Plan Name
+        </span>
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase">
+          Description
+        </span>
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase text-right">
+          Price
+        </span>
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase text-center">
+          Duration
+        </span>
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase text-center">
+          Status
+        </span>
+        <span className="text-xs font-semibold tracking-wide text-neutral-600 uppercase text-right">
+          Actions
+        </span>
+      </div>
 
-          <tbody>
-            {plans.map((plan, index) => (
-              <MembershipPlanTableRow
-                key={plan.id}
-                plan={plan}
-                index={index}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ))}
-          </tbody>
-        </table>
+      <div className="flex-1 overflow-y-auto">
+        {plans.map((plan, index) => (
+          <MembershipPlanTableRow
+            key={plan.id}
+            plan={plan}
+            index={index}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
       </div>
     </div>
   );

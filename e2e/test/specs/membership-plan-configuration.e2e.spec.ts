@@ -2,8 +2,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { loginAsAdmin, uniqueToken } from '../support/auth';
 import { resetDatabase } from '../support/db';
 
-function getPlanRow(page: Page, planName: string) {
-  return page.getByRole('row').filter({ hasText: planName });
+/**
+ * Returns a locator that finds a plan entry by its visible text.
+ *
+ * The MembershipPlanTable renders each plan with two layouts: a mobile card
+ * (`md:hidden`) and a desktop row (`hidden md:grid`). We target the desktop
+ * row to avoid strict-mode violations from duplicate buttons.
+ */
+function getPlanDesktopRow(page: Page, planName: string) {
+  return page.locator('.hidden.md\\:grid').filter({ hasText: planName });
 }
 
 async function openMembershipPlansPage(page: Page): Promise<void> {
@@ -89,8 +96,8 @@ test.describe('Membership plan configuration e2e', () => {
     await expect(page.getByRole('heading', { name: 'Create Plan' })).toBeHidden();
     await assertOptionalSuccessFeedback(page, /(created|added|success)/i);
 
-    const createdRow = getPlanRow(page, planName);
-    await expect(createdRow).toHaveCount(1);
+    const createdRow = getPlanDesktopRow(page, planName);
+    await expect(createdRow).toBeVisible();
     await expect(createdRow).toContainText(/1,500(\.00)?|1500/);
 
     const updateResponsePromise = page.waitForResponse((response) => (
@@ -112,8 +119,8 @@ test.describe('Membership plan configuration e2e', () => {
     await updateResponsePromise;
     await assertOptionalSuccessFeedback(page, /(updated|saved|success)/i);
 
-    const updatedRow = getPlanRow(page, updatedPlanName);
-    await expect(updatedRow).toHaveCount(1);
+    const updatedRow = getPlanDesktopRow(page, updatedPlanName);
+    await expect(updatedRow).toBeVisible();
     await expect(updatedRow).toContainText(/1,750(\.00)?|1750/);
 
     const deleteResponsePromise = page.waitForResponse((response) => (
@@ -130,7 +137,7 @@ test.describe('Membership plan configuration e2e', () => {
     await assertOptionalSuccessFeedback(page, /(deleted|archived|removed|success)/i);
 
     await expect.poll(async () => {
-      const rowAfterDelete = getPlanRow(page, updatedPlanName);
+      const rowAfterDelete = getPlanDesktopRow(page, updatedPlanName);
       const rowCount = await rowAfterDelete.count();
 
       if (rowCount === 0) {
@@ -138,7 +145,6 @@ test.describe('Membership plan configuration e2e', () => {
       }
 
       const isArchived = await rowAfterDelete
-        .first()
         .getByText(/Archived/i)
         .isVisible()
         .catch(() => false);
@@ -188,6 +194,36 @@ test.describe('Membership plan configuration e2e', () => {
     }).toMatch(/custom|native/);
 
     await expect(page.getByRole('heading', { name: 'Create Plan' })).toBeVisible();
-    await expect(getPlanRow(page, invalidNegativePlanName)).toHaveCount(0);
+    await expect(getPlanDesktopRow(page, invalidNegativePlanName)).toHaveCount(0);
+  });
+
+  test('admin creates a plan and verifies it appears on the payments page plan selection', async ({ page }) => {
+    const token = uniqueToken();
+    const planName = `PaymentVisiblePlan ${token}`;
+
+    await openAddPlanModal(page);
+
+    const createResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'POST'
+      && response.url().includes('/api/membership-plans')
+      && response.ok()
+    ));
+
+    await fillPlanForm(page, {
+      name: planName,
+      price: '2500',
+      duration: '60',
+    });
+    await page.getByRole('button', { name: 'Create Plan' }).click();
+    await createResponsePromise;
+    await expect(page.getByRole('heading', { name: 'Create Plan' })).toBeHidden();
+
+    const createdRow = getPlanDesktopRow(page, planName);
+    await expect(createdRow).toBeVisible();
+
+    // Navigate to payments page and verify the plan is listed
+    await page.getByRole('link', { name: 'Payments' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/payments/);
+    await expect(page.getByText(planName)).toBeVisible();
   });
 });

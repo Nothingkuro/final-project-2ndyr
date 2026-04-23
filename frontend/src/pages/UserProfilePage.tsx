@@ -39,7 +39,7 @@ function formatAccountDate(isoDate: string): string {
     return '--';
   }
 
-  return dateValue.toLocaleDateString('en-US', {
+  return dateValue.toLocaleDateString('en-PH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

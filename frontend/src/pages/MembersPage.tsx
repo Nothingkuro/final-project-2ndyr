@@ -324,7 +324,7 @@ export default function MembersPage({
       </div>
 
       {/* ── Search & Filter Bar ── */}
-      <div className="flex items-center gap-3 mb-6 max-w-2xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 max-w-2xl mx-auto">
         <SearchBar
           value={searchQuery}
           onChange={(value) => {
@@ -332,7 +332,7 @@ export default function MembersPage({
             setCurrentPage(1);
           }}
           placeholder="Search member..."
-          className="flex-1"
+          className="w-full sm:flex-1"
           inputClassName="bg-surface border-neutral-300 text-secondary placeholder:text-neutral-400"
         />
 
@@ -389,7 +389,7 @@ export default function MembersPage({
         </div>
 
         {!isLoadingMembers && !membersLoadError && (
-          <div className="mt-4 flex items-center justify-between text-sm text-secondary">
+          <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:justify-between text-sm text-secondary">
             <span>
               Showing page {currentPage} of {totalPages} ({totalMembers} member{totalMembers === 1 ? '' : 's'})
             </span>

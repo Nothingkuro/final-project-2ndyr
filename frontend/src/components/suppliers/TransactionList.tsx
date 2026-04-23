@@ -70,7 +70,7 @@ function formatDate(value: string): string {
     return 'N/A';
   }
 
-  return parsedDate.toLocaleDateString('en-US', {
+  return parsedDate.toLocaleDateString('en-PH', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',

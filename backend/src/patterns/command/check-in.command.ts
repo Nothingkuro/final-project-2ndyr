@@ -1,5 +1,6 @@
 import { MemberStatus } from '@prisma/client';
 import prisma from '../../lib/prisma';
+import { notifyAttendanceLogged } from '../observer-pattern/attendance-logged.observer';
 import type { ICommand } from './command.interface';
 
 export const MEMBER_NOT_FOUND_FOR_CHECKIN = 'MEMBER_NOT_FOUND_FOR_CHECKIN';
@@ -57,6 +58,13 @@ export class CheckInCommand implements ICommand {
           checkInTime: true,
         },
       });
+    });
+
+    await notifyAttendanceLogged({
+      type: 'ATTENDANCE_LOGGED',
+      attendanceId: createdAttendance.id,
+      memberId: createdAttendance.memberId,
+      happenedAt: createdAttendance.checkInTime.toISOString(),
     });
 
     return createdAttendance;

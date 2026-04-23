@@ -119,15 +119,143 @@ All API endpoints are served from the Express backend, running on port `5001` by
 
 ## 5. Reports (`/api/reports`)
 
-All report endpoints require `ADMIN` role unless otherwise noted.
+Most report endpoints require `ADMIN` role. Two operational alerts are available to both authenticated Staff and Admin users.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | `GET` | `/api/reports/upcoming-expirations` | 🔑 | Return active members whose expiry is within the configured alert window. |
-| `GET` | `/api/reports/daily-revenue` | 👑 | Return total revenue grouped by date. |
+| `GET` | `/api/reports/at-risk-members` | 🔑 | Return members with near-term expiry and recent attendance inactivity (retention risk). |
+| `GET` | `/api/reports/daily-revenue` | 👑 | Return current business-day revenue with cash and GCash breakdown. |
 | `GET` | `/api/reports/monthly-revenue` | 👑 | Return a time series of monthly revenue totals. |
-| `GET` | `/api/reports/low-inventory` | 👑 | Return equipment items flagged as low stock or in poor condition. |
+| `GET` | `/api/reports/low-inventory` | 👑 | Return equipment items below a configurable quantity threshold. |
+| `GET` | `/api/reports/revenue-forecast` | 👑 | Return next-month revenue projection using selected forecast mode. |
+| `GET` | `/api/reports/peak-utilization` | 👑 | Return hourly attendance distribution grouped by latest membership plan. |
 | `GET` | `/api/reports/overview` | 👑 | Return a combined payload of all report data (used by the dashboard). |
+
+### Report Query Parameters and Normalization
+
+The report controller sanitizes numeric query inputs to prevent invalid values and expensive unbounded queries.
+
+| Parameter | Used By | Rule | Fallback |
+|---|---|---|---|
+| `days` | `/upcoming-expirations`, `/overview` | Positive integer, clamped to max `30` | `3` |
+| `threshold` | `/low-inventory`, `/overview` | Non-negative integer, clamped to max `9999` | `5` |
+| `mode` | `/revenue-forecast` | `OPTIMISTIC` or `CONSERVATIVE` | `CONSERVATIVE` |
+
+### Reports Business Logic Notes
+
+- **At-risk member criteria:** Member must be `ACTIVE`, must expire within the next **14 days**, and must have **no attendance within the last 10 days**.
+- **Revenue forecast baseline:** Sum of prices of active membership plans.
+- **Revenue forecast churn adjustment:** Sum of latest plan prices for active members expiring next month who have no attendance in the last 30 days.
+- **Forecast modes:** `CONSERVATIVE` and `OPTIMISTIC` apply different strategy multipliers to baseline/churn inputs.
+
+### GET `/api/reports/upcoming-expirations`
+
+Query parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `days` | `number` | Number of days ahead to scan for active memberships nearing expiry. |
+
+Success response shape (`200`):
+
+```json
+[
+  {
+    "id": "string",
+    "name": "string",
+    "expiryDate": "ISO-8601 string",
+    "contactNumber": "string"
+  }
+]
+```
+
+### GET `/api/reports/at-risk-members`
+
+Success response shape (`200`):
+
+```json
+{
+  "items": [
+    {
+      "id": "string",
+      "name": "string",
+      "contactNumber": "string",
+      "expiryDate": "ISO-8601 string",
+      "daysUntilExpiry": 0,
+      "lastCheckInTime": "ISO-8601 string or null",
+      "riskLevel": "AT_RISK"
+    }
+  ],
+  "updatedAt": "ISO-8601 string"
+}
+```
+
+### GET `/api/reports/low-inventory`
+
+Query parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `threshold` | `number` | Minimum stock quantity before an item is flagged as low inventory. |
+
+Success response shape (`200`):
+
+```json
+[
+  {
+    "id": "string",
+    "itemName": "string",
+    "category": "Equipment",
+    "quantity": 0,
+    "threshold": 5
+  }
+]
+```
+
+### GET `/api/reports/revenue-forecast`
+
+Query parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `mode` | `OPTIMISTIC \| CONSERVATIVE` | Forecasting profile used for projection math. |
+
+Success response shape (`200`):
+
+```json
+{
+  "projection": "CONSERVATIVE",
+  "baselineActivePlanRevenue": 0,
+  "projectedChurnAdjustment": 0,
+  "forecastedRevenue": 0
+}
+```
+
+### GET `/api/reports/peak-utilization`
+
+Success response shape (`200`):
+
+```json
+[
+  {
+    "hour": 0,
+    "planName": "Unassigned",
+    "count": 0
+  }
+]
+```
+
+### GET `/api/reports/overview`
+
+Query parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `threshold` | `number` | Low-inventory threshold for equipment alerts. |
+| `days` | `number` | Expiry-alert lookahead window in days. |
+
+Success response combines the following report blocks in one payload: daily revenue, monthly revenue, membership expiry alerts, inventory alerts, at-risk members, revenue forecast, and peak utilization.
 
 ---
 

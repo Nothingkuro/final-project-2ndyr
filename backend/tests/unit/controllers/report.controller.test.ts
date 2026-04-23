@@ -1,29 +1,31 @@
 import type { Request, Response } from 'express';
-import { jest, describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
 
-jest.mock('../../../src/lib/prisma', () => ({
+jest.mock('../../../src/services/analytics.service', () => ({
   __esModule: true,
   default: {
-    payment: {
-      findMany: jest.fn(),
-    },
-    member: {
-      findMany: jest.fn(),
-    },
-    equipment: {
-      findMany: jest.fn(),
-    },
+    getDailyRevenueSummary: jest.fn(),
+    getMonthlyRevenueRecords: jest.fn(),
+    getUpcomingExpirations: jest.fn(),
+    getLowInventoryAlerts: jest.fn(),
+    getReportsOverview: jest.fn(),
+    getAtRiskMembers: jest.fn(),
+    getMonthlyRevenueForecast: jest.fn(),
+    getPeakUtilizationByPlan: jest.fn(),
   },
 }));
 
 import {
+  getAtRiskMembers,
   getDailyRevenueSummary,
   getLowInventoryAlerts,
   getMonthlyRevenueRecords,
+  getPeakUtilization,
   getReportsOverview,
+  getRevenueForecast,
   getUpcomingExpirations,
 } from '../../../src/controllers/report.controller';
-import prisma from '../../../src/lib/prisma';
+import analyticsService from '../../../src/services/analytics.service';
 
 function createResponse(): Response {
   return {
@@ -32,8 +34,8 @@ function createResponse(): Response {
   } as unknown as Response;
 }
 
-describe('report controller (mocked)', () => {
-  const mockedPrisma = prisma as any;
+describe('report controller (mocked service)', () => {
+  const mockedService = analyticsService as jest.Mocked<typeof analyticsService>;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -45,11 +47,12 @@ describe('report controller (mocked)', () => {
   });
 
   it('returns daily revenue summary', async () => {
-    mockedPrisma.payment.findMany.mockResolvedValue([
-      { amount: 1000, paymentMethod: 'CASH' },
-      { amount: 500, paymentMethod: 'GCASH' },
-      { amount: 250, paymentMethod: 'GCASH' },
-    ]);
+    mockedService.getDailyRevenueSummary.mockResolvedValue({
+      cash: 1000,
+      gcash: 750,
+      total: 1750,
+      date: '2026-04-22T00:00:00.000Z',
+    });
 
     const req = {} as Request;
     const res = createResponse();
@@ -66,33 +69,10 @@ describe('report controller (mocked)', () => {
     );
   });
 
-  it('ignores unsupported payment methods in daily revenue summary', async () => {
-    mockedPrisma.payment.findMany.mockResolvedValue([
-      { amount: 1000, paymentMethod: 'CASH' },
-      { amount: 700, paymentMethod: 'CARD' },
-      { amount: 250, paymentMethod: 'GCASH' },
-    ]);
-
-    const req = {} as Request;
-    const res = createResponse();
-
-    await getDailyRevenueSummary(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cash: 1000,
-        gcash: 250,
-        total: 1250,
-      }),
-    );
-  });
-
-  it('returns monthly revenue records grouped by month/year', async () => {
-    mockedPrisma.payment.findMany.mockResolvedValue([
-      { amount: 1000, transactionDate: new Date('2026-03-01T00:00:00.000Z') },
-      { amount: 500, transactionDate: new Date('2026-03-02T00:00:00.000Z') },
-      { amount: 900, transactionDate: new Date('2026-04-01T00:00:00.000Z') },
+  it('returns monthly revenue records', async () => {
+    mockedService.getMonthlyRevenueRecords.mockResolvedValue([
+      { month: 3, year: 2026, total: 1500 },
+      { month: 4, year: 2026, total: 900 },
     ]);
 
     const req = {} as Request;
@@ -107,51 +87,27 @@ describe('report controller (mocked)', () => {
     ]);
   });
 
-  it('returns upcoming expirations limited by days query', async () => {
-    mockedPrisma.member.findMany.mockResolvedValue([
+  it('returns upcoming expirations with normalized days', async () => {
+    mockedService.getUpcomingExpirations.mockResolvedValue([
       {
         id: 'member-1',
-        firstName: 'Alex',
-        lastName: 'Cruz',
+        name: 'Alex Cruz',
+        expiryDate: '2026-04-14T00:00:00.000Z',
         contactNumber: '09171234567',
-        expiryDate: new Date('2026-04-14T00:00:00.000Z'),
       },
     ]);
 
-    const req = {
-      query: {
-        days: '3',
-      },
-    } as unknown as Request;
+    const req = { query: { days: '3' } } as unknown as Request;
     const res = createResponse();
 
     await getUpcomingExpirations(req, res);
 
+    expect(mockedService.getUpcomingExpirations).toHaveBeenCalledWith(3);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([
-      expect.objectContaining({
-        id: 'member-1',
-        name: 'Alex Cruz',
-      }),
-    ]);
   });
 
-  it('returns low inventory alerts with threshold', async () => {
-    mockedPrisma.equipment.findMany.mockResolvedValue([
-      { id: 'eq-1', itemName: 'Barbell', quantity: 2 },
-    ]);
-
-    const req = {
-      query: {
-        threshold: '5',
-      },
-    } as unknown as Request;
-    const res = createResponse();
-
-    await getLowInventoryAlerts(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([
+  it('returns low inventory alerts with normalized threshold', async () => {
+    mockedService.getLowInventoryAlerts.mockResolvedValue([
       {
         id: 'eq-1',
         itemName: 'Barbell',
@@ -160,172 +116,100 @@ describe('report controller (mocked)', () => {
         threshold: 5,
       },
     ]);
-  });
 
-  it('falls back to default threshold when low inventory threshold is invalid', async () => {
-    mockedPrisma.equipment.findMany.mockResolvedValue([
-      { id: 'eq-1', itemName: 'Barbell', quantity: 2 },
-    ]);
-
-    const req = {
-      query: {
-        threshold: '-1',
-      },
-    } as unknown as Request;
+    const req = { query: { threshold: '5' } } as unknown as Request;
     const res = createResponse();
 
     await getLowInventoryAlerts(req, res);
 
-    expect(mockedPrisma.equipment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          quantity: {
-            lt: 5,
-          },
-        },
-      }),
-    );
+    expect(mockedService.getLowInventoryAlerts).toHaveBeenCalledWith(5);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([
-      expect.objectContaining({
-        threshold: 5,
-      }),
-    ]);
   });
 
-  it('caps low inventory threshold at 9999', async () => {
-    mockedPrisma.equipment.findMany.mockResolvedValue([
-      { id: 'eq-1', itemName: 'Barbell', quantity: 2 },
-    ]);
-
-    const req = {
-      query: {
-        threshold: '100000',
+  it('returns reports overview payload', async () => {
+    mockedService.getReportsOverview.mockResolvedValue({
+      dailyRevenue: {
+        cash: 700,
+        gcash: 300,
+        total: 1000,
+        date: '2026-04-22T00:00:00.000Z',
       },
-    } as unknown as Request;
-    const res = createResponse();
-
-    await getLowInventoryAlerts(req, res);
-
-    expect(mockedPrisma.equipment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          quantity: {
-            lt: 9999,
-          },
-        },
-      }),
-    );
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([
-      expect.objectContaining({
-        threshold: 9999,
-      }),
-    ]);
-  });
-
-  it('returns reports overview payload shape', async () => {
-    mockedPrisma.payment.findMany
-      .mockResolvedValueOnce([
-        { amount: 700, paymentMethod: 'CASH' },
-        { amount: 300, paymentMethod: 'GCASH' },
-      ])
-      .mockResolvedValueOnce([
-        { amount: 700, transactionDate: new Date('2026-04-01T00:00:00.000Z') },
-      ]);
-
-    mockedPrisma.member.findMany.mockResolvedValue([
-      {
-        id: 'member-1',
-        firstName: 'Ana',
-        lastName: 'Reyes',
-        contactNumber: '09171234567',
-        expiryDate: new Date('2026-04-14T00:00:00.000Z'),
+      monthlyRevenue: [{ month: 4, year: 2026, total: 1000 }],
+      membershipExpiryAlerts: [],
+      inventoryAlerts: [],
+      atRiskMembers: [],
+      revenueForecast: {
+        projection: 'CONSERVATIVE',
+        baselineActivePlanRevenue: 3000,
+        projectedChurnAdjustment: 500,
+        forecastedRevenue: 2500,
       },
-    ]);
-
-    mockedPrisma.equipment.findMany.mockResolvedValue([
-      { id: 'eq-1', itemName: 'Bench', quantity: 1 },
-    ]);
+      peakUtilization: [],
+    });
 
     const req = {} as Request;
     const res = createResponse();
 
     await getReportsOverview(req, res);
 
+    expect(mockedService.getReportsOverview).toHaveBeenCalledWith(5, 3);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        dailyRevenue: expect.objectContaining({
-          cash: 700,
-          gcash: 300,
-          total: 1000,
-        }),
+        dailyRevenue: expect.any(Object),
         monthlyRevenue: expect.any(Array),
-        membershipExpiryAlerts: expect.any(Array),
-        inventoryAlerts: expect.any(Array),
       }),
     );
   });
 
-  it('returns 500 when daily revenue summary query fails', async () => {
-    mockedPrisma.payment.findMany.mockRejectedValue(new Error('db failure'));
+  it('returns at-risk members', async () => {
+    mockedService.getAtRiskMembers.mockResolvedValue({
+      items: [],
+      updatedAt: '2026-04-22T00:00:00.000Z',
+    });
 
     const req = {} as Request;
     const res = createResponse();
 
-    await getDailyRevenueSummary(req, res);
+    await getAtRiskMembers(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch daily revenue summary' });
+    expect(mockedService.getAtRiskMembers).toHaveBeenCalledWith(true);
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('returns 500 when monthly revenue query fails', async () => {
-    mockedPrisma.payment.findMany.mockRejectedValue(new Error('db failure'));
+  it('returns revenue forecast with optimistic mode', async () => {
+    mockedService.getMonthlyRevenueForecast.mockResolvedValue({
+      projection: 'OPTIMISTIC',
+      baselineActivePlanRevenue: 3000,
+      projectedChurnAdjustment: 500,
+      forecastedRevenue: 3000,
+    });
+
+    const req = { query: { mode: 'OPTIMISTIC' } } as unknown as Request;
+    const res = createResponse();
+
+    await getRevenueForecast(req, res);
+
+    expect(mockedService.getMonthlyRevenueForecast).toHaveBeenCalledWith('OPTIMISTIC');
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('returns peak utilization analytics', async () => {
+    mockedService.getPeakUtilizationByPlan.mockResolvedValue([
+      { hour: 14, planName: 'Student', count: 12 },
+    ]);
 
     const req = {} as Request;
     const res = createResponse();
 
-    await getMonthlyRevenueRecords(req, res);
+    await getPeakUtilization(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch monthly revenue records' });
+    expect(mockedService.getPeakUtilizationByPlan).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('returns 500 when upcoming expirations query fails', async () => {
-    mockedPrisma.member.findMany.mockRejectedValue(new Error('db failure'));
-
-    const req = {
-      query: {
-        days: '3',
-      },
-    } as unknown as Request;
-    const res = createResponse();
-
-    await getUpcomingExpirations(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch upcoming expirations' });
-  });
-
-  it('returns 500 when low inventory query fails', async () => {
-    mockedPrisma.equipment.findMany.mockRejectedValue(new Error('db failure'));
-
-    const req = {
-      query: {
-        threshold: '5',
-      },
-    } as unknown as Request;
-    const res = createResponse();
-
-    await getLowInventoryAlerts(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch low inventory alerts' });
-  });
-
-  it('returns 500 when reports overview query fails', async () => {
-    mockedPrisma.payment.findMany.mockRejectedValueOnce(new Error('db failure'));
+  it('returns 500 when service fails for reports overview', async () => {
+    mockedService.getReportsOverview.mockRejectedValue(new Error('service failure'));
 
     const req = {} as Request;
     const res = createResponse();

@@ -22,6 +22,8 @@ describe('Reporting and analysis API', () => {
 
   let createdMemberId: string | null = null;
   let createdFarMemberId: string | null = null;
+  let createdAtRiskMemberId: string | null = null;
+  let createdAtRiskAttendanceId: string | null = null;
   let createdPlanId: string | null = null;
   let createdEquipmentIds: string[] = [];
   let createdPaymentIds: string[] = [];
@@ -91,6 +93,25 @@ describe('Reporting and analysis API', () => {
       },
     });
     createdFarMemberId = farMember.id;
+
+    const atRiskMember = await prisma.member.create({
+      data: {
+        firstName: 'Risk',
+        lastName: 'Flagged',
+        contactNumber: `0939${Math.floor(1000000 + Math.random() * 8999999)}`,
+        status: 'ACTIVE',
+        expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      },
+    });
+    createdAtRiskMemberId = atRiskMember.id;
+
+    const atRiskAttendance = await prisma.attendance.create({
+      data: {
+        memberId: atRiskMember.id,
+        checkInTime: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000),
+      },
+    });
+    createdAtRiskAttendanceId = atRiskAttendance.id;
 
     const lowEquipment = await prisma.equipment.create({
       data: {
@@ -169,6 +190,12 @@ describe('Reporting and analysis API', () => {
       });
     }
 
+    if (createdAtRiskAttendanceId) {
+      await prisma.attendance.deleteMany({
+        where: { id: createdAtRiskAttendanceId },
+      });
+    }
+
     if (createdEquipmentIds.length > 0) {
       await prisma.equipment.deleteMany({
         where: {
@@ -179,11 +206,13 @@ describe('Reporting and analysis API', () => {
       });
     }
 
-    if (createdMemberId || createdFarMemberId) {
+    if (createdMemberId || createdFarMemberId || createdAtRiskMemberId) {
       await prisma.member.deleteMany({
         where: {
           id: {
-            in: [createdMemberId, createdFarMemberId].filter((value): value is string => Boolean(value)),
+            in: [createdMemberId, createdFarMemberId, createdAtRiskMemberId].filter(
+              (value): value is string => Boolean(value),
+            ),
           },
         },
       });
@@ -235,6 +264,24 @@ describe('Reporting and analysis API', () => {
 
     const farFound = response.body.find((member: { id: string }) => member.id === createdFarMemberId);
     expect(farFound).toBeUndefined();
+  });
+
+  it('flags members as at-risk when expiry is within 14 days and no attendance exists in the last 10 days', async () => {
+    const response = await request(app)
+      .get('/api/reports/at-risk-members')
+      .set('Cookie', staffCookie);
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.items)).toBe(true);
+
+    const flaggedMember = response.body.items.find(
+      (member: { id: string }) => member.id === createdAtRiskMemberId,
+    );
+
+    expect(flaggedMember).toBeDefined();
+    expect(flaggedMember.riskLevel).toBe('AT_RISK');
+    expect(flaggedMember.daysUntilExpiry).toBeGreaterThanOrEqual(0);
+    expect(flaggedMember.daysUntilExpiry).toBeLessThanOrEqual(14);
   });
 
   it('rejects staff from admin reporting endpoints', async () => {

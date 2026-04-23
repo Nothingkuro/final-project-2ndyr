@@ -174,7 +174,7 @@ function formatDate(iso: string): string {
     return '--';
   }
 
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString('en-PH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

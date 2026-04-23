@@ -38,6 +38,56 @@ export interface InventoryAlert {
 }
 
 /**
+ * Defines risk status used by frontend analytics views.
+ */
+export type AtRiskSeverity = 'HIGH' | 'CRITICAL';
+
+/**
+ * Defines at-risk member prediction item used by frontend analytics views.
+ */
+export interface AtRiskMember {
+  id: string;
+  name: string;
+  contactNumber: string;
+  expiryDate: string;
+  daysUntilExpiry: number;
+  lastCheckInTime: string | null;
+  riskLevel: 'AT_RISK';
+}
+
+/**
+ * Defines forecast mode used by frontend analytics views.
+ */
+export type ForecastMode = 'CONSERVATIVE' | 'OPTIMISTIC';
+
+/**
+ * Defines revenue forecast DTO used by frontend analytics views.
+ */
+export interface RevenueForecast {
+  projection: ForecastMode;
+  baselineActivePlanRevenue: number;
+  projectedChurnAdjustment: number;
+  forecastedRevenue: number;
+}
+
+/**
+ * Defines peak utilization item used by frontend analytics views.
+ */
+export interface PeakUtilization {
+  hour: number;
+  planName: string;
+  count: number;
+}
+
+/**
+ * Defines at-risk members API response used by frontend analytics views.
+ */
+export interface AtRiskMembersResponse {
+  items: AtRiskMember[];
+  updatedAt: string;
+}
+
+/**
  * Defines report data used by frontend domain models.
  */
 export interface ReportData {
@@ -45,4 +95,7 @@ export interface ReportData {
   monthlyRevenue: MonthlyRevenueRecord[];
   membershipExpiryAlerts: MembershipExpiryAlert[];
   inventoryAlerts: InventoryAlert[];
+  atRiskMembers?: AtRiskMember[];
+  revenueForecast?: RevenueForecast;
+  peakUtilization?: PeakUtilization[];
 }
