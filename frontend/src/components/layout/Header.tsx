@@ -62,13 +62,14 @@ export default function Header({
     isRefreshingAlertsRef.current = true;
 
     try {
-      const alerts = await getUpcomingExpirations(ALERT_WINDOW_DAYS);
+      const raw = await getUpcomingExpirations(ALERT_WINDOW_DAYS);
+      const alerts = Array.isArray(raw) ? raw : [];
 
-      const sorted = [...alerts].sort(
-        (a, b) =>
-          new Date(a.expiryDate).getTime() -
-          new Date(b.expiryDate).getTime(),
-      );
+      const sorted = [...alerts].sort((a, b) => {
+        const timeA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+        const timeB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+        return (Number.isNaN(timeA) ? Infinity : timeA) - (Number.isNaN(timeB) ? Infinity : timeB);
+      });
 
       if (isMountedRef.current) {
         setExpiringMembershipAlerts(sorted);
@@ -84,6 +85,7 @@ export default function Header({
 
   useEffect(() => () => {
     isMountedRef.current = false;
+    isRefreshingAlertsRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -109,6 +111,8 @@ export default function Header({
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     /**
      * Handles handle focus for dashboard shell behavior.
      * @returns Computed value for the caller.
@@ -241,12 +245,22 @@ export default function Header({
  * @param expiryDate Input used by format expiry date.
  * @returns Computed value for the caller.
  */
-function formatExpiryDate(expiryDate: string): string {
+function formatExpiryDate(expiryDate: string | null | undefined): string {
+  if (!expiryDate) {
+    return 'No date';
+  }
+
+  const parsed = new Date(expiryDate);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Invalid date';
+  }
+
   return new Intl.DateTimeFormat('en-PH', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  }).format(new Date(expiryDate));
+  }).format(parsed);
 }
 
 /**
