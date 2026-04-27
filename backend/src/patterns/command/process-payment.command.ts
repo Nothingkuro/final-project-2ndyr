@@ -2,6 +2,7 @@ import { MemberStatus, PaymentMethod, Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 import { PaymentFactory } from '../factory-method/payment.factory';
 import type { ICommand } from './command.interface';
+import type { RequestContext } from '../../types/request-context';
 
 export const MEMBER_NOT_FOUND_DURING_PAYMENT_TX = 'MEMBER_NOT_FOUND_DURING_PAYMENT_TX';
 export const PAYMENT_NOT_FOUND_FOR_UNDO = 'PAYMENT_NOT_FOUND_FOR_UNDO';
@@ -19,6 +20,12 @@ type ProcessPaymentCommandParams = {
   paymentMethod?: PaymentMethod;
   referenceNumber?: string;
   paymentId?: string;
+  requestContext?: RequestContext;
+};
+
+type UndoPaymentResult = {
+  paymentId: string;
+  memberId: string;
 };
 
 export type ProcessPaymentExecuteResult = {
@@ -43,6 +50,13 @@ export type ProcessPaymentExecuteResult = {
   };
 };
 
+type PaymentUndoLookup = {
+  id: string;
+  memberId: string;
+  previousStatus: string | null;
+  previousExpiryDate: Date | null;
+};
+
 /**
  * Detects Prisma transaction conflicts that are safe to retry.
  */
@@ -62,6 +76,18 @@ function toMemberStatus(status: string): MemberStatus {
   return MemberStatus.INACTIVE;
 }
 
+function toIso(value: Date | null): string | null {
+  return value ? value.toISOString() : null;
+}
+
+function toReferenceTail(referenceNumber?: string): string | null {
+  if (!referenceNumber) {
+    return null;
+  }
+
+  return referenceNumber.slice(-4);
+}
+
 export class ProcessPaymentCommand implements ICommand {
   constructor(
     private readonly params: ProcessPaymentCommandParams,
@@ -77,6 +103,7 @@ export class ProcessPaymentCommand implements ICommand {
       amount,
       paymentMethod,
       referenceNumber,
+      requestContext,
     } = this.params;
 
     if (!memberId || !planId || !processedById || !planDurationDays || !paymentMethod || amount === undefined) {
@@ -150,6 +177,45 @@ export class ProcessPaymentCommand implements ICommand {
               },
             });
 
+            await tx.auditLog.createMany({
+              data: [
+                {
+                  action: 'PAYMENT_CREATED',
+                  entityType: 'PAYMENT',
+                  entityId: payment.id,
+                  actorUserId: requestContext?.actorUserId ?? processedById,
+                  requestId: requestContext?.requestId,
+                  ipAddress: requestContext?.ipAddress,
+                  userAgent: requestContext?.userAgent,
+                  metadata: {
+                    memberId,
+                    planId,
+                    amount,
+                    paymentMethod,
+                    referenceTail: toReferenceTail(referenceNumber),
+                    transactionDate: payment.transactionDate.toISOString(),
+                  },
+                },
+                {
+                  action: 'MEMBER_SUBSCRIPTION_UPDATED',
+                  entityType: 'MEMBER',
+                  entityId: memberId,
+                  actorUserId: requestContext?.actorUserId ?? processedById,
+                  requestId: requestContext?.requestId,
+                  ipAddress: requestContext?.ipAddress,
+                  userAgent: requestContext?.userAgent,
+                  metadata: {
+                    beforeStatus: lockedMember.status,
+                    beforeExpiryDate: toIso(lockedMember.expiryDate),
+                    afterStatus: updatedMember.status,
+                    afterExpiryDate: toIso(updatedMember.expiryDate),
+                    paymentId: payment.id,
+                    planId,
+                  },
+                },
+              ],
+            });
+
             return { payment, updatedMember };
           },
           {
@@ -170,14 +236,14 @@ export class ProcessPaymentCommand implements ICommand {
     throw new Error('FAILED_TO_PROCESS_PAYMENT_TRANSACTION');
   }
 
-  async undo(): Promise<void> {
-    const { paymentId } = this.params;
+  async undo(): Promise<UndoPaymentResult> {
+    const { paymentId, requestContext } = this.params;
 
     if (!paymentId) {
       throw new Error('INVALID_UNDO_PAYMENT_COMMAND_INPUT');
     }
 
-    await this.prismaClient.$transaction(
+    const result = await this.prismaClient.$transaction(
       async (tx) => {
         const paymentToUndo = await tx.payment.findUnique({
           where: { id: paymentId },
@@ -187,7 +253,7 @@ export class ProcessPaymentCommand implements ICommand {
             previousStatus: true,
             previousExpiryDate: true,
           },
-        });
+        }) as PaymentUndoLookup | null;
 
         if (!paymentToUndo) {
           throw new Error(PAYMENT_NOT_FOUND_FOR_UNDO);
@@ -197,13 +263,19 @@ export class ProcessPaymentCommand implements ICommand {
           throw new Error(PAYMENT_UNDO_STATE_UNAVAILABLE);
         }
 
-        const lockedMembers = await tx.$queryRaw<Array<{ id: string }>>`
-          SELECT id FROM "members" WHERE id = ${paymentToUndo.memberId} FOR UPDATE
+        const lockedMembers = await tx.$queryRaw<Array<{
+          id: string;
+          status: MemberStatus;
+          expiryDate: Date | null;
+        }>>`
+          SELECT id, status, "expiryDate" FROM "members" WHERE id = ${paymentToUndo.memberId} FOR UPDATE
         `;
 
         if (!lockedMembers[0]) {
           throw new Error(MEMBER_NOT_FOUND_DURING_PAYMENT_TX);
         }
+
+        const lockedMember = lockedMembers[0];
 
         await tx.member.update({
           where: { id: paymentToUndo.memberId },
@@ -216,10 +288,52 @@ export class ProcessPaymentCommand implements ICommand {
         await tx.payment.delete({
           where: { id: paymentId },
         });
+
+        await tx.auditLog.createMany({
+          data: [
+            {
+              action: 'PAYMENT_UNDONE',
+              entityType: 'PAYMENT',
+              entityId: paymentId,
+              actorUserId: requestContext?.actorUserId ?? null,
+              requestId: requestContext?.requestId,
+              ipAddress: requestContext?.ipAddress,
+              userAgent: requestContext?.userAgent,
+              metadata: {
+                memberId: paymentToUndo.memberId,
+                previousStatus: paymentToUndo.previousStatus,
+                previousExpiryDate: toIso(paymentToUndo.previousExpiryDate),
+              },
+            },
+            {
+              action: 'MEMBER_SUBSCRIPTION_RESTORED',
+              entityType: 'MEMBER',
+              entityId: paymentToUndo.memberId,
+              actorUserId: requestContext?.actorUserId ?? null,
+              requestId: requestContext?.requestId,
+              ipAddress: requestContext?.ipAddress,
+              userAgent: requestContext?.userAgent,
+              metadata: {
+                beforeStatus: lockedMember.status,
+                beforeExpiryDate: toIso(lockedMember.expiryDate),
+                afterStatus: paymentToUndo.previousStatus,
+                afterExpiryDate: toIso(paymentToUndo.previousExpiryDate),
+                paymentId,
+              },
+            },
+          ],
+        });
+
+        return {
+          paymentId,
+          memberId: paymentToUndo.memberId,
+        };
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
+    return result;
   }
 }

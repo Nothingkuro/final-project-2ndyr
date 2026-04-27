@@ -59,6 +59,22 @@ async function ensurePaymentColumns(): Promise<void> {
 	await prisma.$executeRawUnsafe(
 		'ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "previousExpiryDate" TIMESTAMP(3)',
 	);
+
+	await prisma.$executeRawUnsafe(`
+		CREATE TABLE IF NOT EXISTS "audit_logs" (
+			"id" TEXT NOT NULL,
+			"action" TEXT NOT NULL,
+			"entityType" TEXT NOT NULL,
+			"entityId" TEXT NOT NULL,
+			"actorUserId" TEXT,
+			"requestId" TEXT,
+			"ipAddress" TEXT,
+			"userAgent" TEXT,
+			"metadata" JSONB,
+			"createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+		)
+	`);
 }
 
 async function sleep(ms: number): Promise<void> {
