@@ -63,29 +63,31 @@ export default function MemberTableRow({
       `}
     >
       <span
-        title={`#${member.id}`}
-        className={`
-          text-sm font-medium w-16 shrink-0 truncate
-          ${isHovered ? 'text-secondary' : 'text-primary'}
-        `}
-      >
-        #{member.id}
-      </span>
-
-      <span
         title={`${member.firstName} ${member.lastName}`}
         className={`
-          flex-1 min-w-0 text-sm text-right sm:text-center break-words sm:truncate
+          flex-1 min-w-0 text-sm text-left truncate
           ${isHovered ? 'text-secondary font-medium' : 'text-secondary'}
         `}
       >
         {member.firstName} {member.lastName}
       </span>
 
-      <StatusBadge
-        status={member.status}
-        className={`text-sm w-24 text-right shrink-0 ${isHovered ? 'text-danger font-semibold' : ''}`}
-      />
+      <span
+        title={member.updatedAt ? new Date(member.updatedAt).toLocaleDateString() : 'N/A'}
+        className={`
+          flex-1 shrink-0 text-sm text-center truncate hidden sm:block
+          ${isHovered ? 'text-secondary' : 'text-neutral-500'}
+        `}
+      >
+        {member.updatedAt ? new Date(member.updatedAt).toLocaleDateString() : 'N/A'}
+      </span>
+
+      <div className="flex-1 flex justify-end">
+        <StatusBadge
+          status={member.status}
+          className={`text-sm ${isHovered ? 'text-danger font-semibold' : ''}`}
+        />
+      </div>
     </div>
   );
 }

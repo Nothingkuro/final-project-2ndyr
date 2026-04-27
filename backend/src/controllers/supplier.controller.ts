@@ -423,6 +423,26 @@ export const getSupplierTransactions = async (req: Request, res: Response): Prom
     }
 
     const where: Prisma.SupplierTransactionWhereInput = { supplierId };
+    const yearRaw = req.query.year;
+    const monthRaw = req.query.month;
+
+    if (yearRaw && typeof yearRaw === 'string' && yearRaw !== 'ALL') {
+      const year = parseInt(yearRaw, 10);
+      if (!Number.isNaN(year)) {
+        if (monthRaw && typeof monthRaw === 'string' && monthRaw !== 'ALL') {
+          const month = parseInt(monthRaw, 10);
+          if (!Number.isNaN(month)) {
+            const startDate = new Date(year, month - 1, 1);
+            const endDate = new Date(year, month, 1);
+            where.transactionDate = { gte: startDate, lt: endDate };
+          }
+        } else {
+          const startDate = new Date(year, 0, 1);
+          const endDate = new Date(year + 1, 0, 1);
+          where.transactionDate = { gte: startDate, lt: endDate };
+        }
+      }
+    }
 
     const [total, transactions] = await prisma.$transaction([
       prisma.supplierTransaction.count({ where }),

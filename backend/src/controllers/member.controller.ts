@@ -19,6 +19,7 @@ type MemberListItem = {
   expiryDate: string;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   notes: string;
+  updatedAt: string;
 };
 
 type AttendanceListItem = {
@@ -84,6 +85,7 @@ function toMemberListItem(member: {
   joinDate: Date;
   expiryDate: Date | null;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  updatedAt: Date;
 }): MemberListItem {
   return {
     id: member.id,
@@ -94,6 +96,7 @@ function toMemberListItem(member: {
     expiryDate: member.expiryDate ? member.expiryDate.toISOString() : '',
     status: member.status,
     notes: member.notes,
+    updatedAt: member.updatedAt.toISOString(),
   };
 }
 
@@ -190,6 +193,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
           joinDate: true,
           expiryDate: true,
           status: true,
+          updatedAt: true,
         },
       }),
     ]);
@@ -268,6 +272,7 @@ export const createMember = async (req: Request, res: Response): Promise<void> =
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -367,6 +372,7 @@ export const updateMember = async (req: Request, res: Response): Promise<void> =
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -430,6 +436,7 @@ export const deactivateMember = async (req: Request, res: Response): Promise<voi
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 

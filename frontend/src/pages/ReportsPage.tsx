@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
   AnalyticsCharts,
@@ -92,7 +92,7 @@ export default function ReportsPage() {
    *
    * @returns Promise that resolves after all dashboard sections have been refreshed.
    */
-  const loadReports = async (threshold: number, mode: ForecastMode = forecastMode) => {
+  const loadReports = useCallback(async (threshold: number, mode: ForecastMode = forecastMode) => {
     setIsLoading(true);
     setIsRiskLoading(true);
     setIsForecastLoading(true);
@@ -128,7 +128,7 @@ export default function ReportsPage() {
       setIsForecastLoading(false);
       setIsUtilizationLoading(false);
     }
-  };
+  }, [forecastMode]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -161,7 +161,7 @@ export default function ReportsPage() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [loadReports]);
 
   /**
    * Re-runs all dashboard queries using the currently selected page filters.

@@ -1,6 +1,7 @@
 import { Calendar } from 'lucide-react';
 import type { MonthlyRevenueRecord } from '../../types/report';
 import ReportSectionCard from './ReportSectionCard';
+import DateFilters from '../common/DateFilters';
 
 /**
  * Defines monthly revenue report card props used by feature UI behavior.
@@ -28,20 +29,7 @@ interface MonthlyRevenueReportCardProps {
   onYearChange: (year: number) => void;
 }
 
-const monthLabels = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+
 
 const pesoFormatter = new Intl.NumberFormat('en-PH', {
   style: 'currency',
@@ -83,39 +71,20 @@ export default function MonthlyRevenueReportCard({
       icon={<Calendar size={20} />}
       iconClassName="bg-info/20 text-info"
       actionSlot={
-        <div className="flex flex-wrap gap-2">
-          <label className="sr-only" htmlFor="report-month-picker">
-            Select month
-          </label>
-          <select
-            id="report-month-picker"
-            value={selectedMonth}
-            onChange={(event) => onMonthChange(Number(event.target.value))}
-            className="rounded-lg border border-neutral-700 bg-secondary px-3 py-2 text-sm text-text-light focus:outline-none focus:ring-2 focus:ring-info/60"
-          >
-            {monthLabels.map((label, index) => (
-              <option key={label} value={index + 1}>
-                {label}
-              </option>
-            ))}
-          </select>
-
-          <label className="sr-only" htmlFor="report-year-picker">
-            Select year
-          </label>
-          <select
-            id="report-year-picker"
-            value={selectedYear}
-            onChange={(event) => onYearChange(Number(event.target.value))}
-            className="rounded-lg border border-neutral-700 bg-secondary px-3 py-2 text-sm text-text-light focus:outline-none focus:ring-2 focus:ring-info/60"
-          >
-            {resolvedYearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
+        <DateFilters
+          selectedMonth={String(selectedMonth)}
+          selectedYear={String(selectedYear)}
+          yearOptions={resolvedYearOptions.map(String)}
+          onMonthChange={(month) => onMonthChange(Number(month))}
+          onYearChange={(year) => onYearChange(Number(year))}
+          allowAll={false}
+          className="flex flex-wrap gap-2"
+          selectClassName="rounded-lg border border-neutral-700 bg-secondary px-3 py-2 text-sm text-text-light focus:outline-none focus:ring-2 focus:ring-info/60"
+          labelClassName="flex items-center"
+          hideLabels={true}
+          monthId="report-month-picker"
+          yearId="report-year-picker"
+        />
       }
     >
       <div className="rounded-lg border border-info/30 bg-info/10 p-4">

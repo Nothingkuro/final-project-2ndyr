@@ -36,6 +36,7 @@ type ApiMember = {
   expiryDate: string;
   status: MemberStatus;
   notes?: string;
+  updatedAt: string;
 };
 
 /**
@@ -74,6 +75,7 @@ function normalizeMember(apiMember: ApiMember): Member {
     expiryDate: apiMember.expiryDate || '',
     status: computedStatus,
     notes: apiMember.notes ?? '',
+    updatedAt: apiMember.updatedAt,
   };
 }
 
@@ -362,8 +364,15 @@ export default function MembersPage({
               {membersLoadError}
             </div>
           ) : membersList.length > 0 ? (
-            membersList.map((member, index) => {
-              const isHovered = hoveredRow === index;
+            <>
+              {/* Header Row */}
+              <div className="hidden sm:flex items-center px-6 py-3 bg-surface-alt border-b border-neutral-200">
+                <span className="flex-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-left">Name</span>
+                <span className="flex-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-center">Last Updated</span>
+                <span className="flex-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider text-right">Status</span>
+              </div>
+              {membersList.map((member, index) => {
+                const isHovered = hoveredRow === index;
 
               return (
                 <MemberTableRow
@@ -380,7 +389,8 @@ export default function MembersPage({
                   onMouseLeave={() => setHoveredRow(null)}
                 />
               );
-            })
+            })}
+            </>
           ) : (
             <div className="px-6 py-12 text-center text-neutral-400 text-sm">
               No members found matching your search.
