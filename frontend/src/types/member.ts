@@ -17,4 +17,5 @@ export interface Member {
   expiryDate: string;
   status: MemberStatus;
   notes: string;
+  updatedAt: string;
 }

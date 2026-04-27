@@ -21,16 +21,6 @@ function formatPaymentDate(dateIso: string): string {
 }
 
 /**
- * Handles format payment id logic for feature UI behavior.
- *
- * @param paymentId Input used by format payment id.
- * @returns Computed value for the caller.
- */
-function formatPaymentId(paymentId: string): string {
-  return paymentId.length > 10 ? `${paymentId.slice(0, 10)}...` : paymentId;
-}
-
-/**
  * Defines payment history card props used by feature UI behavior.
  */
 interface PaymentHistoryCardProps {
@@ -48,13 +38,11 @@ interface PaymentHistoryCardProps {
  */
 export default function PaymentHistoryCard({ payment }: PaymentHistoryCardProps) {
   const amountLabel = `${payment.amountPhp.toLocaleString('en-PH')} Php`;
-  const paymentIdLabel = formatPaymentId(payment.id);
   const showGcashReference = payment.paymentMethod === 'GCASH';
   const gcashReferenceLabel = payment.referenceNumber?.trim() || 'N/A';
 
   return (
     <article className="w-full rounded-sm bg-primary px-6 py-4 text-center text-text-light shadow-card">
-      <h3 className="text-2xl leading-tight">Payment #{paymentIdLabel}</h3>
       <p className="mt-2 text-lg leading-tight">{formatPaymentDate(payment.paidAt)}</p>
       <p className="mt-1 text-lg leading-tight">{amountLabel}</p>
       <p className="mt-1 text-lg leading-tight">{payment.membershipPlan}</p>

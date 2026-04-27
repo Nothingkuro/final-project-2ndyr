@@ -196,11 +196,21 @@ export async function listTransactionsBySupplier(
   params: {
     page: number;
     pageSize: number;
+    month?: string;
+    year?: string;
   },
 ): Promise<SupplierTransactionListResponse> {
   const searchParams = new URLSearchParams();
   searchParams.append('page', String(params.page));
   searchParams.append('pageSize', String(params.pageSize));
+
+  if (params.month && params.month !== 'ALL') {
+    searchParams.append('month', params.month);
+  }
+  
+  if (params.year && params.year !== 'ALL') {
+    searchParams.append('year', params.year);
+  }
 
   return makeRequest<SupplierTransactionListResponse>(
     `/suppliers/${supplierId}/transactions?${searchParams.toString()}`,

@@ -79,6 +79,7 @@ describe('member controller', () => {
         joinDate,
         expiryDate,
         status: 'ACTIVE',
+        updatedAt: new Date('2026-04-01T00:00:00.000Z'),
       },
     ]);
 
@@ -110,6 +111,7 @@ describe('member controller', () => {
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -125,6 +127,7 @@ describe('member controller', () => {
           expiryDate: expiryDate.toISOString(),
           status: 'ACTIVE',
           notes: 'Evening sessions only',
+          updatedAt: new Date('2026-04-01T00:00:00.000Z').toISOString(),
         },
       ],
       total: 1,
@@ -252,6 +255,7 @@ describe('member controller', () => {
       joinDate,
       expiryDate: null,
       status: 'ACTIVE',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z'),
     });
 
     await createMember(req, res);
@@ -273,6 +277,7 @@ describe('member controller', () => {
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -287,6 +292,7 @@ describe('member controller', () => {
       expiryDate: '',
       status: 'ACTIVE',
       notes: '',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z').toISOString(),
     });
   });
 
@@ -405,6 +411,7 @@ describe('member controller', () => {
       joinDate,
       expiryDate: null,
       status: 'ACTIVE',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z'),
     });
 
     await updateMember(req, res);
@@ -425,6 +432,7 @@ describe('member controller', () => {
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -439,6 +447,7 @@ describe('member controller', () => {
       expiryDate: '',
       status: 'ACTIVE',
       notes: '',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z').toISOString(),
     });
   });
 
@@ -504,6 +513,7 @@ describe('member controller', () => {
       joinDate,
       expiryDate: null,
       status: 'INACTIVE',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z'),
     });
 
     await deactivateMember(req, res);
@@ -523,6 +533,7 @@ describe('member controller', () => {
         joinDate: true,
         expiryDate: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -537,6 +548,7 @@ describe('member controller', () => {
       expiryDate: '',
       status: 'INACTIVE',
       notes: '',
+      updatedAt: new Date('2026-04-01T00:00:00.000Z').toISOString(),
     });
   });
 

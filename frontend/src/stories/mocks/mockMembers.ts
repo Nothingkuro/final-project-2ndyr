@@ -11,6 +11,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-03-03',
     status: 'ACTIVE',
     notes: '',
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '68',
@@ -21,6 +22,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-03-03',
     status: 'ACTIVE',
     notes: '',
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '69',
@@ -31,6 +33,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-04-15',
     status: 'EXPIRED',
     notes: 'Needs follow-up',
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '70',
@@ -41,6 +44,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-04-15',
     status: 'EXPIRED',
     notes: '',
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '71',
@@ -51,6 +55,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-06-10',
     status: 'INACTIVE',
     notes: 'Moved to another city',
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '72',
@@ -61,6 +66,7 @@ export const storyMembers: Member[] = [
     expiryDate: '2023-06-10',
     status: 'INACTIVE',
     notes: '',
+    updatedAt: new Date().toISOString(),
   },
 ];
 

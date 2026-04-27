@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import PaymentHistoryFilters from './PaymentHistoryFilters';
+import { History } from 'lucide-react';
+import DateFilters from '../../common/DateFilters';
 import PaymentHistoryList from './PaymentHistoryList';
 import type { MemberPaymentHistoryRecord } from '../../../types/payment';
 import { getAuthHeaders } from '../../../services/authHeaders';
@@ -123,10 +124,15 @@ export default function MemberPaymentHistoryPanel({
   return (
     <section
       className="
-        w-130 max-w-full border border-neutral-300 bg-surface-alt
-        px-5 py-5 sm:px-8 sm:py-7
+        max-w-2xl w-full min-h-[400px] border border-neutral-300 bg-surface-alt
+        px-8 py-6 sm:px-10 sm:py-8 flex flex-col
       "
     >
+      <div className="flex items-center gap-2 border-b border-neutral-300 pb-3 mb-4">
+        <History size={18} className="text-primary" />
+        <h2 className="text-lg font-semibold text-primary">Payment History</h2>
+      </div>
+
       {isLoading && (
         <div className="mb-4 rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-500">
           Loading payment history...
@@ -139,7 +145,7 @@ export default function MemberPaymentHistoryPanel({
         </div>
       )}
 
-      <PaymentHistoryFilters
+      <DateFilters
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         yearOptions={yearOptions}

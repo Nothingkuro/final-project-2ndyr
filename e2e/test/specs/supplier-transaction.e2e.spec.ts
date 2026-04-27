@@ -93,7 +93,7 @@ async function createSupplier(
     && response.ok()
   ));
 
-  await page.getByRole('button', { name: 'Add Supplier' }).click();
+  await page.getByRole('button', { name: 'Supplier' }).click();
   await page.getByPlaceholder('Supplier Name').fill(supplier.name);
   await page
     .getByPlaceholder('Service Category (e.g. Equipment, Nutrition)')

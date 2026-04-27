@@ -25,6 +25,7 @@ type ApiMember = {
   expiryDate: string;
   status: MemberStatus;
   notes?: string;
+  updatedAt: string;
 };
 
 /**
@@ -66,6 +67,7 @@ function normalizeMember(apiMember: ApiMember): Member {
     expiryDate: apiMember.expiryDate || '',
     status: apiMember.status,
     notes: apiMember.notes ?? '',
+    updatedAt: apiMember.updatedAt ?? new Date().toISOString(),
   };
 }
 
@@ -794,8 +796,8 @@ export default function MemberProfilePage({
             /* ── Profile Card ── */
             <div
               className="
-                max-w-2xl w-full bg-surface-alt border border-neutral-300
-                px-8 py-6 sm:px-10 sm:py-8 z-10
+                max-w-2xl w-full min-h-[400px] bg-surface-alt border border-neutral-300
+                px-8 py-6 sm:px-10 sm:py-8 z-10 flex flex-col
               "
             >
               {/* Info rows */}
