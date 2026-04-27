@@ -52,6 +52,30 @@ Copy `.env.example` to `.env` and provide values for the following keys. **Do no
 | `npm run db:seed` | Seed the local development database |
 | `npm run db:migrate` | Apply pending Prisma migrations (development) |
 | `npm run db:reset:e2e` | Reset and reseed the E2E test database |
+| `npm run audit:check` | Print recent payment/member audit logs from the test database |
+
+---
+
+## Audit Log Verification
+
+Use this flow to confirm payment audit events are being persisted correctly:
+
+```bash
+npm run test:integration -- tests/integration/payment-subscription.integration.test.ts
+npm run audit:check
+```
+
+Expected actions in the audit summary:
+
+- `PAYMENT_CREATED`
+- `PAYMENT_UNDONE`
+- `MEMBER_SUBSCRIPTION_UPDATED`
+- `MEMBER_SUBSCRIPTION_RESTORED`
+
+Notes:
+
+- `audit:check` prefers `.env.test` when it exists.
+- For local Postgres testing, set both `DATABASE_URL_TEST` and `DIRECT_DATABASE_URL_TEST` in `.env.test`.
 
 ---
 
