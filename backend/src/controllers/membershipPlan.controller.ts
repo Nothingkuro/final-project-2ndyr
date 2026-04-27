@@ -333,17 +333,14 @@ export const deleteMembershipPlan = async (req: Request, res: Response): Promise
 
     res.status(204).send();
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError
-      && error.code === 'P2003'
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
       res.status(409).json({
-        error: 'This plan cannot be deleted because it is already referenced by payment records.',
+        error: 'Failed to delete membership plan: There are members currently associated with this plan.',
       });
       return;
     }
 
-    console.error('Error deleting membership plan:', error);
+    console.error('Failed to delete membership plan:', error);
     res.status(500).json({ error: 'Failed to delete membership plan' });
   }
 };

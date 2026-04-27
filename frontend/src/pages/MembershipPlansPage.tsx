@@ -230,7 +230,7 @@ export default function MembershipPlansPage({
       setIsDeleteOpen(false);
       setPlanToDelete(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete membership plan';
+      const message = error instanceof Error ? error.message : 'Failed to delete membership plan: There are members currently associated with this plan.';
       setPageError(message);
       setIsDeleteOpen(false);
       setPlanToDelete(null);

@@ -27,7 +27,7 @@ export default function PaymentHistoryList({ payments }: PaymentHistoryListProps
   }
 
   return (
-    <div className="mt-6 w-full max-h-96 overflow-y-auto rounded-md border border-neutral-300 bg-neutral-100 px-4 py-5 sm:px-6">
+    <div className="mt-6 w-full max-h-[170px] flex-1 overflow-y-auto rounded-md border border-neutral-300 bg-neutral-100 px-4 py-5 sm:px-6">
       <div className="w-full space-y-5">
         {payments.map((payment) => (
           <PaymentHistoryCard key={payment.id} payment={payment} />

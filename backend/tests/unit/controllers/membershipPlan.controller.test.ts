@@ -352,7 +352,7 @@ describe('membership plan controller (mocked)', () => {
 
   it('returns 400 when updating with missing planId', async () => {
     const req = {
-      params: { },
+      params: {},
       body: { name: 'Something' },
     } as unknown as Request;
     const res = createResponse();
@@ -405,7 +405,7 @@ describe('membership plan controller (mocked)', () => {
   });
 
   it('returns 400 when deleting with missing planId', async () => {
-    const req = { params: { } } as unknown as Request;
+    const req = { params: {} } as unknown as Request;
     const res = createResponse();
 
     await deleteMembershipPlan(req, res);
@@ -416,7 +416,7 @@ describe('membership plan controller (mocked)', () => {
 
   it('returns 409 when deleting plan referenced by payment records', async () => {
     mockPrisma.membershipPlan.findUnique.mockResolvedValue({ id: 'plan-1' });
-    
+
     // We need to simulate PrismaClientKnownRequestError
     const { Prisma } = require('@prisma/client');
     const prismaError = new Prisma.PrismaClientKnownRequestError('Foreign key constraint failed', {
@@ -431,7 +431,7 @@ describe('membership plan controller (mocked)', () => {
     await deleteMembershipPlan(req, res);
 
     expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith({ error: 'This plan cannot be deleted because it is already referenced by payment records.' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to delete membership plan: There are members currently associated with this plan.' });
   });
 
   it('returns 500 when deleting membership plan fails', async () => {

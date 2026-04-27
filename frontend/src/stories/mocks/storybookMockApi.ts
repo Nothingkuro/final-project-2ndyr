@@ -411,6 +411,7 @@ async function handleMembersApi(url: URL, method: string, body: unknown): Promis
       expiryDate: toIsoDateString(addDays(now, 30)),
       status: 'ACTIVE',
       notes: '',
+      updatedAt: now.toISOString(),
     };
 
     mockApiState.nextMemberId += 1;

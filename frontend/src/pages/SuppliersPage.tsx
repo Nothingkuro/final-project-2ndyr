@@ -7,6 +7,7 @@ import DeleteConfirmModal from '../components/common/DeleteConfirmModal';
 import AddTransactionModal from '../components/suppliers/AddTransactionModal';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
 import SupplierTable from '../components/suppliers/SupplierTable';
+import DateFilters from '../components/common/DateFilters';
 import TransactionList from '../components/suppliers/TransactionList';
 import {
   createSupplier,
@@ -62,6 +63,8 @@ export default function SuppliersPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [transactionsLoadError, setTransactionsLoadError] = useState<string | null>(null);
   const [transactionRefreshNonce, setTransactionRefreshNonce] = useState(0);
+  const [transactionMonth, setTransactionMonth] = useState('ALL');
+  const [transactionYear, setTransactionYear] = useState(new Date().getFullYear().toString());
 
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isSubmittingTransaction, setIsSubmittingTransaction] = useState(false);
@@ -202,6 +205,8 @@ export default function SuppliersPage() {
         const response = await listTransactionsBySupplier(selectedSupplier.id, {
           page: transactionsPage,
           pageSize: TRANSACTION_PAGE_SIZE,
+          month: transactionMonth,
+          year: transactionYear,
         });
 
         if (isCancelled) {
@@ -242,7 +247,7 @@ export default function SuppliersPage() {
     return () => {
       isCancelled = true;
     };
-  }, [selectedSupplier, transactionsPage, transactionRefreshNonce]);
+  }, [selectedSupplier, transactionsPage, transactionRefreshNonce, transactionMonth, transactionYear]);
 
   /**
    * Handles handle open add supplier for route-level dashboard orchestration.
@@ -368,6 +373,8 @@ export default function SuppliersPage() {
     setSelectedSupplier(supplier);
     setTransactionsPage(1);
     setTransactionsLoadError(null);
+    setTransactionMonth('ALL');
+    setTransactionYear(new Date().getFullYear().toString());
     setTransactionRefreshNonce((prev) => prev + 1);
   };
 
@@ -433,47 +440,49 @@ export default function SuppliersPage() {
         <h1 className="text-primary text-3xl sm:text-4xl font-semibold">Suppliers</h1>
       </div>
 
-      <div className="mb-6 mx-auto max-w-6xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-center">
-          <SearchBar
-            value={searchQuery}
-            onChange={(value) => {
-              setSearchQuery(value);
-              setCurrentPage(1);
-            }}
-            placeholder="Search supplier..."
-            className="w-full sm:flex-1"
-            inputClassName="bg-surface border-neutral-300 text-secondary placeholder:text-neutral-400"
-          />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 max-w-2xl mx-auto">
+        <SearchBar
+          value={searchQuery}
+          onChange={(value) => {
+            setSearchQuery(value);
+            setCurrentPage(1);
+          }}
+          placeholder="Search supplier..."
+          className="w-full sm:flex-1"
+          inputClassName="bg-surface border-neutral-300 text-secondary placeholder:text-neutral-400"
+        />
 
-          <FilterDropdown
-            label="Filter"
-            options={categoryFilterOptions}
-            activeOption={selectedCategoryFilter}
-            isOpen={isCategoryFilterOpen}
-            onToggle={() => setIsCategoryFilterOpen((prev) => !prev)}
-            onSelect={(option) => {
-              setSelectedCategoryFilter(option);
-              setCurrentPage(1);
-              setIsCategoryFilterOpen(false);
-              setSelectedSupplier(null);
-              setIsTransactionModalOpen(false);
-            }}
-          />
-        </div>
+        <FilterDropdown
+          label="Filter"
+          options={categoryFilterOptions}
+          activeOption={selectedCategoryFilter}
+          isOpen={isCategoryFilterOpen}
+          onToggle={() => setIsCategoryFilterOpen((prev) => !prev)}
+          onSelect={(option) => {
+            setSelectedCategoryFilter(option);
+            setCurrentPage(1);
+            setIsCategoryFilterOpen(false);
+            setSelectedSupplier(null);
+            setIsTransactionModalOpen(false);
+          }}
+        />
+      </div>
 
+      {/* ── Add Supplier FAB ── */}
+      <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-20">
         <button
           type="button"
           onClick={handleOpenAddSupplier}
           className="
-            inline-flex items-center justify-center gap-2 px-5 py-2.5
-            bg-primary text-text-light rounded-full shadow-md shadow-primary/25
-            hover:bg-primary-dark transition-all duration-200 cursor-pointer
+            flex items-center gap-2 px-5 py-3 bg-primary text-text-light
+            rounded-full shadow-lg shadow-primary/30
+            hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/40
+            active:scale-95 transition-all duration-200 cursor-pointer
             text-sm font-semibold
           "
         >
-          <Plus size={16} strokeWidth={2.5} />
-          Add Supplier
+          <Plus size={18} strokeWidth={2.5} />
+          <span>Supplier</span>
         </button>
       </div>
 
@@ -538,6 +547,20 @@ export default function SuppliersPage() {
               Log Transaction
             </button>
           </div>
+
+          <DateFilters
+            selectedMonth={transactionMonth}
+            selectedYear={transactionYear}
+            yearOptions={Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i).toString())}
+            onMonthChange={(month) => {
+              setTransactionMonth(month);
+              setTransactionsPage(1);
+            }}
+            onYearChange={(year) => {
+              setTransactionYear(year);
+              setTransactionsPage(1);
+            }}
+          />
 
           <TransactionList
             transactions={transactions}
